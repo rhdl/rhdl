@@ -137,7 +137,7 @@ pub enum Member {
     #[display(fmt = "{}", _0)]
     Named(Ident),
     #[display(fmt = "{}", _0)]
-    Unnamed(u32),
+    Unnamed(Int),
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]

@@ -15,7 +15,7 @@ mod tests {
             ($($($input: expr),+ => $expected: expr),+) => {
                 $(
                     $(
-                        assert_eq!(IntParser::new().parse($input), Ok(Lit::Int {
+                        assert_eq!(IntLitParser::new().parse($input), Ok(Lit::Int {
                             val: rug::Integer::from($expected),
                             type_hint: None,
                         }));
@@ -31,7 +31,7 @@ mod tests {
             "0xB105F00D", "0xB105_F00D" => 0xB105F00Du32,
             "36#HELLO_THERE" => 1767707662651898u64
         );
-        assert!(IntParser::new().parse("?").is_err());
+        assert!(IntLitParser::new().parse("?").is_err());
     }
 
     #[test]
@@ -74,7 +74,8 @@ mod tests {
             };
         }
         parse!(
-            "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))"
+            "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))",
+            "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))"
         );
     }
 }

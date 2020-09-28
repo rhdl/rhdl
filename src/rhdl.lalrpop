@@ -47,65 +47,44 @@ Path: ast::Path = {
 
 
 pub Type: ast::Type = {
-    "[" <ty:Type> ";" <expr:Int> "]" => ast::Type::Array(Box::new(ty), Box::new(expr))
+    "[" <ty:Type> ";" <expr:IntLit> "]" => ast::Type::Array(Box::new(ty), Box::new(expr))
 };
 
-pub Int: ast::Lit = {
+Int: Int = {
     // i.e. 1_234_567_890
-    r"\d+(?:_\d+)*" => ast::Lit::Int {
-        type_hint: None,
-        val: Int::parse(<>).unwrap().into(),
-    },
-
-    // i.e. 0d123
-    r"0d\d+(?:_\d+)*" => {
-        const BASE_CHAR: char = 'd';
-        const BASE: i32 = 10;
-        ast::Lit::Int {
-            type_hint: None,
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
-        }
-    },
+    "0d"? <val:r"\d+(?:_\d+)*"> => Int::parse(val).unwrap().into(),
 
     // i.e. 0xC0FFEE_CAFE
     r"0x[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*" => {
         const BASE_CHAR: char = 'x';
         const BASE: i32 = 16;
-        ast::Lit::Int {
-            type_hint: None,
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
-        }
+        Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
     },
 
     // i.e. 0o72
     r"0o[0-7]+(?:_[0-7]+)*" => {
         const BASE_CHAR: char = 'o';
         const BASE: i32 = 8;
-        ast::Lit::Int {
-            type_hint: None,
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
-        }
+        Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
     },
 
     // i.e. 0b00110010_00101011_00110010_00111101_00110101
     r"0b[01]+(?:_[01]+)*" => {
         const BASE_CHAR: char = 'b';
         const BASE: i32 = 2;
-        ast::Lit::Int {
-            type_hint: None,
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
-        }
+        Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
     },
 
     // i.e. 36#HI, an Int in base 36
     r"(?:2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36)#[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*" => {
         const BASE_CHAR: char = '#';
         let base = <>.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
-        ast::Lit::Int {
-            type_hint: None,
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into()
-        }
+        Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into()
     },
+};
+
+pub IntLit: ast::Lit = {
+    Int => ast::Lit::Int { val: <>, type_hint: None },
 };
 
 pub Float: ast::Lit = r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => {
@@ -127,7 +106,7 @@ pub Float: ast::Lit = r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|8
 
 PathOrLit: ast::Expr = {
     Path => ast::Expr::Path(<>),
-    Int => ast::Expr::Lit(<>),
+    IntLit => ast::Expr::Lit(<>),
     Float => ast::Expr::Lit(<>),
 };
 
@@ -146,7 +125,7 @@ MethodCall: ast::Expr = {
 
 FieldExpression: ast::Expr = {
     <base:Term> "." <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
-    // <base:Expr> "." <unnamed:r"\d+"> => ast::Expr::Field(base, ast::Member::Unnamed(u32::from_str(unnamed).unwrap())),
+    <base:Term> "." <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
     MethodCall => <>,
 };
 
