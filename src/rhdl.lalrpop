@@ -1,0 +1,247 @@
+use rug::{Integer as Int, Float};
+
+use std::str::FromStr;
+
+use crate::ast;
+
+grammar;
+
+/// https://doc.rust-lang.org/reference/identifiers.html
+/// raw identifiers are not supported (for now)
+Ident: ast::Ident = r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => ast::Ident {
+    inner: <>.to_string()
+};
+
+Comma<T>: ast::Comma<T> = {
+    <v:(<T> ",")*> <e:T?> => match e {
+        None => ast::Comma(v),
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            ast::Comma(v)
+        }
+    }
+};
+
+Path: ast::Path = {
+    <leading_colon:"::"?> <path:(<Ident> "::")*> <final_path:Ident> => {
+        let mut v = path;
+        v.push(final_path);
+        ast::Path {
+            leading_colon: leading_colon.map(|_| ()),
+            segments: v,
+        }
+    }
+};
+
+// Field<T>: (ast::Ident, ast::Expr) = {
+//     <v:(<T> ":")*> <e:T?> => match e {
+//         None => v,
+//         Some(e) => {
+//             let mut v = v;
+//             v.push(e);
+//             v
+//         }
+//     }
+// };
+
+
+pub Type: ast::Type = {
+    "[" <ty:Type> ";" <expr:Int> "]" => ast::Type::Array(Box::new(ty), Box::new(expr))
+};
+
+pub Int: ast::Lit = {
+    // i.e. 1_234_567_890
+    r"\d+(?:_\d+)*" => ast::Lit::Int {
+        type_hint: None,
+        val: Int::parse(<>).unwrap().into(),
+    },
+
+    // i.e. 0d123
+    r"0d\d+(?:_\d+)*" => {
+        const BASE_CHAR: char = 'd';
+        const BASE: i32 = 10;
+        ast::Lit::Int {
+            type_hint: None,
+            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
+        }
+    },
+
+    // i.e. 0xC0FFEE_CAFE
+    r"0x[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*" => {
+        const BASE_CHAR: char = 'x';
+        const BASE: i32 = 16;
+        ast::Lit::Int {
+            type_hint: None,
+            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
+        }
+    },
+
+    // i.e. 0o72
+    r"0o[0-7]+(?:_[0-7]+)*" => {
+        const BASE_CHAR: char = 'o';
+        const BASE: i32 = 8;
+        ast::Lit::Int {
+            type_hint: None,
+            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
+        }
+    },
+
+    // i.e. 0b00110010_00101011_00110010_00111101_00110101
+    r"0b[01]+(?:_[01]+)*" => {
+        const BASE_CHAR: char = 'b';
+        const BASE: i32 = 2;
+        ast::Lit::Int {
+            type_hint: None,
+            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into()
+        }
+    },
+
+    // i.e. 36#HI, an Int in base 36
+    r"(?:2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36)#[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*" => {
+        const BASE_CHAR: char = '#';
+        let base = <>.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
+        ast::Lit::Int {
+            type_hint: None,
+            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into()
+        }
+    },
+};
+
+pub Float: ast::Lit = r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => {
+    let format = <>.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
+    let precision = match format {
+        16 => 11,
+        32 => 24,
+        64 => 53,
+        80 => 64,
+        128 => 113,
+        256 => 237,
+        _ => unreachable!()
+    };
+    let float = Float::parse(<>.split('f').next().unwrap()).unwrap();
+    ast::Lit::Float {
+        val: Float::with_val(precision, float)
+    }
+};
+
+PathOrLit: ast::Expr = {
+    Path => ast::Expr::Path(<>),
+    Int => ast::Expr::Lit(<>),
+    Float => ast::Expr::Lit(<>),
+};
+
+Term: ast::Expr = {
+    "(" <Expr> ")" => <>,
+    "[" <val:Expr> ";" <repeat:Expr> "]" => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
+    "[" <Comma<Expr>> "]" => ast::Expr::Array(<>),
+    "{" <Comma<Expr>> "}" => ast::Expr::Concat(<>),
+    PathOrLit => <>
+};
+
+MethodCall: ast::Expr = {
+    <receiver:Term> "." <method:Ident> "(" <args:Comma<Expr>> ")" => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    Term => <>,
+};
+
+FieldExpression: ast::Expr = {
+    <base:Term> "." <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
+    // <base:Expr> "." <unnamed:r"\d+"> => ast::Expr::Field(base, ast::Member::Unnamed(u32::from_str(unnamed).unwrap())),
+    MethodCall => <>,
+};
+
+FunctionCallOrArrayIndexing: ast::Expr = {
+    <func:Path> "(" <args:Comma<FieldExpression>> ")" => ast::Expr::Call(func, args),
+    <on:FunctionCallOrArrayIndexing> "[" <index:FieldExpression> "]" => ast::Expr::Index(Box::new(on), Box::new(index)),
+    FieldExpression => <>,
+};
+
+Unary: ast::Expr = {
+    "!" <Term> => ast::Expr::Unary(ast::UnOp::Not, Box::new(<>)),
+    "-" <Term> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(<>)),
+    FunctionCallOrArrayIndexing => <>,
+};
+
+Cast: ast::Expr = {
+    <expr:Unary> "as" <ty:Type> => {
+        ast::Expr::Cast(Box::new(expr), Box::new(ty))
+    },
+    Unary => <>,
+};
+
+Arith0: ast::Expr = {
+    <l:Arith0> "**" <r:Cast> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
+    Cast => <>,
+};
+
+Arith1: ast::Expr = {
+    <l:Arith1> "*" <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Mul, Box::new(r)),
+    <l:Arith1> "/" <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Div, Box::new(r)),
+    <l:Arith1> "%" <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Rem, Box::new(r)),
+    Arith0 => <>,
+};
+
+Arith2: ast::Expr = {
+    <l:Arith2> "+" <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::Add, Box::new(r)),
+    <l:Arith2> "-" <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::Sub, Box::new(r)),
+    Arith1 => <>,
+};
+
+Bin0: ast::Expr = {
+    <l:Bin0> "<<" <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shl, Box::new(r)),
+    <l:Bin0> ">>" <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shr, Box::new(r)),
+    Arith2 => <>,
+};
+
+Bin1: ast::Expr = {
+    <l:Bin1> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    Bin0 => <>,
+};
+
+Bin2: ast::Expr = {
+    <l:Bin2> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    Bin1 => <>,
+};
+
+Bin3: ast::Expr = {
+    <l:Bin3> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    Bin2 => <>,
+};
+
+Comparison: ast::Expr = {
+    <l:Comparison> "<" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
+    <l:Comparison> "<=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
+    <l:Comparison> ">" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
+    <l:Comparison> ">=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ge, Box::new(r)),
+    <l:Comparison> "==" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
+    Bin3 => <>,
+};
+
+Range: ast::Expr = {
+    <l:Range?> ".." <r:Comparison?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
+    <l:Range?> "..=" <r:Comparison> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
+    Comparison => <>,
+};
+
+Assign0: ast::Expr = {
+    <l:Assign0> "=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
+    <l:Assign0> "+=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
+    <l:Assign0> "-=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
+    <l:Assign0> "*=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
+    <l:Assign0> "/=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
+    <l:Assign0> "%=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
+    Range => <>,
+};
+
+Assign1: ast::Expr = {
+    <l:Assign1> "&=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+    <l:Assign1> "|=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    <l:Assign1> "^=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+    <l:Assign1> "<<=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+    <l:Assign1> ">>=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+    Assign0 => <>,
+};
+
+pub Expr: ast::Expr = {
+    Assign1 => <>,
+};
