@@ -47,7 +47,10 @@ Path: ast::Path = {
 
 
 pub Type: ast::Type = {
-    "[" <ty:Type> ";" <expr:IntLit> "]" => ast::Type::Array(Box::new(ty), Box::new(expr))
+    "[" <ty:Type> ";" <expr:IntLit> "]" => ast::Type::Array(Box::new(ty), Box::new(expr)),
+    Path => ast::Type::Path(<>),
+    "fn" "(" <args:Comma<Type>> ")" "->" <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
+    "fn" "(" <args:Comma<Type>> ")" => ast::Type::Fn(args, None),
 };
 
 Int: Int = {
