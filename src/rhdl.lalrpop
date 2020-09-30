@@ -238,11 +238,11 @@ Assign0: ast::Expr = {
 };
 
 Assign1: ast::Expr = {
-    <l:Assign1> "&=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
-    <l:Assign1> "|=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
-    <l:Assign1> "^=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
-    <l:Assign1> "<<=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
-    <l:Assign1> ">>=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+    <l:Assign0> "&=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+    <l:Assign0> "|=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    <l:Assign0> "^=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+    <l:Assign0> "<<=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+    <l:Assign0> ">>=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
     Assign0 => <>,
 };
 
