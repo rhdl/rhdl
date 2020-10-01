@@ -77,7 +77,9 @@ mod tests {
             "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))",
             "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))",
             "if a >= 4 { a = 4; b } else if a < 0 { a = 0; c } else { a +=1; d }" => "(if (>= a 4) (= a 4); b (else (if (< a 0) (= a 0); c (else (+= a 1); d))))",
-            "{ let x: u2 = 0; match x { 0 => a(), 1 => b(), 2 => c(), 3 => d(), } }" => "(let x: u2 0); (match x (=> 0 a()), (=> 1 b()), (=> 2 c()), (=> 3 d()))"
+            "{ let x: u2 = 0; match x { 0 => a(), 1 => b(), 2 => c(), 3 => d(), } }" => "(let x: u2 0); (match x (=> 0 a()), (=> 1 b()), (=> 2 c()), (=> 3 d()))",
+            "{ let x = if a { 0 } else { 1 }; }" => "(let x (if a 0 (else 1)));"
+            // "x += if a { 0 } else { 1 }" => ""
         );
     }
 }

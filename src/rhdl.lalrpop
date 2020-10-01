@@ -270,7 +270,7 @@ pub Pat: ast::Pat = {
 }
 
 SemiStatement: ast::Stmt = {
-    "let" <pat:Pat> <ty:(":" <Type>)?> "=" <expr:Range> ";" => ast::Stmt::Local(pat, ty, expr),
+    "let" <pat:Pat> <ty:(":" <Type>)?> "=" <expr:Expr> ";" => ast::Stmt::Local(pat, ty, expr),
     <Expr> ";" => ast::Stmt::Expr(<>, true),
 };
 
