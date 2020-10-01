@@ -275,12 +275,19 @@ SemiStatement: ast::Stmt = {
 };
 
 Statement: ast::Stmt = {
-    <Expr> => ast::Stmt::Expr(<>, false),
+    <SemiStatement> => <>,
+    <Conditional> => ast::Stmt::Expr(<>, false),
+    <Block> => ast::Stmt::Expr(ast::Expr::Block(<>), false),
+    <Match> => ast::Stmt::Expr(<>, false),
     // <Item> => {},
 };
 
+RetStatement: ast::Stmt = {
+    <Range> => ast::Stmt::Expr(<>, false)
+}
+
 Block: ast::Block = {
-    "{" <v:(<SemiStatement>)*> <e:Statement?> "}" => match e {
+    "{" <v:(<Statement>)*> <e:RetStatement?> "}" => match e {
         None => ast::Block(v),
         Some(e) => {
             let mut v = v;
