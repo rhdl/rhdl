@@ -261,10 +261,12 @@ pub Expr: ast::Expr = {
     Assign1 => <>,
     Conditional => <>,
     Block => ast::Expr::Block(<>),
+    Match => <>,
 };
 
 pub Pat: ast::Pat = {
-    <Ident> => ast::Pat::Ident(<>)
+    <Ident> => ast::Pat::Ident(<>),
+    <IntLit> => ast::Pat::Lit(<>)
 }
 
 SemiStatement: ast::Stmt = {
@@ -291,12 +293,24 @@ Block: ast::Block = {
 CondElse: ast::Expr = {
     Conditional => <>,
     Block => ast::Expr::Block(<>)
+};
+
+CondIf: ast::Expr = {
+    "if" <Expr> => <>
+};
+
+Conditional: ast::Expr = <c:CondIf> <b:Block> <els:("else" <CondElse>)?> => {
+    ast::Expr::If(Box::new(c), b, els.map(Box::new))
+};
+
+Match: ast::Expr = {
+    "match" <e:Expr> "{" <arms:Comma<Arm>> "}" => ast::Expr::Match(Box::new(e), arms)
 }
 
-
-Conditional: ast::Expr = {
-    "if" <c:Expr> <b:Block> <els:("else" <CondElse>)?> => {
-        ast::Expr::If(Box::new(c), b, els.map(Box::new))
-    },
-
-};
+Arm: ast::Arm = {
+    <pat:Pat> <guard:CondIf?> "=>" <body:Expr> => ast::Arm {
+        pat,
+        guard,
+        body: Box::new(body)
+    }
+}

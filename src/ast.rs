@@ -12,7 +12,7 @@ impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
             write!(f, "{}", item)?;
         }
         for item in self.0.iter().skip(1) {
-            write!(f, ",{}", item)?;
+            write!(f, ", {}", item)?;
         }
         Ok(())
     }
@@ -112,12 +112,14 @@ impl Display for Path {
 pub enum Pat {
     #[display(fmt = "{}", _0)]
     Ident(Ident),
+    #[display(fmt = "{}", _0)]
+    Lit(Lit),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Stmt {
     #[display(
-        fmt = "(let {}{} {})",
+        fmt = "(let {}{} {});",
         _0,
         "_1.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()",
         _2
@@ -166,18 +168,28 @@ pub enum Expr {
     #[display(fmt = "(as {} {})", _0, _1)]
     Cast(Box<Expr>, Box<Type>),
     #[display(
-        fmt = "(if {} ({}){})",
+        fmt = "(if {} {}{})",
         _0,
         _1,
         "_2.as_ref().map(|x| format!(\" (else {})\", x)).unwrap_or_default()"
     )]
-    If(
-        Box<Expr>,
-        Block,
-        Option<Box<Expr>>,
-    ),
+    If(Box<Expr>, Block, Option<Box<Expr>>),
+    #[display(fmt = "(match {} {})", _0, _1)]
+    Match(Box<Expr>, Comma<Arm>),
     #[display(fmt = "{}", _0)]
     Block(Block),
+}
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "(=> {}{} {})",
+    pat,
+    "guard.as_ref().map(|x| format!(\"(if {})\", x)).unwrap_or_default()",
+    body
+)]
+pub struct Arm {
+    pub pat: Pat,
+    pub guard: Option<Expr>,
+    pub body: Box<Expr>,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
