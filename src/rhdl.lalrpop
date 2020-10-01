@@ -23,6 +23,17 @@ Comma<T>: ast::Comma<T> = {
     }
 };
 
+Pipe<T>: Vec<T> = {
+    <v:(<T> "|")*> <e:T?> => match e {
+        None => v,
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            v
+        }
+    }
+};
+
 Path: ast::Path = {
     <leading_colon:"::"?> <path:(<Ident> "::")*> <final_path:Ident> => {
         let mut v = path;
@@ -139,7 +150,7 @@ Term: ast::Expr = {
     "(" <Expr> ")" => <>,
     "[" <val:Expr> ";" <repeat:Expr> "]" => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
     "[" <Comma<Expr>> "]" => ast::Expr::Array(<>),
-    "{" <Comma<Expr>> "}" => ast::Expr::Concat(<>),
+    // "{" <Comma<Expr>> "}" => ast::Expr::Concat(<>),
     PathOrLit => <>
 };
 
@@ -213,39 +224,79 @@ Bin3: ast::Expr = {
 };
 
 Comparison: ast::Expr = {
-    <l:Comparison> "<" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
-    <l:Comparison> "<=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
-    <l:Comparison> ">" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
-    <l:Comparison> ">=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ge, Box::new(r)),
-    <l:Comparison> "==" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
+    <l:Bin3> "<" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
+    <l:Bin3> "<=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
+    <l:Bin3> ">" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
+    <l:Bin3> ">=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ge, Box::new(r)),
+    <l:Bin3> "==" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
     Bin3 => <>,
 };
 
 Range: ast::Expr = {
-    <l:Range?> ".." <r:Comparison?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
-    <l:Range?> "..=" <r:Comparison> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
+    <l:Comparison?> ".." <r:Comparison?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
+    <l:Comparison?> "..=" <r:Comparison> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
     Comparison => <>,
 };
 
 Assign0: ast::Expr = {
-    <l:Assign0> "=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
-    <l:Assign0> "+=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
-    <l:Assign0> "-=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
-    <l:Assign0> "*=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
-    <l:Assign0> "/=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
-    <l:Assign0> "%=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
+    <l:Range> "=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
+    <l:Range> "+=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
+    <l:Range> "-=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
+    <l:Range> "*=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
+    <l:Range> "/=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
+    <l:Range> "%=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
     Range => <>,
 };
 
 Assign1: ast::Expr = {
-    <l:Assign0> "&=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
-    <l:Assign0> "|=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
-    <l:Assign0> "^=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
-    <l:Assign0> "<<=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
-    <l:Assign0> ">>=" <r:Assign0> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+    <l:Range> "&=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+    <l:Range> "|=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    <l:Range> "^=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+    <l:Range> "<<=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+    <l:Range> ">>=" <r:Range> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
     Assign0 => <>,
 };
 
 pub Expr: ast::Expr = {
     Assign1 => <>,
+    Conditional => <>,
+    Block => ast::Expr::Block(<>),
+};
+
+pub Pat: ast::Pat = {
+    <Ident> => ast::Pat::Ident(<>)
+}
+
+SemiStatement: ast::Stmt = {
+    "let" <pat:Pat> <ty:(":" <Type>)?> "=" <expr:Range> ";" => ast::Stmt::Local(pat, ty, expr),
+    <Expr> ";" => ast::Stmt::Expr(<>, true),
+};
+
+Statement: ast::Stmt = {
+    <Expr> => ast::Stmt::Expr(<>, false),
+    // <Item> => {},
+};
+
+Block: ast::Block = {
+    "{" <v:(<SemiStatement>)*> <e:Statement?> "}" => match e {
+        None => ast::Block(v),
+        Some(e) => {
+            let mut v = v;
+            v.push(e);
+            ast::Block(v)
+        }
+    }
+};
+
+CondElse: ast::Expr = {
+    Conditional => <>,
+    Block => ast::Expr::Block(<>)
+}
+
+
+Conditional: ast::Expr = {
+    "if" <c:Expr> <b:Block> <els:("else" <CondElse>)?> => {
+        ast::Expr::If(Box::new(c), b, els.map(Box::new))
+    },
+
 };

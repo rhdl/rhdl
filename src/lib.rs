@@ -75,7 +75,8 @@ mod tests {
         }
         parse!(
             "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))",
-            "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))"
+            "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))",
+            "if a >= 4 { a = 4; b } else if a < 0 { a = 0; c } else { a +=1; d }" => "(if (>= a 4) ((= a 4); b) (else (if (< a 0) ((= a 0); c) (else (+= a 1); d))))"
         );
     }
 }

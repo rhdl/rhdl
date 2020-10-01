@@ -19,6 +19,21 @@ impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct Block(pub Vec<Stmt>);
+
+impl Display for Block {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        for stmt in self.0.iter().take(self.0.len().saturating_sub(1)) {
+            write!(f, "{} ", stmt)?;
+        }
+        if let Some(stmt) = self.0.last() {
+            write!(f, "{}", stmt)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub enum Item {
     /// const x: u3 = 0b000;
     Const {
@@ -94,6 +109,26 @@ impl Display for Path {
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
+pub enum Pat {
+    #[display(fmt = "{}", _0)]
+    Ident(Ident),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum Stmt {
+    #[display(
+        fmt = "(let {}{} {})",
+        _0,
+        "_1.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()",
+        _2
+    )]
+    Local(Pat, Option<Type>, Expr),
+    // Item(),
+    #[display(fmt = "{}{}", _0, "if *_1 { \";\" } else { \"\" }")]
+    Expr(Expr, bool),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
 pub enum Expr {
     // Block(Block),
     #[display(fmt = "({} {})", _0, _1)]
@@ -130,6 +165,19 @@ pub enum Expr {
     Array(Comma<Expr>),
     #[display(fmt = "(as {} {})", _0, _1)]
     Cast(Box<Expr>, Box<Type>),
+    #[display(
+        fmt = "(if {} ({}){})",
+        _0,
+        _1,
+        "_2.as_ref().map(|x| format!(\" (else {})\", x)).unwrap_or_default()"
+    )]
+    If(
+        Box<Expr>,
+        Block,
+        Option<Box<Expr>>,
+    ),
+    #[display(fmt = "{}", _0)]
+    Block(Block),
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
@@ -216,13 +264,6 @@ pub enum AssOp {
     ShrEq,
 }
 
-#[derive(Clone, Debug, PartialEq)]
-pub enum Stmt {
-    Let(Let),
-    Item(Item),
-    Expr { inner: Expr, semi: bool },
-}
-
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Pattern {}
 
@@ -245,5 +286,3 @@ pub enum Lit {
     #[display(fmt = "{}", val)]
     Float { val: Float },
 }
-
-pub type Block = Vec<Stmt>;
