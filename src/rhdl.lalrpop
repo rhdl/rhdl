@@ -151,7 +151,8 @@ Term: ast::Expr = {
     "[" <val:Expr> ";" <repeat:Expr> "]" => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
     "[" <Comma<Expr>> "]" => ast::Expr::Array(<>),
     // "{" <Comma<Expr>> "}" => ast::Expr::Concat(<>),
-    PathOrLit => <>
+    PathOrLit => <>,
+    PrefixedBlocks => <>,
 };
 
 MethodCall: ast::Expr = {
@@ -257,44 +258,40 @@ Assign1: ast::Expr = {
     Assign0 => <>,
 };
 
-pub Expr: ast::Expr = {
-    Assign1 => <>,
+PrefixedBlocks: ast::Expr = {
     Conditional => <>,
-    Block => ast::Expr::Block(<>),
     Match => <>,
 };
 
-pub Pat: ast::Pat = {
-    <Ident> => ast::Pat::Ident(<>),
-    <IntLit> => ast::Pat::Lit(<>)
-}
-
-SemiStatement: ast::Stmt = {
-    "let" <pat:Pat> <ty:(":" <Type>)?> "=" <expr:Expr> ";" => ast::Stmt::Local(pat, ty, expr),
-    <Expr> ";" => ast::Stmt::Expr(<>, true),
+pub Expr: ast::Expr = {
+    Assign1 => <>,
+    Block => ast::Expr::Block(<>),
 };
 
+pub Pat: ast::Pat = {
+    Ident => ast::Pat::Ident(<>),
+    IntLit => ast::Pat::Lit(<>)
+}
+
 Statement: ast::Stmt = {
-    <SemiStatement> => <>,
-    <Conditional> => ast::Stmt::Expr(<>, false),
-    <Block> => ast::Stmt::Expr(ast::Expr::Block(<>), false),
-    <Match> => ast::Stmt::Expr(<>, false),
+    "let" <pat:Pat> <ty:(":" <Type>)?> "=" <expr:Expr> ";" => ast::Stmt::Local(pat, ty, expr),
+    <Expr> ";" => ast::Stmt::Expr(<>, true),
+    // PrefixedBlocks => ast::Stmt::Expr(<>, false),
+};
+
+ImplicitReturnStatement: ast::Stmt = {
+    Expr => ast::Stmt::Expr(<>, false),
+    // Block => ast::Stmt::Expr(ast::Expr::Block(<>), false),
     // <Item> => {},
 };
 
-RetStatement: ast::Stmt = {
-    <Range> => ast::Stmt::Expr(<>, false)
-}
-
 Block: ast::Block = {
-    "{" <v:(<Statement>)*> <e:RetStatement?> "}" => match e {
-        None => ast::Block(v),
-        Some(e) => {
-            let mut v = v;
-            v.push(e);
-            ast::Block(v)
+    "{" <mut v:Statement*> <r:ImplicitReturnStatement?> "}" => {
+        if let Some(r) = r {
+            v.push(r);
         }
-    }
+        ast::Block(v)
+    },
 };
 
 CondElse: ast::Expr = {
