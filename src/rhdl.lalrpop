@@ -8,7 +8,14 @@ grammar;
 
 /// https://doc.rust-lang.org/reference/identifiers.html
 /// raw identifiers are not supported (for now)
-/// todo: disallow super|self|crate etc
+
+match {
+    "(as|break|const|continue|crate|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
+} else {
+    r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
+    _
+}
+
 Ident: ast::Ident = {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => ast::Ident {
         inner: <>.to_string()
@@ -74,7 +81,7 @@ pub Type: ast::Type = {
 
 Int: Int = {
     // i.e. 1_234_567_890
-    r"[1-9]\d+(?:_\d+)*" => Int::parse(<>).unwrap().into(),
+    r"[1-9]\d*(?:_\d+)*" => Int::parse(<>).unwrap().into(),
 };
 
 pub IntLit: ast::Lit = {
