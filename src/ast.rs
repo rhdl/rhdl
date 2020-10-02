@@ -3,7 +3,7 @@ use rug::{Float, Integer as Int};
 
 use std::fmt::{Debug, Display, Formatter, Result};
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Default)]
 pub struct Comma<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
 
 impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
@@ -122,9 +122,9 @@ pub enum Stmt {
         fmt = "(let {}{} {});",
         _0,
         "_1.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()",
-        _2
+        "_2.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"
     )]
-    Local(Pat, Option<Type>, Expr),
+    Local(Pat, Option<Type>, Option<Expr>),
     // Item(),
     #[display(fmt = "{}{}", _0, "if *_1 { \";\" } else { \"\" }")]
     Expr(Expr, bool),
@@ -158,13 +158,15 @@ pub enum Expr {
     #[display(fmt = "{}.{}", _0, _1)]
     Field(Box<Expr>, Member),
     #[display(fmt = "{}({})", _0, _1)]
-    Call(Path, Comma<Expr>),
+    Call(Box<Expr>, Comma<Expr>),
     #[display(fmt = "{}.{}({})", _0, _1, _2)]
     MethodCall(Box<Expr>, Ident, Comma<Expr>),
     #[display(fmt = "{}[{}]", _0, _1)]
     Index(Box<Expr>, Box<Expr>),
     #[display(fmt = "[{}]", _0)]
     Array(Comma<Expr>),
+    #[display(fmt = "({})", _0)]
+    Tuple(Comma<Expr>),
     #[display(fmt = "(as {} {})", _0, _1)]
     Cast(Box<Expr>, Box<Type>),
     #[display(
@@ -173,11 +175,16 @@ pub enum Expr {
         _1,
         "_2.as_ref().map(|x| format!(\" (else {})\", x)).unwrap_or_default()"
     )]
-    If(Box<Expr>, Block, Option<Box<Expr>>),
+    If(Box<Expr>, Box<Expr>, Option<Box<Expr>>),
     #[display(fmt = "(match {} {})", _0, _1)]
     Match(Box<Expr>, Comma<Arm>),
     #[display(fmt = "{}", _0)]
     Block(Block),
+    #[display(
+        fmt = "return {}",
+        "_0.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"
+    )]
+    Return(Option<Box<Expr>>),
 }
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(
@@ -189,7 +196,7 @@ pub enum Expr {
 pub struct Arm {
     pub pat: Pat,
     pub guard: Option<Expr>,
-    pub body: Box<Expr>,
+    pub body: Expr,
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
