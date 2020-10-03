@@ -16,7 +16,8 @@ match {
     "match" => Match,
     "let" => Let,
     "return" => Return,
-    "(break|const|continue|crate|enum|extern|false|fn|for|impl|in|loop|mod|move|mut|pub|ref|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
+    "fn" => Fn,
+    "(break|const|continue|crate|enum|extern|false|for|impl|in|loop|mod|move|mut|pub|ref|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
     _
@@ -81,8 +82,8 @@ Path: ast::Path = {
 pub Type: ast::Type = {
     "[" <ty:Type> ";" <expr:IntLit> "]" => ast::Type::Array(Box::new(ty), Box::new(expr)),
     Path => ast::Type::Path(<>),
-    "fn" "(" <args:Comma<Type>> ")" "->" <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
-    "fn" "(" <args:Comma<Type>> ")" => ast::Type::Fn(args, None),
+    Fn "(" <args:Comma<Type>> ")" "->" <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
+    Fn "(" <args:Comma<Type>> ")" => ast::Type::Fn(args, None),
 };
 
 Int: Int = {
