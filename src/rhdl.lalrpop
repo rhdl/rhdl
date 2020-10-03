@@ -196,8 +196,8 @@ BlockExpression: ast::Expr = {
 
 Unary: ast::Expr = {
     "-" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
-    "-" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
-    "!" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
+    "-" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
+    "!" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
     "!" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
     ExprWithoutBlockOrOperator => <>,
     // ExprWithBlock => <>,
@@ -218,42 +218,71 @@ Arith0: ast::Expr = {
 };
 
 Arith1: ast::Expr = {
-    <l:Arith1> <op:r"(\*|/|%)"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Arith0 => <>,
 };
 
 Arith2: ast::Expr = {
-    <l:Arith2> <op:r"(\+|-)"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith2> <op:r"\+|-"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith2> <op:r"\+|-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"\+|-"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"\+|-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Arith1 => <>,
 };
 
 Bin0: ast::Expr = {
-    <l:Bin0> <op:r"(<<|>>)"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin0> <op:r"<<|>>"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin0> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"<<|>>"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Arith2 => <>,
 };
 
 Bin1: ast::Expr = {
     <l:Bin1> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    <l:Bin1> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    <l:ExprWithBlock> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    <l:ExprWithBlock> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
     Bin0 => <>,
 };
 
 Bin2: ast::Expr = {
     <l:Bin2> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    <l:Bin2> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    <l:ExprWithBlock> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    <l:ExprWithBlock> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
     Bin1 => <>,
 };
 
 Bin3: ast::Expr = {
     <l:Bin3> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    <l:Bin3> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    <l:ExprWithBlock> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    <l:ExprWithBlock> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
     Bin2 => <>,
 };
 
 ComparisonExpression: ast::Expr = {
-    <l:Bin3> <op:r"(<|<=|>|>=|==)"> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:r"<=|<|>=|>|=="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:r"<=|<|>=|>|=="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"<=|<|>=|>|=="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"<=|<|>=|>|=="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Bin3 => <>,
 };
 
 AssignExpression: ast::Expr = {
-    <l:ComparisonExpression> <op:r"(=|\+=|-=|\*=|\*\*=|/=|%=|&=|\|=|\^=|<<=|>>=)"> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+
+    <l:ComparisonExpression> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ComparisonExpression> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ExprWithBlock> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     ComparisonExpression => <>,
 };
 
