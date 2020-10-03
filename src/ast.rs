@@ -1,13 +1,14 @@
 use derive_more::Display;
 use rug::{Float, Integer as Int};
+use std::str::FromStr;
 
-use std::fmt::{Debug, Display, Formatter, Result};
+use std::fmt::{self, Debug, Display, Formatter};
 
 #[derive(Clone, Debug, PartialEq, Default)]
 pub struct Comma<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
 
 impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         if let Some(item) = self.0.first() {
             write!(f, "{}", item)?;
         }
@@ -22,7 +23,7 @@ impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
 pub struct Block(pub Vec<Stmt>);
 
 impl Display for Block {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for stmt in self.0.iter().take(self.0.len().saturating_sub(1)) {
             write!(f, "{} ", stmt)?;
         }
@@ -91,7 +92,7 @@ pub struct Path {
 }
 
 impl Display for Path {
-    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for (i, seg) in self.segments.iter().enumerate() {
             write!(
                 f,
@@ -207,81 +208,72 @@ pub enum Member {
     Unnamed(Int),
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
-pub enum BinOp {
-    #[display(fmt = "+")]
-    Add,
-    #[display(fmt = "-")]
-    Sub,
-    #[display(fmt = "*")]
-    Mul,
-    #[display(fmt = "/")]
-    Div,
-    #[display(fmt = "%")]
-    Rem,
-    #[display(fmt = "&&")]
-    And,
-    #[display(fmt = "||")]
-    Or,
-    #[display(fmt = "^")]
-    BitXor,
-    #[display(fmt = "&")]
-    BitAnd,
-    #[display(fmt = "|")]
-    BitOr,
-    #[display(fmt = "<<")]
-    Shl,
-    #[display(fmt = ">>")]
-    Shr,
-    #[display(fmt = "==")]
-    Eq,
-    #[display(fmt = "<")]
-    Lt,
-    #[display(fmt = "<=")]
-    Le,
-    #[display(fmt = "!=")]
-    Ne,
-    #[display(fmt = ">=")]
-    Ge,
-    #[display(fmt = ">")]
-    Gt,
-    #[display(fmt = "**")]
-    Exp,
+macro_rules! op_enum {
+    ($name: ident { $($varname: ident => $varval: expr),+ }) => {
+        #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
+        pub enum $name {
+            $(
+                #[display(fmt = $varval)]
+                $varname,
+            )+
+        }
+
+        impl FromStr for $name {
+            type Err = ();
+
+            fn from_str(s: &str) -> Result<Self, Self::Err> {
+                match s {
+                    $(
+                        $varval => Ok(Self::$varname),
+                    )+
+                    _ => Err(()),
+                }
+            }
+        }
+    };
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
-pub enum UnOp {
-    #[display(fmt = "!")]
-    Not,
-    #[display(fmt = "-")]
-    Neg,
-}
+op_enum!(BinOp {
+    Add => "+",
+    Sub => "-",
+    Mul => "*",
+    Div => "/",
+    Rem => "%",
+    Exp => "**",
+    And => "&&",
+    Or => "||",
+    BitXor => "^",
+    BitAnd => "&",
+    BitOr => "|",
+    Shl => "<<",
+    Shr => ">>",
+    Eq => "==",
+    Lt => "<",
+    Le => "<=",
+    Ne => "!=",
+    Ge => ">=",
+    Gt => ">"
+});
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
-pub enum AssOp {
-    #[display(fmt = "=")]
-    Eq,
-    #[display(fmt = "+=")]
-    AddEq,
-    #[display(fmt = "-=")]
-    SubEq,
-    #[display(fmt = "*=")]
-    MulEq,
-    #[display(fmt = "/=")]
-    DivEq,
-    #[display(fmt = "%=")]
-    RemEq,
-    #[display(fmt = "^=")]
-    BitXorEq,
-    #[display(fmt = "&=")]
-    BitAndEq,
-    #[display(fmt = "|=")]
-    BitOrEq,
-    #[display(fmt = "<<=")]
-    ShlEq,
-    #[display(fmt = ">>=")]
-    ShrEq,
-}
+op_enum!( UnOp {
+    Not => "!",
+    Neg => "-"
+});
+
+op_enum!(AssOp {
+    Eq => "=",
+    AddEq => "+=",
+    SubEq => "-=",
+    MulEq => "*=",
+    DivEq => "/=",
+    RemEq => "%=",
+    ExpEq => "**=",
+    BitXorEq => "^=",
+    BitAndEq => "&=",
+    BitOrEq => "|=",
+    ShlEq => "<<=",
+    ShrEq => ">>="
+});
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum Pattern {}
