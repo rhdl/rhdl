@@ -9,15 +9,21 @@ grammar;
 /// https://doc.rust-lang.org/reference/identifiers.html
 /// raw identifiers are not supported (for now)
 
-// match {
-//     "(as|break|const|continue|crate|else|enum|extern|false|fn|for|if|impl|in|let|loop|match|mod|move|mut|pub|ref|return|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
-// } else {
-//     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
-//     _
-// }
+match {
+    "if" => If,
+    "else" => Else,
+    "as" => As,
+    "match" => Match,
+    "let" => Let,
+    "return" => Return,
+    "(break|const|continue|crate|enum|extern|false|fn|for|impl|in|loop|mod|move|mut|pub|ref|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
+} else {
+    r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
+    _
+}
 
 Ident: ast::Ident = {
-    r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => ast::Ident {
+    Identifier => ast::Ident {
         inner: <>.to_string()
     },
 };
@@ -165,9 +171,9 @@ PathExpression: ast::Expr = Path => ast::Expr::Path(<>);
 
 Statement: ast::Stmt = {
     // Item,
-    "let" <pat:Pat> <ty:(":" <Type>)?> <expr:("=" <Expr>)?> ";" => ast::Stmt::Local(pat, ty, expr),
+    Let <pat:Pat> <ty:(":" <Type>)?> <expr:("=" <Expr>)?> ";" => ast::Stmt::Local(pat, ty, expr),
     <expr:ExprWithoutBlockWithReturn> ";" => ast::Stmt::Expr(expr, true),
-    <expr:ExprWithBlock> => ast::Stmt::Expr(expr, semi.is_some()),
+    <expr:ExprWithBlock> <semi:";"?> => ast::Stmt::Expr(expr, semi.is_some()),
 };
 
 Statements: Vec<ast::Stmt> = {
@@ -181,7 +187,7 @@ Statements: Vec<ast::Stmt> = {
 
 BlockExpression: ast::Expr = {
     "{" <mut v:Statements?> "}" => {
-        let mut v = v.unwrap_or_default();
+        let v = v.unwrap_or_default();
         ast::Expr::Block(ast::Block(v))
     },
 };
@@ -193,13 +199,11 @@ Unary: ast::Expr = {
     "!" <ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(<>)),
     "-" <ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(<>)),
     ExprWithoutBlockOrOperator => <>,
-    ExprWithBlock => <>,
+    // ExprWithBlock => <>,
 };
 
 Cast: ast::Expr = {
-    <expr:Unary> "as" <ty:Type> => {
-        ast::Expr::Cast(Box::new(expr), Box::new(ty))
-    },
+    <expr:Unary> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
     Unary => <>,
 };
 
@@ -242,7 +246,7 @@ Bin3: ast::Expr = {
     Bin2 => <>,
 };
 
-Comparison: ast::Expr = {
+ComparisonExpression: ast::Expr = {
     <l:Bin3> "<" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
     <l:Bin3> "<=" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
     <l:Bin3> ">" <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
@@ -252,22 +256,22 @@ Comparison: ast::Expr = {
 };
 
 AssignExpression: ast::Expr = {
-    <l:Comparison> "=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
-    <l:Comparison> "+=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
-    <l:Comparison> "-=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
-    <l:Comparison> "*=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
-    <l:Comparison> "/=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
-    <l:Comparison> "%=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
-    <l:Comparison> "&=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
-    <l:Comparison> "|=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
-    <l:Comparison> "^=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
-    <l:Comparison> "<<=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
-    <l:Comparison> ">>=" <r:Comparison> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+    <l:ComparisonExpression> "=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
+    <l:ComparisonExpression> "+=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
+    <l:ComparisonExpression> "-=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
+    <l:ComparisonExpression> "*=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
+    <l:ComparisonExpression> "/=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
+    <l:ComparisonExpression> "%=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
+    <l:ComparisonExpression> "&=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+    <l:ComparisonExpression> "|=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    <l:ComparisonExpression> "^=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+    <l:ComparisonExpression> "<<=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+    <l:ComparisonExpression> ">>=" <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
     Comparison => <>,
 };
 
 OperatorExpression: ast::Expr = {
-    Arith1 => <>,
+    AssignExpression => <>,
 };
 
 GroupedExpression: ast::Expr = {
@@ -319,14 +323,14 @@ RangeExpression: ast::Expr = {
     <l:LiteralExpression?> "..=" <r:LiteralExpression> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
 };
 
-CondIf: ast::Expr = "if" <Expr> => <>;
+CondIf: ast::Expr = If <Expr> => <>;
 
 // todo: if let expression
 pub IfExpression: ast::Expr = {
-    <c:CondIf> <b:BlockExpression> <els:("else" <IfExpression>)> => {
+    <c:CondIf> <b:BlockExpression> <els:(Else <IfExpression>)> => {
         ast::Expr::If(Box::new(c), Box::new(b), Some(Box::new(els)))
     },
-    <c:CondIf> <b:BlockExpression> <els:("else" <BlockExpression>)?> => {
+    <c:CondIf> <b:BlockExpression> <els:(Else <BlockExpression>)?> => {
         ast::Expr::If(Box::new(c), Box::new(b), els.map(Box::new))
     },
 };
@@ -340,11 +344,11 @@ MatchArm: ast::Arm = {
 };
 
 MatchExpression: ast::Expr = {
-    "match" <e:Expr> "{" <arms:Comma<MatchArm>> "}" => ast::Expr::Match(Box::new(e), arms)
+    Match <e:Expr> "{" <arms:Comma<MatchArm>> "}" => ast::Expr::Match(Box::new(e), arms)
 };
 
 ReturnExpression: ast::Expr = {
-    "return" <Expr?> => ast::Expr::Return(<>.map(Box::new)),
+    Return <Expr?> => ast::Expr::Return(<>.map(Box::new)),
 };
 
 ExprWithoutFieldOrBlock: ast::Expr = {
@@ -377,6 +381,7 @@ ExprWithBlock: ast::Expr = {
 
 pub Expr: ast::Expr = {
     OperatorExpression => <>,
+    ExprWithBlock,
 };
 
 pub Pat: ast::Pat = {
