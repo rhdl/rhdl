@@ -166,17 +166,17 @@ PathExpression: ast::Expr = Path => ast::Expr::Path(<>);
 Statement: ast::Stmt = {
     // Item,
     "let" <pat:Pat> <ty:(":" <Type>)?> <expr:("=" <Expr>)?> ";" => ast::Stmt::Local(pat, ty, expr),
-    <expr:ExprWithoutBlock> ";" => ast::Stmt::Expr(expr, true),
+    <expr:ExprWithoutBlockWithReturn> ";" => ast::Stmt::Expr(expr, true),
     <expr:ExprWithBlock> <semi:";"?> => ast::Stmt::Expr(expr, semi.is_some()),
 };
 
 Statements: Vec<ast::Stmt> = {
     <Statement+> => <>,
-    <mut v:Statement+> <e:ExprWithoutBlock> => {
+    <mut v:Statement+> <e:ExprWithoutBlockWithReturn> => {
         v.push(ast::Stmt::Expr(e, false));
         v
     },
-    ExprWithoutBlock => vec![ast::Stmt::Expr(<>, false)],
+    ExprWithoutBlockWithReturn => vec![ast::Stmt::Expr(<>, false)],
 };
 
 BlockExpression: ast::Expr = {
@@ -360,6 +360,11 @@ ExprWithoutFieldOrBlock: ast::Expr = {
 ExprWithoutBlock: ast::Expr = {
     ExprWithoutFieldOrBlock => <>,
     FieldExpression => <>,
+};
+
+ExprWithoutBlockWithReturn: ast::Expr = {
+    ExprWithoutBlock => <>,
+    ReturnExpression => <>,
 };
 
 ExprWithBlock: ast::Expr = {
