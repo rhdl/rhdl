@@ -65,15 +65,20 @@ mod tests {
     #[test]
     fn expr_parser() {
         macro_rules! parse {
-            ($($($input: expr),+ => $expected: expr),+) => {
+            ($($input: expr => $expected: expr),+) => {
                 $(
-                    $(
-                        assert_eq!(ExprParser::new().parse($input).map(|output| format!("{}", output)), Ok($expected.to_string()));
-                    )+
+                    assert_eq!(ExprParser::new().parse($input).map(|output| format!("{}", output)), Ok($expected.to_string()));
                 )+
             };
         }
         parse!(
+            "{}" => "",
+            "a" => "a",
+            "a >= 4" => "(>= a 4)",
+            "{ a }" => "a",
+            "if a >= 4 {}" => "(if (>= a 4) )",
+            "if a >= 4 {} else {}" => "(if (>= a 4)  (else ))",
+            "if a >= 4 {} else if a < 0 {} else if a > 0 {} else {}" => "(if (>= a 4)  (else (if (< a 0)  (else (if (> a 0)  (else ))))))",
             "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))",
             "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))",
             "if a >= 4 { a = 4; b } else if a < 0 { a = 0; c } else { a +=1; d }" => "(if (>= a 4) (= a 4); b (else (if (< a 0) (= a 0); c (else (+= a 1); d))))",
