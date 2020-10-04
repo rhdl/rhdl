@@ -4,26 +4,34 @@ use std::str::FromStr;
 
 use std::fmt::{self, Debug, Display, Formatter};
 
-#[derive(Clone, Debug, PartialEq, Default)]
-pub struct Comma<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
+macro_rules! punct {
+    ($ident: ident, $punct:expr) => {
+        #[derive(Clone, Debug, PartialEq, Default)]
+        pub struct $ident<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
 
-impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(item) = self.0.first() {
-            write!(f, "{}", item)?;
+        impl<T: Clone + Display + Debug + PartialEq> Display for $ident<T> {
+            fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+                if let Some(item) = self.0.first() {
+                    write!(f, "{}", item)?;
+                }
+                for item in self.0.iter().skip(1) {
+                    write!(f, "{} {}", $punct, item)?;
+                }
+                Ok(())
+            }
         }
-        for item in self.0.iter().skip(1) {
-            write!(f, ", {}", item)?;
+
+        impl<T: Clone + Display + Debug + PartialEq> From<Vec<T>> for $ident<T> {
+            fn from(v: Vec<T>) -> Self {
+                Self(v)
+            }
         }
-        Ok(())
-    }
+    };
 }
 
-impl<T: Clone + Display + Debug + PartialEq> From<Vec<T>> for Comma<T> {
-    fn from(v: Vec<T>) -> Self {
-        Self(v)
-    }
-}
+punct!(Comma, ',');
+punct!(Add, '+');
+punct!(Implicit, "");
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
@@ -40,25 +48,153 @@ impl Display for Block {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum Vis {
+    #[display(fmt = "pub ")]
+    Pub,
+    #[display(fmt = "crate ")]
+    Crate,
+    #[display(fmt = "pub({}) ", _0)]
+    Restricted(Path),
+    #[display(fmt = "")]
+    Inherited,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum GenericParam {
+    #[display(
+        fmt = "{}: {}{}",
+        _0,
+        _1,
+        "_2.as_ref().map(|x| format!(\" = {}\", x)).unwrap_or_default()"
+    )]
+    Type(Ident, Add<Path>, Option<Type>),
+    #[display(
+        fmt = "const {}: {}{}",
+        _0,
+        _1,
+        "_2.as_ref().map(|x| format!(\" = {}\", x)).unwrap_or_default()"
+    )]
+    Const(Ident, Type, Option<Expr>),
+}
+
+/// TODO: decide whether to allow where predicates
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum WherePredicate {
+    #[display(fmt = "{}: {}", _0, _1)]
+    Type(Type, Add<Path>),
+    #[display(fmt = "const {} = {}", _0, _1)]
+    Const(Ident, Expr),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "{}",
+    "if params.0.is_empty() { \"\".to_string() } else { format!(\"<{}>\", params) }",
+    // "where_clause.as_ref().map(|x| format!(\"where: {}\", x)).unwrap_or_default()"
+)]
+pub struct Generics {
+    params: Comma<GenericParam>,
+    // where_clause: Option<Comma<WherePredicate>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}: {}", ident, ty)]
+pub struct Field {
+    ident: Ident,
+    ty: Type,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum Fields {
+    #[display(fmt = "{{ {} }}", _0)]
+    Named(Comma<Field>),
+    #[display(fmt = "({})", _0)]
+    Unnamed(Comma<Type>),
+    Unit,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "{}{}{}",
+    ident,
+    fields,
+    "discriminant.as_ref().map(|x| format!(\"= {}\", x)).unwrap_or_default()"
+)]
+pub struct Variant {
+    ident: Ident,
+    fields: Fields,
+    discriminant: Option<Expr>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum FnArg {
+    #[display(fmt = "self")]
+    Receiver,
+    #[display(fmt = "{}", _0)]
+    Typed(PatType),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "{}{}({}){}",
+    ident,
+    "generics.as_ref().map(|x| format!(\"<{}>\", x)).unwrap_or_default()",
+    inputs,
+    "output.as_ref().map(|x| format!(\" -> {}\", x)).unwrap_or_default()"
+)]
+pub struct Sig {
+    ident: Ident,
+    generics: Option<Generics>,
+    inputs: Comma<FnArg>,
+    output: Option<Type>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum ImplItem {
+    #[display(fmt = "{}const {}: {} = {}", _0, _1, _2, _3)]
+    Const(Vis, Ident, Type, Expr),
+    #[display(fmt = "{}fn {}{{ {} }}", _0, _1, _2)]
+    Method(Vis, Sig, Block),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
 pub enum Item {
     /// const x: u3 = 0b000;
-    Const {
-        ident: Ident,
-        ty: Type,
-        expr: Expr,
-    },
-    /// impl X {
-    /// }
-    Impl,
-    Entity,
+    #[display(fmt = "{}const {}: {} = {}", _0, _1, _2, _3)]
+    Const(Vis, Ident, Type, Expr),
+    #[display(
+        fmt = "{}mod {}{}",
+        _0,
+        _1,
+        "_2.as_ref().map(|x| format!(\" {{ {} }}\", x)).unwrap_or(\";\".to_string())"
+    )]
+    Mod(Vis, Ident, Option<Implicit<Item>>),
+    #[display(fmt = "{}fn {}{{ {} }}", _0, _1, _2)]
+    Fn(Vis, Sig, Block),
+    #[display(fmt = "{}type {}{} = {}", _0, _1, _2, _3)]
+    Type(Vis, Ident, Generics, Type),
+    #[display(fmt = "{}struct {}{}{}", _0, _1, _2, _3)]
+    Struct(Vis, Ident, Generics, Fields),
     /// A special type useful for keeping track of state,
     /// sending named commands, etc.
-    /// A discriminator is inferred according to the enum size
+    /// A discriminant is inferred according to the enum size
     /// and the backing register will be as large as the largest variant.
-    Enum,
-    /// Functions can have a self ref
-    Fn,
+    #[display(fmt = "{}enum {}{}{}", _0, _1, _2, _3)]
+    Enum(Vis, Ident, Generics, Comma<Variant>),
+    #[display(fmt = "{}struct {}{}{}", _0, _1, _2, _3)]
+    Entity(Vis, Ident, Generics, Fields),
+    /// impl X {
+    /// }
+    #[display(
+        fmt = "impl{} {}{} {{ {} }}",
+        _0,
+        "_1.as_ref().map(|x| format!(\"{} for \", x)).unwrap_or_default()",
+        _2,
+        _3
+    )]
+    Impl(Generics, Option<Path>, Box<Type>, Implicit<ImplItem>),
+
     /// Collection of behaviors that a type satisfies
     /// Entities cannot implement traits, but types can
     Trait,
@@ -66,9 +202,6 @@ pub enum Item {
     Use,
     /// Don't repeat yourself
     Macro,
-    /// entity Sawtooth16Bit = Sawtooth<u16>;
-    EntityAlias,
-    Mod,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -116,11 +249,20 @@ impl Display for Path {
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}: {}", pat, ty)]
+pub struct PatType {
+    pat: Box<Pat>,
+    ty: Type,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
 pub enum Pat {
     #[display(fmt = "{}", _0)]
     Ident(Ident),
     #[display(fmt = "{}", _0)]
     Lit(Lit),
+    #[display(fmt = "{}", _0)]
+    Type(PatType),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
