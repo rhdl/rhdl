@@ -74,7 +74,8 @@ mod tests {
         for op in UnOp::variants().iter().map(ToString::to_string) {
             parse!(
                 format!("{}a", op) => format!("({} a)", op),
-                format!("{}0", op) => format!("({} 0)", op)
+                format!("{}0", op) => format!("({} 0)", op),
+                format!("{}{{0}}", op) => format!("({} 0)", op)
             );
         }
         for op in BinOp::variants()
@@ -84,7 +85,8 @@ mod tests {
         {
             parse!(
                 format!("a {} 0", op) => format!("({} a 0)", op),
-                format!("a {} b", op) => format!("({} a b)", op)
+                format!("a {} b", op) => format!("({} a b)", op),
+                format!("a {} {{ b }}", op) => format!("({} a b)", op)
             );
         }
     }
