@@ -31,7 +31,7 @@ Ident: ast::Ident = {
 };
 
 PathIdentSegment: ast::Ident = {
-    Ident => <>,
+    Ident,
     // r"(super|self|Self|crate|$crate)" => ast::Ident { inner: <>.to_string() },
 };
 
@@ -179,7 +179,7 @@ Statement: ast::Stmt = {
 };
 
 Statements: Vec<ast::Stmt> = {
-    <Statement+> => <>,
+    <Statement+>,
     <mut v:Statement+> <e:ExprWithoutBlockWithReturn> => {
         v.push(ast::Stmt::Expr(e, false));
         v
@@ -200,13 +200,13 @@ Unary: ast::Expr = {
     "-" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
     "!" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
     "!" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
-    ExprWithoutBlockOrOperator => <>,
+    ExprWithoutBlockOrOperator,
 };
 
 Cast: ast::Expr = {
     <expr:Unary> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
     <expr:ExprWithBlock> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
-    Unary => <>,
+    Unary,
 };
 
 Arith0: ast::Expr = {
@@ -214,7 +214,7 @@ Arith0: ast::Expr = {
     <l:Arith0> "**" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
     // <l:ExprWithBlock> "**" <r:Cast> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
     // <l:ExprWithBlock> "**" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
-    Cast => <>,
+    Cast,
 };
 
 Arith1: ast::Expr = {
@@ -222,7 +222,7 @@ Arith1: ast::Expr = {
     <l:Arith1> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    Arith0 => <>,
+    Arith0,
 };
 
 Arith2: ast::Expr = {
@@ -235,7 +235,7 @@ Arith2: ast::Expr = {
     <l:Arith2> <op:"-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:"-"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:"-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    Arith1 => <>,
+    Arith1,
 };
 
 Bin0: ast::Expr = {
@@ -243,7 +243,7 @@ Bin0: ast::Expr = {
     <l:Bin0> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<<|>>"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    Arith2 => <>,
+    Arith2,
 };
 
 Bin1: ast::Expr = {
@@ -251,7 +251,7 @@ Bin1: ast::Expr = {
     <l:Bin1> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
     // <l:ExprWithBlock> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
     // <l:ExprWithBlock> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
-    Bin0 => <>,
+    Bin0,
 };
 
 Bin2: ast::Expr = {
@@ -259,7 +259,7 @@ Bin2: ast::Expr = {
     <l:Bin2> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
     // <l:ExprWithBlock> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
     // <l:ExprWithBlock> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
-    Bin1 => <>,
+    Bin1,
 };
 
 Bin3: ast::Expr = {
@@ -267,7 +267,7 @@ Bin3: ast::Expr = {
     <l:Bin3> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
     // <l:ExprWithBlock> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
     // <l:ExprWithBlock> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
-    Bin2 => <>,
+    Bin2,
 };
 
 ComparisonExpression: ast::Expr = {
@@ -275,7 +275,7 @@ ComparisonExpression: ast::Expr = {
     <l:Bin3> <op:r"<=|<|>=|>|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    Bin3 => <>,
+    Bin3,
 };
 
 AssignExpression: ast::Expr = {
@@ -288,15 +288,15 @@ AssignExpression: ast::Expr = {
     <l:ComparisonExpression> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    ComparisonExpression => <>,
+    ComparisonExpression,
 };
 
 OperatorExpression: ast::Expr = {
-    AssignExpression => <>,
+    AssignExpression,
 };
 
 GroupedExpression: ast::Expr = {
-    "(" <Expr> ")" => <>,
+    "(" <Expr> ")",
 };
 
 ArrayExpression: ast::Expr = {
@@ -396,35 +396,35 @@ ReturnExpression: ast::Expr = {
 };
 
 ExprWithoutFieldOrBlock: ast::Expr = {
-    LiteralExpression => <>,
-    PathExpression => <>,
-    GroupedExpression => <>,
-    ArrayExpression => <>,
-    IndexExpression => <>,
-    TupleIndexingExpression => <>,
-    CallExpression => <>,
-    MethodCallExpression => <>,
-    RangeExpression => <>,
+    LiteralExpression,
+    PathExpression,
+    GroupedExpression,
+    ArrayExpression,
+    IndexExpression,
+    TupleIndexingExpression,
+    CallExpression,
+    MethodCallExpression,
+    RangeExpression,
 };
 
 ExprWithoutBlockOrOperator: ast::Expr = {
-    ExprWithoutFieldOrBlock => <>,
-    FieldExpression => <>,
+    ExprWithoutFieldOrBlock,
+    FieldExpression,
 };
 
 ExprWithoutBlockWithReturn: ast::Expr = {
-    OperatorExpression => <>,
-    ReturnExpression => <>,
+    OperatorExpression,
+    ReturnExpression,
 };
 
 ExprWithBlock: ast::Expr = {
-    BlockExpression => <>,
-    IfExpression => <>,
-    MatchExpression => <>,
+    BlockExpression,
+    IfExpression,
+    MatchExpression,
 };
 
 pub Expr: ast::Expr = {
-    OperatorExpression => <>,
+    OperatorExpression,
     ExprWithBlock,
 };
 
