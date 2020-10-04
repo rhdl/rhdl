@@ -16,6 +16,12 @@ pub enum Vis {
     Inherited,
 }
 
+impl Default for Vis {
+    fn default() -> Self {
+        Self::Inherited
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum GenericParam {
     #[display(
@@ -50,15 +56,23 @@ pub enum WherePredicate {
     // "where_clause.as_ref().map(|x| format!(\"where: {}\", x)).unwrap_or_default()"
 )]
 pub struct Generics {
-    params: Comma<GenericParam>,
+    pub params: Comma<GenericParam>,
     // where_clause: Option<Comma<WherePredicate>>,
+}
+
+impl Default for Generics {
+    fn default() -> Self {
+        Self {
+            params: Comma(vec![]),
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(fmt = "{}: {}", ident, ty)]
 pub struct Field {
-    ident: Ident,
-    ty: Type,
+    pub ident: Ident,
+    pub ty: Type,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -78,9 +92,9 @@ pub enum Fields {
     "discriminant.as_ref().map(|x| format!(\"= {}\", x)).unwrap_or_default()"
 )]
 pub struct Variant {
-    ident: Ident,
-    fields: Fields,
-    discriminant: Option<Expr>,
+    pub ident: Ident,
+    pub fields: Fields,
+    pub discriminant: Option<Expr>,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -95,15 +109,15 @@ pub enum FnArg {
 #[display(
     fmt = "{}{}({}){}",
     ident,
-    "generics.as_ref().map(|x| format!(\"<{}>\", x)).unwrap_or_default()",
+    generics,
     inputs,
     "output.as_ref().map(|x| format!(\" -> {}\", x)).unwrap_or_default()"
 )]
 pub struct Sig {
-    ident: Ident,
-    generics: Option<Generics>,
-    inputs: Comma<FnArg>,
-    output: Option<Type>,
+    pub ident: Ident,
+    pub generics: Generics,
+    pub inputs: Comma<FnArg>,
+    pub output: Option<Type>,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -116,8 +130,8 @@ pub enum ImplItem {
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum UseTree {
-    #[display(fmt = "{}{}", _0, _1)]
-    Path(Path, Box<Self>),
+    #[display(fmt = "{}::{}", _0, _1)]
+    Path(Ident, Box<Self>),
     #[display(fmt = "{}", _0)]
     Name(Ident),
     #[display(fmt = "{} as {}", _0, _1)]
@@ -146,6 +160,8 @@ pub enum Item {
     Type(Vis, Ident, Generics, Type),
     #[display(fmt = "{}struct {}{}{}", _0, _1, _2, _3)]
     Struct(Vis, Ident, Generics, Fields),
+    #[display(fmt = "{}entity {}{}{}", _0, _1, _2, _3)]
+    Entity(Vis, Ident, Generics, Fields),
     /// A special type useful for keeping track of state,
     /// sending named commands, etc.
     /// A discriminant is inferred according to the enum size
@@ -153,8 +169,6 @@ pub enum Item {
     /// If all variants are unit variants, an explicit discriminant can be specified.
     #[display(fmt = "{}enum {}{}{}", _0, _1, _2, _3)]
     Enum(Vis, Ident, Generics, Comma<Variant>),
-    #[display(fmt = "{}entity {}{}{}", _0, _1, _2, _3)]
-    Entity(Vis, Ident, Generics, Fields),
     /// impl X {
     /// }
     #[display(
@@ -187,8 +201,8 @@ pub enum Item {
     /// todo: implement traits in ast and grammar
     Trait,
     /// Import entities, functions, etc. from other modules
-    #[display(fmt = "{}use {};", _0, _1)]
-    Use(Vis, UseTree),
+    #[display(fmt = "{}use {}{};", _0, "if *_1 { \"::\" } else { \"\" }", _2)]
+    Use(Vis, bool, UseTree),
     /// Don't repeat yourself
     Macro,
 }

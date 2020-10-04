@@ -5,8 +5,8 @@ use super::*;
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(fmt = "{}: {}", pat, ty)]
 pub struct PatType {
-    pat: Box<Pat>,
-    ty: Type,
+    pub pat: Box<Pat>,
+    pub ty: Type,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]

@@ -18,7 +18,23 @@ match {
     "return" => Return,
     "fn" => Fn,
     "mut" => Mut,
-    "(break|const|continue|crate|enum|extern|false|for|impl|in|loop|mod|move|mut|pub|ref|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
+    "in" => In,
+    "pub" => Pub,
+    "mod" => Mod,
+    "struct" => Struct,
+    "entity" => Entity,
+    "enum" => Enum,
+    "const" => Const,
+    "impl" => Impl,
+    "bag" => Bag,
+    "ring" => Ring,
+    "crate" => Crate,
+    "super" => Super,
+    "self" => LowerSelf,
+    "Self" => UpperSelf,
+    "type" => TokenType,
+    "use" => Use,
+    "(break|continue|extern|false|for|loop|move|mut|ref|static|trait|true|unsafe|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
     _
@@ -50,6 +66,13 @@ Pipe<T>: Vec<T> = {
             v.push(e);
             v
         }
+    }
+};
+
+Add<T>: ast::Add<T> = {
+    <mut v:(<T> "+")*> <e:T> => {
+        v.push(e);
+        ast::Add(v)
     }
 };
 
@@ -157,16 +180,20 @@ pub Float: ast::Lit = r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|8
     }
 };
 
+Lit: ast::Lit = {
+    IntLit,
+    Float,
+};
+
 LiteralExpression: ast::Expr = {
-    IntLit => ast::Expr::Lit(<>),
-    Float => ast::Expr::Lit(<>),
+    Lit => ast::Expr::Lit(<>),
 };
 
 PathExpression: ast::Expr = Path => ast::Expr::Path(<>);
 
 
 Statement: ast::Stmt = {
-    // Item,
+    Item => ast::Stmt::Item(<>),
     Let <pat:Pat> <ty:(":" <Type>)?> <expr:("=" <Expr>)?> ";" => ast::Stmt::Local(pat, ty, expr),
     <expr:ExprWithoutBlockWithReturn> ";" => ast::Stmt::Expr(expr, true),
     <expr:ExprWithBlock> <semi:";"?> => ast::Stmt::Expr(expr, semi.is_some()),
@@ -181,12 +208,13 @@ Statements: Vec<ast::Stmt> = {
     ExprWithoutBlockWithReturn => vec![ast::Stmt::Expr(<>, false)],
 };
 
-BlockExpression: ast::Expr = {
+Block: ast::Block = {
     "{" <mut v:Statements?> "}" => {
         let v = v.unwrap_or_default();
-        ast::Expr::Block(ast::Block(v))
+        ast::Block(v)
     },
 };
+BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
 
 
 Unary: ast::Expr = {
@@ -265,8 +293,13 @@ Bin3: ast::Expr = {
 };
 
 ComparisonExpression: ast::Expr = {
-    <l:Bin3> <op:r"<=|<|>=|>|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin3> <op:r"<=|<|>=|>|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:r"<=|>=|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:r"<=|>=|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+
+    <l:Bin3> <op:"<"> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:"<"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:">"> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> <op:">"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Bin3,
@@ -407,7 +440,87 @@ pub Expr: ast::Expr = {
     StructExpression,
 };
 
+PatType: ast::PatType = <pat:Pat> ":" <ty:Type> => ast::PatType { pat: Box::new(pat), ty };
+
 pub Pat: ast::Pat = {
     Ident => ast::Pat::Ident(<>),
-    IntLit => ast::Pat::Lit(<>)
+    IntLit => ast::Pat::Lit(<>),
 }
+
+Visibility: ast::Vis = {
+    Pub => ast::Vis::Pub,
+    Crate => ast::Vis::Crate,
+    Pub "(" Super ")" => ast::Vis::Pub,
+    Pub "(" LowerSelf ")" => ast::Vis::Inherited,
+    Pub "(" Crate ")" => ast::Vis::Crate,
+    Pub "(" In <Path> ")" => ast::Vis::Restricted(<>),
+};
+
+Field: ast::Field = <ident: Ident> ":" <ty:Type> => ast::Field { ident, ty };
+
+Fields: ast::Fields = {
+    "{" <Comma<Field>> "}" => ast::Fields::Named(<>),
+    "(" <Comma<Type>> ")" => ast::Fields::Unnamed(<>),
+};
+
+Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:("=" <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
+
+GenericParam: ast::GenericParam = {
+    <ident:Ident> <add:Add<Path>> <ty:("=" <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    Const <ident:Ident> ":" <ty:Type> <default:("=" <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
+};
+Generics: ast::Generics = "<" <Comma<GenericParam>> ">" => ast::Generics { params: <> };
+
+FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
+
+FnArgs: ast::Comma<ast::FnArg> = {
+    <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
+    <receiver:(<LowerSelf> ",")> <mut args:Comma<FnArg>> => {
+        args.0.insert(0, ast::FnArg::Receiver);
+        args
+    },
+    Comma<FnArg>,
+};
+
+Sig: ast::Sig = <ident:Ident> <generics:Generics?> "(" <inputs:FnArgs> ")" <output:("->" <Type>)?> => ast::Sig {
+    ident,
+    generics: generics.unwrap_or_default(),
+    inputs,
+    output,
+};
+
+
+UseGroup: ast::UseTree = <group:("{" <Comma<UseTree>> "}")> => ast::UseTree::Group(group);
+// UseGlob: ast::UseTree = "*" => ast::UseTree::Glob;
+UseRename: ast::UseTree = <name:Ident> As <rename:Ident> => ast::UseTree::Rename(name, rename);
+UseName: ast::UseTree = Ident => ast::UseTree::Name(<>);
+
+UseTree: ast::UseTree = {
+    <path:(<Ident> "::")> <tree:UseTree> => ast::UseTree::Path(path, Box::new(tree)),
+    // <path:(<ident:Ident> "::")> <tree:UseRename> => ast::UseTree::Path(ident, Box::new(tree)),
+    // <path:(<ident:Ident> "::")> <tree:UseName> => ast::UseTree::Path(ident, Box::new(tree)),
+    // <path:(<ident:Ident> "::")> <tree:UseGlob> => ast::UseTree::Path(ident, Box::new(tree)),
+    UseGroup,
+    UseRename,
+    UseName,
+};
+
+pub Item: ast::Item = {
+    <vis:Visibility?> Const <ident:Ident> ":" <ty:Type> "=" <expr:Expr> ";" => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
+
+    <vis:Visibility?> Mod <ident:Ident> "{" <items:Item*> "}" => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
+    <vis:Visibility?> Mod <ident:Ident> ";" => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
+
+    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
+
+    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> "=" <ty:Type> ";" => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
+
+    <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+    <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> "{" <variants:Comma<Variant>> "}" => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
+
+    <vis:Visibility?> Bag <ident:Ident> "(" <lits:Comma<Lit>> ")" => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
+    <vis:Visibility?> Ring <ident:Ident> "(" <begin:Lit> ".." <inclusive:"="?> <end:Lit> ")" => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
+
+    <vis:Visibility?> Use <colon:"::"?> <tree:UseTree> ";" => ast::Item::Use(vis.unwrap_or_default(), colon.is_some(), tree),
+};

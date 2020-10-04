@@ -107,7 +107,8 @@ pub enum Stmt {
         "_2.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"
     )]
     Local(Pat, Option<Type>, Option<Expr>),
-    // Item(),
+    #[display(fmt = "{}", _0)]
+    Item(Item),
     #[display(fmt = "{}{}", _0, "if *_1 { \";\" } else { \"\" }")]
     Expr(Expr, bool),
 }
