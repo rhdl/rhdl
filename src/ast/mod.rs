@@ -98,8 +98,6 @@ impl Display for Path {
     }
 }
 
-
-
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Stmt {
     #[display(

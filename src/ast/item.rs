@@ -165,9 +165,26 @@ pub enum Item {
         _3
     )]
     Impl(Generics, Option<Path>, Box<Type>, Implicit<ImplItem>),
+    /// A type representing a "bag" of allowed literal values for compile-time parameters
+    #[display(fmt = "{}bag {} {{ {} }}", _0, _1, _2)]
+    Bag(Vis, Ident, Comma<Lit>),
+    /// A bounded type closed under addition and subtraction.
+    /// Only other allowed operation is comparison.
+    /// Can be cast to a primitive type where it will have the appropriate bitwise representation.
+    /// It is not possible to cast a primitive into a ring.
+    #[display(
+        fmt = "{}ring {} {{ {}..{}{} }}",
+        _0,
+        _1,
+        _2,
+        "if *_4 { \"..\" } else { \"\" }",
+        _3
+    )]
+    Ring(Vis, Ident, Lit, Lit, bool),
 
     /// Collection of behaviors that a type satisfies
     /// Entities cannot implement traits, but types can
+    /// todo: implement traits in ast and grammar
     Trait,
     /// Import entities, functions, etc. from other modules
     #[display(fmt = "{}use {};", _0, _1)]

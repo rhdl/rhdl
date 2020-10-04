@@ -330,9 +330,6 @@ StructExpression: ast::Expr = {
     },
 };
 
-// TODO: struct, enum expressions
-
-
 CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(Box::new(func), args);
 
 MethodCallExpression: ast::Expr = {
