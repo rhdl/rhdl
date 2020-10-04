@@ -218,6 +218,16 @@ macro_rules! op_enum {
             )+
         }
 
+        impl $name {
+            pub fn variants() -> Vec<Self> {
+                vec![
+                    $(
+                        Self::$varname,
+                    )+
+                ]
+            }
+        }
+
         impl FromStr for $name {
             type Err = ();
 
@@ -240,8 +250,8 @@ op_enum!(BinOp {
     Div => "/",
     Rem => "%",
     Exp => "**",
-    And => "&&",
-    Or => "||",
+    // And => "&&",
+    // Or => "||",
     BitXor => "^",
     BitAnd => "&",
     BitOr => "|",

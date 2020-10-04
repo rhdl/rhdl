@@ -63,6 +63,33 @@ mod tests {
     }
 
     #[test]
+    fn expr_parser_parses_all_ops() {
+        macro_rules! parse {
+            ($($input: expr => $expected: expr),+) => {
+                $(
+                    assert_eq!(ExprParser::new().parse(&$input).map(|output| format!("{}", output)), Ok($expected.to_string()));
+                )+
+            };
+        }
+        for op in UnOp::variants().iter().map(ToString::to_string) {
+            parse!(
+                format!("{}a", op) => format!("({} a)", op),
+                format!("{}0", op) => format!("({} 0)", op)
+            );
+        }
+        for op in BinOp::variants()
+            .iter()
+            .map(ToString::to_string)
+            .chain(AssOp::variants().iter().map(ToString::to_string))
+        {
+            parse!(
+                format!("a {} 0", op) => format!("({} a 0)", op),
+                format!("a {} b", op) => format!("({} a b)", op)
+            );
+        }
+    }
+
+    #[test]
     fn expr_parser() {
         macro_rules! parse {
             ($($input: expr => $expected: expr),+) => {
@@ -74,9 +101,6 @@ mod tests {
         parse!(
             "{}" => "",
             "a" => "a",
-            "a + 4" => "(+ a 4)",
-            "a >= 4" => "(>= a 4)",
-            "a = 4" => "(= a 4)",
             "{ a }" => "a",
             "if a >= 4 {}" => "(if (>= a 4) )",
             "if a >= 4 {} else {}" => "(if (>= a 4)  (else ))",
