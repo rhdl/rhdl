@@ -17,6 +17,7 @@ match {
     "let" => Let,
     "return" => Return,
     "fn" => Fn,
+    "mut" => Mut,
     "(break|const|continue|crate|enum|extern|false|for|impl|in|loop|mod|move|mut|pub|ref|self|Self|static|struct|super|trait|true|type|unsafe|use|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
@@ -317,6 +318,29 @@ TupleExpression: ast::Expr = "(" <TupleElements?> ")" => ast::Expr::Tuple(ast::C
 TupleIndexingExpression: ast::Expr = {
     <base:ExprWithBlock> "." <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
     <base:ExprWithoutBlockOrOperator> "." <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
+};
+
+FieldValue: ast::FieldValue = {
+    <named:Ident> ":" <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr, },
+    <unnamed:Int> ":" <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr, },
+    <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: ast::Expr::Path(ast::Path { leading_colon: None, segments: vec![named] }), },
+};
+
+StructExpression: ast::Expr = {
+    <path:Path> "{" <first:FieldValue> <mut rest:("," <FieldValue>)*> <base:(("," ".." <Expr>)? ","?)> "}" => {
+        let mut fields = vec![first];
+        fields.append(&mut rest);
+        ast::Expr::Struct(path, ast::Fields::Braced(fields.into()), base.0.map(Box::new))
+    },
+    <path:Path> "{" <base:(".." <Expr> ","?)> "}" => {
+        ast::Expr::Struct(path, ast::Fields::Braced(vec![].into()), Some(Box::new(base)))
+    },
+    <path:Path> "{" "}" => {
+        ast::Expr::Struct(path, ast::Fields::Braced(vec![].into()), None)
+    },
+    <path:Path> "(" <fields:Comma<Expr>> ")" => {
+        ast::Expr::Struct(path, ast::Fields::Parenthesized(fields), None)
+    },
 };
 
 // TODO: struct, enum expressions

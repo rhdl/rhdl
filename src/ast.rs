@@ -19,6 +19,12 @@ impl<T: Clone + Display + Debug + PartialEq> Display for Comma<T> {
     }
 }
 
+impl<T: Clone + Display + Debug + PartialEq> From<Vec<T>> for Comma<T> {
+    fn from(v: Vec<T>) -> Self {
+        Self(v)
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
 
@@ -186,7 +192,10 @@ pub enum Expr {
         "_0.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"
     )]
     Return(Option<Box<Expr>>),
+    #[display(fmt = "{}", _0)]
+    Struct(Path, Fields, Option<Box<Expr>>),
 }
+
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(
     fmt = "(=> {}{} {})",
@@ -206,6 +215,21 @@ pub enum Member {
     Named(Ident),
     #[display(fmt = "{}", _0)]
     Unnamed(Int),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}: {}", member, expr)]
+pub struct FieldValue {
+    pub member: Member,
+    pub expr: Expr,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+pub enum Fields {
+    #[display(fmt = "( {} )", _0)]
+    Parenthesized(Comma<Expr>),
+    #[display(fmt = "{{ {} }}", _0)]
+    Braced(Comma<FieldValue>),
 }
 
 macro_rules! op_enum {
