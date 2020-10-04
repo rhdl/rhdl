@@ -115,6 +115,20 @@ pub enum ImplItem {
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
+pub enum UseTree {
+    #[display(fmt = "{}{}", _0, _1)]
+    Path(Path, Box<Self>),
+    #[display(fmt = "{}", _0)]
+    Name(Ident),
+    #[display(fmt = "{} as {}", _0, _1)]
+    Rename(Ident, Ident),
+    #[display(fmt = "*")]
+    Glob,
+    #[display(fmt = "{}", _0)]
+    Group(Comma<UseTree>),
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
 pub enum Item {
     /// const x: u3 = 0b000;
     #[display(fmt = "{}const {}: {} = {}", _0, _1, _2, _3)]
@@ -136,9 +150,10 @@ pub enum Item {
     /// sending named commands, etc.
     /// A discriminant is inferred according to the enum size
     /// and the backing register will be as large as the largest variant.
+    /// If all variants are unit variants, an explicit discriminant can be specified.
     #[display(fmt = "{}enum {}{}{}", _0, _1, _2, _3)]
     Enum(Vis, Ident, Generics, Comma<Variant>),
-    #[display(fmt = "{}struct {}{}{}", _0, _1, _2, _3)]
+    #[display(fmt = "{}entity {}{}{}", _0, _1, _2, _3)]
     Entity(Vis, Ident, Generics, Fields),
     /// impl X {
     /// }
@@ -155,7 +170,8 @@ pub enum Item {
     /// Entities cannot implement traits, but types can
     Trait,
     /// Import entities, functions, etc. from other modules
-    Use,
+    #[display(fmt = "{}use {};", _0, _1)]
+    Use(Vis, UseTree),
     /// Don't repeat yourself
     Macro,
 }
