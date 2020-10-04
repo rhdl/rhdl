@@ -280,13 +280,13 @@ ComparisonExpression: ast::Expr = {
 AssignExpression: ast::Expr = {
     <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    // <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    // <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
 
     <l:ComparisonExpression> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     <l:ComparisonExpression> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ExprWithBlock> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ExprWithBlock> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    // <l:ExprWithBlock> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    // <l:ExprWithBlock> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
     ComparisonExpression => <>,
 };
 
