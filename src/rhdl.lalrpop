@@ -24,16 +24,12 @@ match {
     _
 }
 
-Ident: ast::Ident = {
-    Identifier => ast::Ident {
-        inner: <>.to_string()
-    },
+Ident: ast::Ident = Identifier => ast::Ident {
+    inner: <>.to_string()
 };
 
-PathIdentSegment: ast::Ident = {
-    Ident,
+PathIdentSegment: ast::Ident = Ident;
     // r"(super|self|Self|crate|$crate)" => ast::Ident { inner: <>.to_string() },
-};
 
 Comma<T>: ast::Comma<T> = {
     <v:(<T> ",")*> <e:T?> => match e {
@@ -87,10 +83,8 @@ pub Type: ast::Type = {
     Fn "(" <args:Comma<Type>> ")" => ast::Type::Fn(args, None),
 };
 
-Int: Int = {
-    // i.e. 1_234_567_890
-    r"(0|[1-9]\d*(?:_\d+)*)" => Int::parse(<>).unwrap().into(),
-};
+// i.e. 1_234_567_890
+Int: Int = r"(0|[1-9]\d*(?:_\d+)*)" => Int::parse(<>).unwrap().into();
 
 pub IntLit: ast::Lit = {
     Int => ast::Lit::Int { val: <>, type_hint: None },
@@ -291,13 +285,9 @@ AssignExpression: ast::Expr = {
     ComparisonExpression,
 };
 
-OperatorExpression: ast::Expr = {
-    AssignExpression,
-};
+OperatorExpression: ast::Expr = AssignExpression;
 
-GroupedExpression: ast::Expr = {
-    "(" <Expr> ")",
-};
+GroupedExpression: ast::Expr = "(" <Expr> ")";
 
 ArrayExpression: ast::Expr = {
     "[" <val:Expr> ";" <repeat:Expr> "]" => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
@@ -330,25 +320,20 @@ StructExpression: ast::Expr = {
     <path:Path> "{" <first:FieldValue> <mut rest:("," <FieldValue>)*> <base:(("," ".." <Expr>)? ","?)> "}" => {
         let mut fields = vec![first];
         fields.append(&mut rest);
-        ast::Expr::Struct(path, ast::Fields::Braced(fields.into()), base.0.map(Box::new))
+        ast::Expr::Struct(path, fields.into(), base.0.map(Box::new))
     },
     <path:Path> "{" <base:(".." <Expr> ","?)> "}" => {
-        ast::Expr::Struct(path, ast::Fields::Braced(vec![].into()), Some(Box::new(base)))
+        ast::Expr::Struct(path, vec![].into(), Some(Box::new(base)))
     },
     <path:Path> "{" "}" => {
-        ast::Expr::Struct(path, ast::Fields::Braced(vec![].into()), None)
-    },
-    <path:Path> "(" <fields:Comma<Expr>> ")" => {
-        ast::Expr::Struct(path, ast::Fields::Parenthesized(fields), None)
+        ast::Expr::Struct(path, vec![].into(), None)
     },
 };
 
 // TODO: struct, enum expressions
 
 
-CallExpression: ast::Expr = {
-    <func:ExprWithoutFieldOrBlock> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(Box::new(func), args),
-};
+CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(Box::new(func), args);
 
 MethodCallExpression: ast::Expr = {
     <receiver:ExprWithBlock> "." <method:PathIdentSegment> "(" <args:Comma<Expr>> ")" => ast::Expr::MethodCall(Box::new(receiver), method, args),
@@ -367,16 +352,12 @@ RangeExpression: ast::Expr = {
     <l:LiteralExpression?> "..=" <r:LiteralExpression> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
 };
 
-CondIf: ast::Expr = If <Expr> => <>;
+CondIf: ast::Expr = If <ExprWithoutStruct>;
 
 // todo: if let expression
 pub IfExpression: ast::Expr = {
-    <c:CondIf> <b:BlockExpression> <els:(Else <IfExpression>)> => {
-        ast::Expr::If(Box::new(c), Box::new(b), Some(Box::new(els)))
-    },
-    <c:CondIf> <b:BlockExpression> <els:(Else <BlockExpression>)?> => {
-        ast::Expr::If(Box::new(c), Box::new(b), els.map(Box::new))
-    },
+    <c:CondIf> <b:BlockExpression> <els:(Else <IfExpression>)> => ast::Expr::If(Box::new(c), Box::new(b), Some(Box::new(els))),
+    <c:CondIf> <b:BlockExpression> <els:(Else <BlockExpression>)?> => ast::Expr::If(Box::new(c), Box::new(b), els.map(Box::new)),
 };
 
 MatchArm: ast::Arm = {
@@ -387,13 +368,9 @@ MatchArm: ast::Arm = {
     },
 };
 
-MatchExpression: ast::Expr = {
-    Match <e:Expr> "{" <arms:Comma<MatchArm>> "}" => ast::Expr::Match(Box::new(e), arms)
-};
+MatchExpression: ast::Expr = Match <e:ExprWithoutStruct> "{" <arms:Comma<MatchArm>> "}" => ast::Expr::Match(Box::new(e), arms);
 
-ReturnExpression: ast::Expr = {
-    Return <Expr?> => ast::Expr::Return(<>.map(Box::new)),
-};
+ReturnExpression: ast::Expr = Return <Expr?> => ast::Expr::Return(<>.map(Box::new));
 
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
@@ -423,9 +400,14 @@ ExprWithBlock: ast::Expr = {
     MatchExpression,
 };
 
-pub Expr: ast::Expr = {
+ExprWithoutStruct: ast::Expr = {
     OperatorExpression,
     ExprWithBlock,
+};
+
+pub Expr: ast::Expr = {
+    ExprWithoutStruct,
+    StructExpression,
 };
 
 pub Pat: ast::Pat = {

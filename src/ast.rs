@@ -193,7 +193,7 @@ pub enum Expr {
     )]
     Return(Option<Box<Expr>>),
     #[display(fmt = "{}", _0)]
-    Struct(Path, Fields, Option<Box<Expr>>),
+    Struct(Path, Comma<FieldValue>, Option<Box<Expr>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -222,14 +222,6 @@ pub enum Member {
 pub struct FieldValue {
     pub member: Member,
     pub expr: Expr,
-}
-
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Fields {
-    #[display(fmt = "( {} )", _0)]
-    Parenthesized(Comma<Expr>),
-    #[display(fmt = "{{ {} }}", _0)]
-    Braced(Comma<FieldValue>),
 }
 
 macro_rules! op_enum {
