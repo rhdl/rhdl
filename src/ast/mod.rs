@@ -3,17 +3,26 @@ use derive_more::Display;
 use std::fmt::{self, Debug, Display, Formatter};
 
 macro_rules! punct {
-    ($ident: ident, $punct:expr) => {
+    ($ident: ident, $punct:expr, $delimit_last: expr) => {
         #[derive(Clone, Debug, PartialEq, Default)]
         pub struct $ident<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
 
         impl<T: Clone + Display + Debug + PartialEq> Display for $ident<T> {
             fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-                if let Some(item) = self.0.first() {
-                    write!(f, "{}", item)?;
-                }
-                for item in self.0.iter().skip(1) {
-                    write!(f, "{} {}", $punct, item)?;
+                if !$delimit_last {
+                    if let Some(item) = self.0.first() {
+                        write!(f, "{}", item)?;
+                    }
+                    for item in self.0.iter().skip(1) {
+                        write!(f, "{} {}", $punct, item)?;
+                    }
+                } else {
+                    if let Some(item) = self.0.first() {
+                        write!(f, "{}{}", item, $punct)?;
+                    }
+                    for item in self.0.iter().skip(1) {
+                        write!(f, " {}{}", item, $punct)?;
+                    }
                 }
                 Ok(())
             }
@@ -27,9 +36,11 @@ macro_rules! punct {
     };
 }
 
-punct!(Comma, ',');
-punct!(Add, '+');
-punct!(Implicit, "");
+punct!(Comma, ',', false);
+punct!(Add, '+', false);
+punct!(Pipe, '|', false);
+punct!(Implicit, "", false);
+punct!(Semi, ";", true);
 
 mod expr;
 mod item;

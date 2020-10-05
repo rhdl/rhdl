@@ -33,10 +33,70 @@ match {
     "Self" => UpperSelf,
     "type" => TokenType,
     "use" => Use,
-    "(break|continue|extern|false|for|loop|move|mut|ref|static|trait|true|unsafe|where|while|async|await|dyn|abstract|become|box|do|final|macro|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
+    "macro" => Macro,
+    "for" => For,
+    "+" => Plus,
+    "-" => Minus,
+    "*" => Star,
+    "**" => StarStar,
+    "/" => Slash,
+    "%" => Percent,
+    "^" => Caret,
+    "!" => Not,
+    "&" => And,
+    "|" => Or,
+    "&&" => AndAnd,
+    "||" => OrOr,
+    "<<" => Shl,
+    ">>" => Shr,
+    "+=" => PlusEq,
+    "-=" => MinusEq,
+    "*=" => StarEq,
+    "**=" => StarStarEq,
+    "/=" => SlashEq,
+    "%=" => PercentEq,
+    "^=" => CaretEq,
+    "&=" => AndEq,
+    "|=" => OrEq,
+    "<<=" => ShlEq,
+    ">>=" => ShrEq,
+    "=" => Eq,
+    "==" => EqEq,
+    "!=" => Ne,
+    ">" => Gt,
+    "<" => Lt,
+    ">=" => Ge,
+    "<=" => Le,
+    "@" => At,
+    "_" => UnderScore,
+    "." => Dot,
+    ".." => DotDot,
+    "..=" => DotDotEq,
+    "," => Comma,
+    ";" => Semi,
+    ":" => Colon,
+    "::" => PathSep,
+    "->" => RArrow,
+    "=>" => FatArrow,
+    "#" => Pound,
+    "$" => Dollar,
+    "?" => Question,
+    "[" => BracketOpen,
+    "]" => BracketClose,
+    "(" => ParenOpen,
+    ")" => ParenClose,
+    "{" => BraceOpen,
+    "}" => BraceClose,
+    "(break|continue|extern|false|loop|move|mut|ref|static|trait|true|unsafe|where|while|async|await|dyn|abstract|become|box|do|final|override|priv|typeof|unsized|virtual|yield|try|union)" => Keyword,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-z A-Z 0-9 _]+)" => Identifier,
-    _
+    r"(0|[1-9]\d*(?:_\d+)*)" => IntTok,
+    r"0d\d+(?:_\d+)*" => IntDecTok,
+    r"0x[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*" => IntHexTok,
+    r"0o[0-7]+(?:_[0-7]+)*" => IntOctTok,
+    r"0b[01]+(?:_[01]+)*" => IntBinTok,
+    r"(?:2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36)#[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*" => IntBaseTok,
+    r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => FloatTok,
 }
 
 Ident: ast::Ident = Identifier => ast::Ident {
@@ -46,37 +106,42 @@ Ident: ast::Ident = Identifier => ast::Ident {
 PathIdentSegment: ast::Ident = Ident;
     // r"(super|self|Self|crate|$crate)" => ast::Ident { inner: <>.to_string() },
 
-Comma<T>: ast::Comma<T> = {
-    <v:(<T> ",")*> <e:T?> => match e {
-        None => ast::Comma(v),
-        Some(e) => {
-            let mut v = v;
+VecComma<T>: ast::Comma<T> = {
+    <mut v:(<T> Comma)*> <e:T?> => {
+        if let Some(e) = e {
             v.push(e);
-            ast::Comma(v)
         }
+        ast::Comma(v)
     }
 };
 
-Pipe<T>: Vec<T> = {
-    <v:(<T> "|")*> <e:T?> => match e {
-        None => v,
-        Some(e) => {
-            let mut v = v;
+VecSemi<T>: ast::Semi<T> = {
+    <mut v:(<T> Semi)*> <e:T?> => {
+        if let Some(e) = e {
             v.push(e);
-            v
         }
+        ast::Semi(v)
     }
 };
 
-Add<T>: ast::Add<T> = {
-    <mut v:(<T> "+")*> <e:T> => {
+VecPipe<T>: ast::Pipe<T> = {
+    <mut v:(<T> Or)*> <e:T?> => {
+        if let Some(e) = e {
+            v.push(e);
+        }
+        ast::Pipe(v)
+    }
+};
+
+VecAdd<T>: ast::Add<T> = {
+    <mut v:(<T> Plus)*> <e:T> => {
         v.push(e);
         ast::Add(v)
     }
 };
 
 Path: ast::Path = {
-    <leading_colon:"::"?> <path:(<Ident> "::")*> <final_path:Ident> => {
+    <leading_colon:PathSep?> <path:(<Ident> PathSep)*> <final_path:Ident> => {
         let mut v = path;
         v.push(final_path);
         ast::Path {
@@ -87,20 +152,20 @@ Path: ast::Path = {
 };
 
 pub Type: ast::Type = {
-    "[" <ty:Type> ";" <expr:IntLit> "]" => ast::Type::Array(Box::new(ty), Box::new(expr)),
+    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
     Path => ast::Type::Path(<>),
-    Fn "(" <args:Comma<Type>> ")" "->" <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
-    Fn "(" <args:Comma<Type>> ")" => ast::Type::Fn(args, None),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
 };
 
 // i.e. 1_234_567_890
-Int: Int = r"(0|[1-9]\d*(?:_\d+)*)" => Int::parse(<>).unwrap().into();
+Int: Int = IntTok => Int::parse(<>).unwrap().into();
 
 pub IntLit: ast::Lit = {
     Int => ast::Lit::Int { val: <>, type_hint: None },
 
-    // i.e. 0xC0FFEE_CAFE
-    r"0d\d+(?:_\d+)*" => {
+    // i.e. 0d123
+    IntDecTok => {
         const BASE_CHAR: char = 'd';
         const BASE: i32 = 10;
         ast::Lit::Int {
@@ -110,7 +175,7 @@ pub IntLit: ast::Lit = {
     },
 
     // i.e. 0xC0FFEE_CAFE
-    r"0x[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*" => {
+    IntHexTok => {
         const BASE_CHAR: char = 'x';
         const BASE: i32 = 16;
         ast::Lit::Int {
@@ -120,7 +185,7 @@ pub IntLit: ast::Lit = {
     },
 
     // i.e. 0o72
-    r"0o[0-7]+(?:_[0-7]+)*" => {
+    IntOctTok => {
         const BASE_CHAR: char = 'o';
         const BASE: i32 = 8;
         ast::Lit::Int {
@@ -130,7 +195,7 @@ pub IntLit: ast::Lit = {
     },
 
     // i.e. 0b00110010_00101011_00110010_00111101_00110101
-    r"0b[01]+(?:_[01]+)*" => {
+    IntBinTok => {
         const BASE_CHAR: char = 'b';
         const BASE: i32 = 2;
         ast::Lit::Int {
@@ -140,7 +205,7 @@ pub IntLit: ast::Lit = {
     },
 
     // i.e. 36#HI, an Int in base 36
-    r"(?:2|3|4|5|6|7|8|9|10|11|12|13|14|15|16|17|18|19|20|21|22|23|24|25|26|27|28|29|30|31|32|33|34|35|36)#[a-zA-Z0-9]+(?:_[a-zA-Z0-9]+)*" => {
+    IntBaseTok => {
         const BASE_CHAR: char = '#';
         let base = <>.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
         ast::Lit::Int {
@@ -150,7 +215,7 @@ pub IntLit: ast::Lit = {
     },
 };
 
-pub Float: ast::Lit = r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => {
+pub Float: ast::Lit = FloatTok => {
     let format = <>.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
     let precision = match format {
         16 => 11,
@@ -181,9 +246,9 @@ PathExpression: ast::Expr = Path => ast::Expr::Path(<>);
 
 Statement: ast::Stmt = {
     Item => ast::Stmt::Item(<>),
-    Let <pat:Pat> <ty:(":" <Type>)?> <expr:("=" <Expr>)?> ";" => ast::Stmt::Local(pat, ty, expr),
-    <expr:ExprWithoutBlockWithReturn> ";" => ast::Stmt::Expr(expr, true),
-    <expr:ExprWithBlock> <semi:";"?> => ast::Stmt::Expr(expr, semi.is_some()),
+    Let <pat:Pat> <ty:(Colon <Type>)?> <expr:(Eq <Expr>)?> Semi => ast::Stmt::Local(pat, ty, expr),
+    <expr:ExprWithoutBlockWithReturn> Semi => ast::Stmt::Expr(expr, true),
+    <expr:ExprWithBlock> <semi:Semi?> => ast::Stmt::Expr(expr, semi.is_some()),
 };
 
 Statements: Vec<ast::Stmt> = {
@@ -196,7 +261,7 @@ Statements: Vec<ast::Stmt> = {
 };
 
 Block: ast::Block = {
-    "{" <mut v:Statements?> "}" => {
+    BraceOpen <mut v:Statements?> BraceClose => {
         let v = v.unwrap_or_default();
         ast::Block(v)
     },
@@ -205,171 +270,206 @@ BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
 
 
 Unary: ast::Expr = {
-    "-" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
-    "-" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
-    "!" <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
-    "!" <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
+    Minus <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
+    Minus <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
+
+    Not <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
+    Not <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Not, Box::new(expr)),
+
     ExprWithoutBlockOrOperator,
 };
 
 Cast: ast::Expr = {
     <expr:Unary> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
     <expr:ExprWithBlock> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
+
     Unary,
 };
 
 Arith0: ast::Expr = {
-    <l:Arith0> "**" <r:Cast> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
-    <l:Arith0> "**" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
-    // <l:ExprWithBlock> "**" <r:Cast> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
-    // <l:ExprWithBlock> "**" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
+    <l:Arith0> StarStar <r:Cast> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
+    <l:Arith0> StarStar <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Exp, Box::new(r)),
+
     Cast,
 };
 
 Arith1: ast::Expr = {
-    <l:Arith1> <op:r"/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Arith1> <op:r"/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> Slash <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Div, Box::new(r)),
+    <l:Arith1> Slash <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Div, Box::new(r)),
 
-    <l:Arith1> <op:"*"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Arith1> <op:"*"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> Percent <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Rem, Box::new(r)),
+    <l:Arith1> Percent <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Rem, Box::new(r)),
+
+    <l:Arith1> Star <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Mul, Box::new(r)),
+    <l:Arith1> Star <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Mul, Box::new(r)),
+
     Arith0,
 };
 
 Arith2: ast::Expr = {
-    <l:Arith2> <op:"+"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Arith2> <op:"+"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"+"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"+"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith2> Plus <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::Add, Box::new(r)),
+    <l:Arith2> Plus <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Add, Box::new(r)),
 
-    <l:Arith2> <op:"-"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Arith2> <op:"-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"-"> <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"-"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith2> Minus <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::Sub, Box::new(r)),
+    <l:Arith2> Minus <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Sub, Box::new(r)),
+
     Arith1,
 };
 
 Bin0: ast::Expr = {
-    <l:Bin0> <op:r"<<|>>"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin0> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"<<|>>"> <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"<<|>>"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin0> Shr <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shr, Box::new(r)),
+    <l:Bin0> Shr <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shr, Box::new(r)),
+
+    <l:Bin0> Shl <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shl, Box::new(r)),
+    <l:Bin0> Shl <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shl, Box::new(r)),
+
     Arith2,
 };
 
 Bin1: ast::Expr = {
-    <l:Bin1> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
-    <l:Bin1> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
-    // <l:ExprWithBlock> "&" <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
-    // <l:ExprWithBlock> "&" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    <l:Bin1> And <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+    <l:Bin1> And <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
+
     Bin0,
 };
 
 Bin2: ast::Expr = {
-    <l:Bin2> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
-    <l:Bin2> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
-    // <l:ExprWithBlock> "^" <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
-    // <l:ExprWithBlock> "^" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    <l:Bin2> Caret <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+    <l:Bin2> Caret <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
+
     Bin1,
 };
 
 Bin3: ast::Expr = {
-    <l:Bin3> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
-    <l:Bin3> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
-    // <l:ExprWithBlock> "|" <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
-    // <l:ExprWithBlock> "|" <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    <l:Bin3> Or <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+    <l:Bin3> Or <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
+
     Bin2,
 };
 
 ComparisonExpression: ast::Expr = {
-    <l:Bin3> <op:r"<=|>=|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin3> <op:r"<=|>=|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> EqEq <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
+    <l:Bin3> EqEq <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
 
-    <l:Bin3> <op:"<"> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin3> <op:"<"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin3> <op:">"> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Bin3> <op:">"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"<=|<|>=|>|==|!="> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Bin3> Ne <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ne, Box::new(r)),
+    <l:Bin3> Ne <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ne, Box::new(r)),
+
+    <l:Bin3> Lt <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
+    <l:Bin3> Lt <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Lt, Box::new(r)),
+
+    <l:Bin3> Le <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
+    <l:Bin3> Le <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Le, Box::new(r)),
+
+    <l:Bin3> Gt <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
+    <l:Bin3> Gt <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Gt, Box::new(r)),
+
+    <l:Bin3> Ge <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ge, Box::new(r)),
+    <l:Bin3> Ge <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Ge, Box::new(r)),
     Bin3,
 };
 
 AssignExpression: ast::Expr = {
-    <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ComparisonExpression> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:r"(\+|-|\*|\*\*|/|%|&|\||\^|<<|>>)="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ComparisonExpression> Eq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
+    <l:ComparisonExpression> Eq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
 
-    <l:ComparisonExpression> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    <l:ComparisonExpression> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"="> <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
-    // <l:ExprWithBlock> <op:"="> <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::from_str(op).unwrap(), Box::new(r)),
+    <l:ComparisonExpression> PlusEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
+    <l:ComparisonExpression> PlusEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::AddEq, Box::new(r)),
+
+    <l:ComparisonExpression> MinusEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
+    <l:ComparisonExpression> MinusEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::SubEq, Box::new(r)),
+
+    <l:ComparisonExpression> StarEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
+    <l:ComparisonExpression> StarEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::MulEq, Box::new(r)),
+
+    <l:ComparisonExpression> StarStarEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::ExpEq, Box::new(r)),
+    <l:ComparisonExpression> StarStarEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::ExpEq, Box::new(r)),
+
+    <l:ComparisonExpression> SlashEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
+    <l:ComparisonExpression> SlashEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::DivEq, Box::new(r)),
+
+    <l:ComparisonExpression> PercentEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
+    <l:ComparisonExpression> PercentEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::RemEq, Box::new(r)),
+
+    <l:ComparisonExpression> AndEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+    <l:ComparisonExpression> AndEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitAndEq, Box::new(r)),
+
+    <l:ComparisonExpression> OrEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    <l:ComparisonExpression> OrEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitOrEq, Box::new(r)),
+    
+    <l:ComparisonExpression> CaretEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+    <l:ComparisonExpression> CaretEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::BitXorEq, Box::new(r)),
+
+    <l:ComparisonExpression> ShlEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+    <l:ComparisonExpression> ShlEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShlEq, Box::new(r)),
+
+    <l:ComparisonExpression> ShrEq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+    <l:ComparisonExpression> ShrEq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::ShrEq, Box::new(r)),
+
     ComparisonExpression,
 };
 
 OperatorExpression: ast::Expr = AssignExpression;
 
-GroupedExpression: ast::Expr = "(" <Expr> ")";
+GroupedExpression: ast::Expr = ParenOpen <Expr> ParenClose;
 
 ArrayExpression: ast::Expr = {
-    "[" <val:Expr> ";" <repeat:Expr> "]" => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
-    "[" <Comma<Expr>> "]" => ast::Expr::Array(<>),
+    BracketOpen <val:Expr> Semi <repeat:Expr> BracketClose => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
+    BracketOpen <VecComma<Expr>> BracketClose => ast::Expr::Array(<>),
 };
 
-IndexExpression: ast::Expr = <on:ExprWithoutBlockOrOperator> "[" <index:Expr> "]" => ast::Expr::Index(Box::new(on), Box::new(index));
+IndexExpression: ast::Expr = <on:ExprWithoutBlockOrOperator> BracketOpen <index:Expr> BracketClose => ast::Expr::Index(Box::new(on), Box::new(index));
 
-TupleElements: Vec<ast::Expr> = <mut v:(<Expr> ",")+> <e:Expr?> => {
+TupleElements: Vec<ast::Expr> = <mut v:(<Expr> Comma)+> <e:Expr?> => {
     if let Some(e) = e {
         v.push(e);
     }
     v
 };
-TupleExpression: ast::Expr = "(" <TupleElements?> ")" => ast::Expr::Tuple(ast::Comma(<>.unwrap_or_default()));
+TupleExpression: ast::Expr = ParenOpen <TupleElements?> ParenClose => ast::Expr::Tuple(ast::Comma(<>.unwrap_or_default()));
 
 
 TupleIndexingExpression: ast::Expr = {
-    <base:ExprWithBlock> "." <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
-    <base:ExprWithoutBlockOrOperator> "." <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
+    <base:ExprWithBlock> Dot <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
+    <base:ExprWithoutBlockOrOperator> Dot <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
 };
 
 FieldValue: ast::FieldValue = {
-    <named:Ident> ":" <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr, },
-    <unnamed:Int> ":" <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr, },
+    <named:Ident> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr, },
+    <unnamed:Int> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr, },
     <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: ast::Expr::Path(ast::Path { leading_colon: None, segments: vec![named] }), },
 };
 
 StructExpression: ast::Expr = {
-    <path:Path> "{" <first:FieldValue> <mut rest:("," <FieldValue>)*> <base:(("," ".." <Expr>)? ","?)> "}" => {
+    <path:Path> BraceOpen <first:FieldValue> <mut rest:(Comma <FieldValue>)*> <base:((Comma DotDot <Expr>)? Comma?)> BraceClose => {
         let mut fields = vec![first];
         fields.append(&mut rest);
         ast::Expr::Struct(path, fields.into(), base.0.map(Box::new))
     },
-    <path:Path> "{" <base:(".." <Expr> ","?)> "}" => {
+    <path:Path> BraceOpen <base:(DotDot <Expr> Comma?)> BraceClose => {
         ast::Expr::Struct(path, vec![].into(), Some(Box::new(base)))
     },
-    <path:Path> "{" "}" => {
+    <path:Path> BraceOpen BraceClose => {
         ast::Expr::Struct(path, vec![].into(), None)
     },
 };
 
-CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> "(" <args:Comma<Expr>> ")" => ast::Expr::Call(Box::new(func), args);
+CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
 
 MethodCallExpression: ast::Expr = {
-    <receiver:ExprWithBlock> "." <method:PathIdentSegment> "(" <args:Comma<Expr>> ")" => ast::Expr::MethodCall(Box::new(receiver), method, args),
-    <receiver:ExprWithoutBlockOrOperator> "." <method:PathIdentSegment> "(" <args:Comma<Expr>> ")" => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithBlock> Dot <method:PathIdentSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithoutBlockOrOperator> Dot <method:PathIdentSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
 };
 
 FieldExpression: ast::Expr = {
-    <base:ExprWithBlock> "." <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
-    <base:ExprWithoutBlockOrOperator> "." <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
+    <base:ExprWithBlock> Dot <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
+    <base:ExprWithoutBlockOrOperator> Dot <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
 };
 
 // todo: closure expression
 
 RangeExpression: ast::Expr = {
-    <l:LiteralExpression?> ".." <r:LiteralExpression?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
-    <l:LiteralExpression?> "..=" <r:LiteralExpression> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
+    <l:LiteralExpression?> DotDot <r:LiteralExpression?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
+    <l:LiteralExpression?> DotDotEq <r:LiteralExpression> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
 };
 
 CondIf: ast::Expr = If <ExprWithoutStruct>;
@@ -381,14 +481,14 @@ pub IfExpression: ast::Expr = {
 };
 
 MatchArm: ast::Arm = {
-    <pat:Pat> <guard:CondIf?> "=>" <body:Expr> => ast::Arm {
+    <pat:Pat> <guard:CondIf?> FatArrow <body:Expr> => ast::Arm {
         pat,
         guard,
         body,
     },
 };
 
-MatchExpression: ast::Expr = Match <e:ExprWithoutStruct> "{" <arms:Comma<MatchArm>> "}" => ast::Expr::Match(Box::new(e), arms);
+MatchExpression: ast::Expr = Match <e:ExprWithoutStruct> BraceOpen <arms:VecComma<MatchArm>> BraceClose => ast::Expr::Match(Box::new(e), arms);
 
 ReturnExpression: ast::Expr = Return <Expr?> => ast::Expr::Return(<>.map(Box::new));
 
@@ -430,7 +530,7 @@ pub Expr: ast::Expr = {
     StructExpression,
 };
 
-PatType: ast::PatType = <pat:Pat> ":" <ty:Type> => ast::PatType { pat: Box::new(pat), ty };
+PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat: Box::new(pat), ty };
 
 pub Pat: ast::Pat = {
     Ident => ast::Pat::Ident(<>),
@@ -440,39 +540,39 @@ pub Pat: ast::Pat = {
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub,
     Crate => ast::Vis::Crate,
-    Pub "(" Super ")" => ast::Vis::Pub,
-    Pub "(" LowerSelf ")" => ast::Vis::Inherited,
-    Pub "(" Crate ")" => ast::Vis::Crate,
-    Pub "(" In <Path> ")" => ast::Vis::Restricted(<>),
+    Pub ParenOpen Super ParenClose => ast::Vis::Pub,
+    Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
+    Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
+    Pub ParenOpen In <Path> ParenClose => ast::Vis::Restricted(<>),
 };
 
-Field: ast::Field = <ident: Ident> ":" <ty:Type> => ast::Field { ident, ty };
+Field: ast::Field = <ident: Ident> Colon <ty:Type> => ast::Field { ident, ty };
 
 Fields: ast::Fields = {
-    "{" <Comma<Field>> "}" => ast::Fields::Named(<>),
-    "(" <Comma<Type>> ")" => ast::Fields::Unnamed(<>),
+    BraceOpen <VecComma<Field>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <VecComma<Type>> ParenClose => ast::Fields::Unnamed(<>),
 };
 
-Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:("=" <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
+Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:(Eq <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> <add:Add<Path>> <ty:("=" <Type>)?> => ast::GenericParam::Type(ident, add, ty),
-    Const <ident:Ident> ":" <ty:Type> <default:("=" <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
+    <ident:Ident> <add:VecAdd<Path>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
 };
-Generics: ast::Generics = "<" <Comma<GenericParam>> ">" => ast::Generics { params: <> };
+Generics: ast::Generics = Le <VecComma<GenericParam>> Ge => ast::Generics { params: <> };
 
 FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
 
 FnArgs: ast::Comma<ast::FnArg> = {
     <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
-    <receiver:(<LowerSelf> ",")> <mut args:Comma<FnArg>> => {
+    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
         args.0.insert(0, ast::FnArg::Receiver);
         args
     },
-    Comma<FnArg>,
+    VecComma<FnArg>,
 };
 
-Sig: ast::Sig = <ident:Ident> <generics:Generics?> "(" <inputs:FnArgs> ")" <output:("->" <Type>)?> => ast::Sig {
+Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> ParenClose <output:(RArrow <Type>)?> => ast::Sig {
     ident,
     generics: generics.unwrap_or_default(),
     inputs,
@@ -480,36 +580,36 @@ Sig: ast::Sig = <ident:Ident> <generics:Generics?> "(" <inputs:FnArgs> ")" <outp
 };
 
 UseTree: ast::UseTree = {
-    <path:(<Ident> "::")> <tree:UseTree> => ast::UseTree::Path(path, Box::new(tree)),
-    <group:("{" <Comma<UseTree>> "}")> => ast::UseTree::Group(group),
+    <path:(<Ident> PathSep)> <tree:UseTree> => ast::UseTree::Path(path, Box::new(tree)),
+    <group:(BraceOpen <VecComma<UseTree>> BraceClose)> => ast::UseTree::Group(group),
     <name:Ident> As <rename:Ident> => ast::UseTree::Rename(name, rename),
-    "*" => ast::UseTree::Glob,
+    Star => ast::UseTree::Glob,
     Ident => ast::UseTree::Name(<>),
 };
 
 ImplItem: ast::ImplItem = {
-    <vis:Visibility?> Const <ident:Ident> ":" <ty:Type> "=" <expr:Expr> ";" => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
     <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
 };
 
 Item: ast::Item = {
-    <vis:Visibility?> Const <ident:Ident> ":" <ty:Type> "=" <expr:Expr> ";" => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
 
-    <vis:Visibility?> Mod <ident:Ident> "{" <items:Item*> "}" => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
-    <vis:Visibility?> Mod <ident:Ident> ";" => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
+    <vis:Visibility?> Mod <ident:Ident> BraceOpen <items:Item*> BraceClose => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
+    <vis:Visibility?> Mod <ident:Ident> Semi => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
 
     <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
 
-    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> "=" <ty:Type> ";" => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
+    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> Eq <ty:Type> Semi => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
 
     <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
     <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> "{" <variants:Comma<Variant>> "}" => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
+    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
 
-    <vis:Visibility?> Bag <ident:Ident> "(" <lits:Comma<Lit>> ")" => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
-    <vis:Visibility?> Ring <ident:Ident> "(" <begin:Lit> ".." <inclusive:"="?> <end:Lit> ")" => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
+    <vis:Visibility?> Bag <ident:Ident> ParenOpen <lits:VecComma<Lit>> ParenClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
+    <vis:Visibility?> Ring <ident:Ident> ParenOpen <begin:Lit> DotDot <inclusive:Eq?> <end:Lit> ParenClose => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
 
-    <vis:Visibility?> Use <colon:"::"?> <tree:UseTree> ";" => ast::Item::Use(vis.unwrap_or_default(), colon.is_some(), tree),
+    <vis:Visibility?> Use <colon:PathSep?> <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), colon.is_some(), tree),
 
-    Impl <generics:Generics?> <path:(<Path> "for")?> <ty:Type> "{" <items:ImplItem*> "}" => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
+    Impl <generics:Generics?> <path:(<Path> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
 };
