@@ -240,8 +240,11 @@ Arith0: ast::Expr = {
 };
 
 Arith1: ast::Expr = {
-    <l:Arith1> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
-    <l:Arith1> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> <op:r"/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> <op:r"/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+
+    <l:Arith1> <op:"*"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
+    <l:Arith1> <op:"*"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"\*|/|%"> <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     // <l:ExprWithBlock> <op:r"\*|/|%"> <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::from_str(op).unwrap(), Box::new(r)),
     Arith0,
@@ -489,20 +492,12 @@ Sig: ast::Sig = <ident:Ident> <generics:Generics?> "(" <inputs:FnArgs> ")" <outp
     output,
 };
 
-
-UseGroup: ast::UseTree = <group:("{" <Comma<UseTree>> "}")> => ast::UseTree::Group(group);
-// UseGlob: ast::UseTree = "*" => ast::UseTree::Glob;
-UseRename: ast::UseTree = <name:Ident> As <rename:Ident> => ast::UseTree::Rename(name, rename);
-UseName: ast::UseTree = Ident => ast::UseTree::Name(<>);
-
 UseTree: ast::UseTree = {
     <path:(<Ident> "::")> <tree:UseTree> => ast::UseTree::Path(path, Box::new(tree)),
-    // <path:(<ident:Ident> "::")> <tree:UseRename> => ast::UseTree::Path(ident, Box::new(tree)),
-    // <path:(<ident:Ident> "::")> <tree:UseName> => ast::UseTree::Path(ident, Box::new(tree)),
-    // <path:(<ident:Ident> "::")> <tree:UseGlob> => ast::UseTree::Path(ident, Box::new(tree)),
-    UseGroup,
-    UseRename,
-    UseName,
+    <group:("{" <Comma<UseTree>> "}")> => ast::UseTree::Group(group),
+    <name:Ident> As <rename:Ident> => ast::UseTree::Rename(name, rename),
+    "*" => ast::UseTree::Glob,
+    Ident => ast::UseTree::Name(<>),
 };
 
 pub Item: ast::Item = {
