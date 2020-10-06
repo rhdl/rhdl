@@ -204,5 +204,6 @@ pub enum Item {
     #[display(fmt = "{}use {}{};", _0, "if *_1 { \"::\" } else { \"\" }", _2)]
     Use(Vis, bool, UseTree),
     /// Don't repeat yourself
-    Macro,
+    #[display(fmt = "{}macro! {} {{ {} }}", _0, _1, _2)]
+    Macro(Vis, Ident, Semi<MacroRule>),
 }

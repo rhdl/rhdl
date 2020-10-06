@@ -45,10 +45,12 @@ punct!(Semi, ";", true);
 mod expr;
 mod item;
 mod pat;
+mod macaroni;
 
 pub use expr::*;
 pub use item::*;
 pub use pat::*;
+pub use macaroni::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
