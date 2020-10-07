@@ -568,7 +568,7 @@ Fields: ast::Fields = {
 Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:(Eq <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> <add:VecAdd<Path>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    <ident:Ident> Colon <add:VecAdd<Path>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
     Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
 };
 Generics: ast::Generics = Le <VecComma<GenericParam>> Ge => ast::Generics { params: <> };
