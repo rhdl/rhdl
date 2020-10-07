@@ -354,12 +354,12 @@ TypePath: ast::ExprPath = PathInExpression;
 // QualifiedPathType: = Lt <ty:Type> (As <as:TypePath>)? Gt => QSelf
 
 /// https://doc.rust-lang.org/reference/macros.html
-// MacroInvocation: ast::MacroInvocation = <path:SimplePath> Not <tree:DelimTokenTree> => ast::MacroInvocation(path, tree);
-// MacroInvocationSemi: ast::MacroInvocation = {
-//     <path:SimplePath> Not ParenOpen <tree:TokenTree*> ParenClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-//     <path:SimplePath> Not BracketOpen <tree:TokenTree*> BracketClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-//     <path:SimplePath> Not BraceOpen <tree:TokenTree*> BraceClose => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-// };
+MacroInvocation: ast::MacroInvocation = <path:SimplePath> Not <tree:DelimTokenTree> => ast::MacroInvocation(path, tree);
+MacroInvocationSemi: ast::MacroInvocation = {
+    <path:SimplePath> Not ParenOpen <tree:TokenTree*> ParenClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+    <path:SimplePath> Not BracketOpen <tree:TokenTree*> BracketClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+    <path:SimplePath> Not BraceOpen <tree:TokenTree*> BraceClose => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+};
 
 TokenTree: Vec<String> = {
     DelimTokenTree,
@@ -538,6 +538,7 @@ Item: ast::Item = {
     <vis:Visibility?> Ring <ident:Ident> ParenOpen <begin:Lit> DotDot <inclusive:Eq?> <end:Lit> ParenClose => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
 
     <vis:Visibility?> Macro Not <ident:Ident> <rules:MacroRulesDef> => ast::Item::Macro(vis.unwrap_or_default(), ident, rules),
+    // MacroInvocationSemi => ast::Item::MacroInvocation(<>),
 };
 
 /// https://doc.rust-lang.org/reference/items/use-declarations.html
@@ -610,6 +611,7 @@ pub Type: ast::Type = {
     TypePath => ast::Type::Path(<>),
     Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
     Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
+    // MacroInvocation => ast::Type::MacroInvocation(<>),
 };
 
 LiteralExpression: ast::Expr = {
@@ -621,6 +623,7 @@ Statement: ast::Stmt = {
     Let <pat:Pat> <ty:(Colon <Type>)?> <expr:(Eq <Expr>)?> Semi => ast::Stmt::Local(pat, ty, expr),
     <expr:ExprWithoutBlockWithReturn> Semi => ast::Stmt::Expr(expr, true),
     <expr:ExprWithBlock> <semi:Semi?> => ast::Stmt::Expr(expr, semi.is_some()),
+    // MacroInvocation => ast::Stmt::MacroInvocation(<>),
 };
 
 Statements: Vec<ast::Stmt> = {
@@ -874,6 +877,7 @@ ExprWithoutFieldOrBlock: ast::Expr = {
     CallExpression,
     MethodCallExpression,
     RangeExpression,
+    // MacroInvocation => ast::Expr::MacroInvocation(<>),
 };
 
 ExprWithoutBlockOrOperator: ast::Expr = {
@@ -935,6 +939,7 @@ pub Pat: ast::Pat = {
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
     BraceOpen <VecComma<Pat>> BraceClose => ast::Pat::Slice(<>),
 
+    /// https://doc.rust-lang.org/reference/macros.html#macro-invocation
     // MacroInvocation => ast::Pat::Macro(<>),
 };
 

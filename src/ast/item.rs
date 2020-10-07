@@ -209,4 +209,6 @@ pub enum Item {
     /// Don't repeat yourself
     #[display(fmt = "{}macro! {} {{ {} }}", _0, _1, _2)]
     Macro(Vis, Ident, Semi<MacroRule>),
+    #[display(fmt = "{}", _0)]
+    MacroInvocation(MacroInvocation),
 }

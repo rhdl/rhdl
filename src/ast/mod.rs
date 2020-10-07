@@ -112,4 +112,6 @@ pub enum Stmt {
     Item(Item),
     #[display(fmt = "{}{}", _0, "if *_1 { \";\" } else { \"\" }")]
     Expr(Expr, bool),
+    #[display(fmt = "{}", _0)]
+    MacroInvocation(MacroInvocation),
 }

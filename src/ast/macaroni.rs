@@ -81,3 +81,7 @@ pub struct MacroMatcher(pub Implicit<MacroMatch>);
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(fmt = "{} => {}", _0, "_1.iter().cloned().collect::<String>()")]
 pub struct MacroRule(pub MacroMatcher, pub Vec<String>);
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}!{{ {} }}", _0, "_1.iter().cloned().collect::<String>()")]
+pub struct MacroInvocation(pub SimplePath, pub Vec<String>);

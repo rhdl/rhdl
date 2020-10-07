@@ -126,6 +126,8 @@ pub enum Expr {
     Return(Option<Box<Expr>>),
     #[display(fmt = "{}", _0)]
     Struct(ExprPath, Comma<FieldValue>, Option<Box<Expr>>),
+    #[display(fmt = "{}", _0)]
+    MacroInvocation(MacroInvocation),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]

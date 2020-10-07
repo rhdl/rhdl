@@ -16,4 +16,6 @@ pub enum Type {
         "_1.as_ref().map(|x| format!(\" -> ({})\", x)).unwrap_or_default()"
     )]
     Fn(Comma<Type>, Option<Box<Type>>),
+    #[display(fmt = "{}", _0)]
+    MacroInvocation(MacroInvocation),
 }
