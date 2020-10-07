@@ -6,6 +6,70 @@ use std::str::FromStr;
 use super::*;
 
 #[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{} = {}", ident, ty)]
+pub struct GenericArgsBinding {
+    pub ident: Ident,
+    pub ty: Box<Type>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{},{}", tys, bindings)]
+pub struct GenericArgs {
+    pub tys: Comma<Type>,
+    pub bindings: Comma<GenericArgsBinding>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "{}{}",
+    ident,
+    "args.as_ref().map(|x| format!(\"::<{}>\", x)).unwrap_or_default()"
+)]
+pub struct ExprPathSegment {
+    pub ident: Ident,
+    pub args: Option<GenericArgs>,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ExprPath {
+    pub leading_colon: Option<()>,
+    pub segments: Vec<ExprPathSegment>,
+    pub qself: Option<QSelf>,
+}
+
+impl Display for ExprPath {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(qself) = self.qself.as_ref() {
+            write!(f, "<{}>", qself)?;
+        }
+        for (i, seg) in self.segments.iter().enumerate() {
+            write!(
+                f,
+                "{}{}",
+                if i != 0 || self.leading_colon.is_some() {
+                    "::"
+                } else {
+                    ""
+                },
+                seg
+            )?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(
+    fmt = "{}{}",
+    ty,
+    "path.as_ref().map(|x| format!(\"as {}\", x)).unwrap_or_default()"
+)]
+pub struct QSelf {
+    pub ty: Box<Type>,
+    pub path: Option<Box<TypePath>>,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
 pub enum Expr {
     // Block(Block),
     #[display(fmt = "({} {})", _0, _1)]
@@ -27,7 +91,7 @@ pub enum Expr {
     #[display(fmt = "{}", _0)]
     Concat(Comma<Expr>),
     #[display(fmt = "{}", _0)]
-    Path(Path),
+    Path(ExprPath),
     #[display(fmt = "{}", _0)]
     Lit(Lit),
     #[display(fmt = "{}.{}", _0, _1)]
@@ -35,7 +99,7 @@ pub enum Expr {
     #[display(fmt = "{}({})", _0, _1)]
     Call(Box<Expr>, Comma<Expr>),
     #[display(fmt = "{}.{}({})", _0, _1, _2)]
-    MethodCall(Box<Expr>, Ident, Comma<Expr>),
+    MethodCall(Box<Expr>, ExprPathSegment, Comma<Expr>),
     #[display(fmt = "{}[{}]", _0, _1)]
     Index(Box<Expr>, Box<Expr>),
     #[display(fmt = "[{}]", _0)]
@@ -61,7 +125,7 @@ pub enum Expr {
     )]
     Return(Option<Box<Expr>>),
     #[display(fmt = "{}", _0)]
-    Struct(Path, Comma<FieldValue>, Option<Box<Expr>>),
+    Struct(ExprPath, Comma<FieldValue>, Option<Box<Expr>>),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -86,10 +150,14 @@ pub enum Member {
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
-#[display(fmt = "{}: {}", member, expr)]
+#[display(
+    fmt = "{}{}",
+    member,
+    "expr.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()"
+)]
 pub struct FieldValue {
     pub member: Member,
-    pub expr: Expr,
+    pub expr: Option<Expr>,
 }
 
 macro_rules! op_enum {

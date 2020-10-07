@@ -44,13 +44,15 @@ punct!(Semi, ";", true);
 
 mod expr;
 mod item;
-mod pat;
 mod macaroni;
+mod pat;
+mod types;
 
 pub use expr::*;
 pub use item::*;
-pub use pat::*;
 pub use macaroni::*;
+pub use pat::*;
+pub use types::*;
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
@@ -67,20 +69,6 @@ impl Display for Block {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Type {
-    #[display(fmt = "[{}; {}]", _0, _1)]
-    Array(Box<Type>, Box<Lit>),
-    #[display(fmt = "{}", _0)]
-    Path(Path),
-    #[display(
-        fmt = "fn({}){}",
-        _0,
-        "_1.as_ref().map(|x| format!(\" -> ({})\", x)).unwrap_or_default()"
-    )]
-    Fn(Comma<Type>, Option<Box<Type>>),
-}
-
 #[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
 #[display(fmt = "{}", inner)]
 pub struct Ident {
@@ -88,12 +76,12 @@ pub struct Ident {
 }
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
-pub struct Path {
+pub struct SimplePath {
     pub leading_colon: Option<()>,
     pub segments: Vec<Ident>,
 }
 
-impl Display for Path {
+impl Display for SimplePath {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         for (i, seg) in self.segments.iter().enumerate() {
             write!(

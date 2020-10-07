@@ -11,7 +11,7 @@ pub enum Vis {
     #[display(fmt = "crate ")]
     Crate,
     #[display(fmt = "pub({}) ", _0)]
-    Restricted(Path),
+    Restricted(SimplePath),
     #[display(fmt = "")]
     Inherited,
 }
@@ -30,7 +30,7 @@ pub enum GenericParam {
         _1,
         "_2.as_ref().map(|x| format!(\" = {}\", x)).unwrap_or_default()"
     )]
-    Type(Ident, Add<Path>, Option<Type>),
+    Type(Ident, Add<TypePath>, Option<Type>),
     #[display(
         fmt = "const {}: {}{}",
         _0,
@@ -44,7 +44,7 @@ pub enum GenericParam {
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum WherePredicate {
     #[display(fmt = "{}: {}", _0, _1)]
-    Type(Type, Add<Path>),
+    Type(Type, Add<TypePath>),
     #[display(fmt = "const {} = {}", _0, _1)]
     Const(Ident, Expr),
 }
@@ -178,7 +178,7 @@ pub enum Item {
         _2,
         _3
     )]
-    Impl(Generics, Option<Path>, Box<Type>, Implicit<ImplItem>),
+    Impl(Generics, Option<TypePath>, Box<Type>, Implicit<ImplItem>),
     /// A type representing a "bag" of allowed literal values for compile-time parameters
     #[display(fmt = "{}bag {} {{ {} }}", _0, _1, _2)]
     Bag(Vis, Ident, Comma<Lit>),

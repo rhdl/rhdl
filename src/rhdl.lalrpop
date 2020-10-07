@@ -115,15 +115,6 @@ match {
     r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => FloatingPoint,
 }
 
-/// https://doc.rust-lang.org/reference/identifiers.html
-Identifier: &'input str = { NonKeywordIdentifier, RawIdentifier };
-Ident: ast::Ident = Identifier => ast::Ident {
-    inner: <>.to_string()
-};
-
-PathIdentSegment: ast::Ident = Ident;
-    // r"(super|self|Self|crate|$crate)" => ast::Ident { inner: <>.to_string() },
-
 VecComma<T>: ast::Comma<T> = {
     <mut v:(<T> Comma)*> <e:T?> => {
         if let Some(e) = e {
@@ -155,23 +146,11 @@ VecAdd<T>: ast::Add<T> = {
         ast::Add(v)
     }
 };
-    
-Path: ast::Path = {
-    <leading_colon:PathSep?> <path:(<Ident> PathSep)*> <final_path:Ident> => {
-        let mut v = path;
-        v.push(final_path);
-        ast::Path {
-            leading_colon: leading_colon.map(|_| ()),
-            segments: v,
-        }
-    }
-};
 
-pub Type: ast::Type = {
-    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
-    Path => ast::Type::Path(<>),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
+/// https://doc.rust-lang.org/reference/identifiers.html
+Identifier: &'input str = { NonKeywordIdentifier, RawIdentifier };
+Ident: ast::Ident = Identifier => ast::Ident {
+    inner: <>.to_string()
 };
 
 // i.e. 1_234_567_890
@@ -254,12 +233,51 @@ Lit: ast::Lit = {
     Float,
 };
 
+/// https://doc.rust-lang.org/reference/paths.html#simple-paths
+SimplePath: ast::SimplePath = <leading_colon:PathSep?> <mut segments:(<SimplePathSegment> PathSep)*> <last:SimplePathSegment> => {
+    segments.push(last);
+    ast::SimplePath { leading_colon: leading_colon.map(|_| ()), segments, }
+};
+SimplePathSegment: ast::Ident = {
+    Identifier => ast::Ident { inner: <>.to_string() },
+    LowerSelf => ast::Ident { inner: <>.to_string() },
+    Super => ast::Ident { inner: <>.to_string() },
+    Crate => ast::Ident { inner: <>.to_string() },
+};
+
+/// https://doc.rust-lang.org/reference/paths.html#paths-in-expressions
+PathInExpression: ast::ExprPath = <leading_colon:PathSep?> <mut segments:(<PathExprSegment> PathSep)*> <last:PathExprSegment> => {
+    segments.push(last);
+    ast::ExprPath { leading_colon: leading_colon.map(|_| ()), segments, qself: None, }
+};
+PathExprSegment: ast::ExprPathSegment = SimplePathSegment => ast::ExprPathSegment { ident: <>, args: None, };
+GenericArgs: ast::GenericArgs = {
+    Lt Gt => ast::GenericArgs { tys: vec![].into(), bindings: vec![].into() },
+    Lt <VecComma<Type>> Gt => ast::GenericArgs { tys: <>, bindings: vec![].into() },
+    Lt <VecComma<GenericArgsBinding>> Gt => ast::GenericArgs { tys: vec![].into(), bindings: <> },
+    Lt <first:Type> <mut rest:(Comma <Type>)*> Comma <bindings:VecComma<GenericArgsBinding>> Gt => ast::GenericArgs { tys: { rest.insert(0, first); ast::Comma(rest) }, bindings, },
+};
+GenericArgsBinding: ast::GenericArgsBinding = <ident:Ident> Eq <ty:Type> => ast::GenericArgsBinding { ident, ty: Box::new(ty) };
+
+/// TODO: Short-circuit this for now and revisit later
+/// https://doc.rust-lang.org/reference/paths.html#qualified-paths
+TypePath: ast::ExprPath = PathInExpression;
+
+/// TODO: implement qself
+/// https://doc.rust-lang.org/reference/paths.html#qualified-paths
+// QualifiedPathInExpression: ast::ExprPath = QualifiedPathType (PathSep PathExprSegment)+;
+// QualifiedPathType: = Lt <ty:Type> (As <as:TypePath>)? Gt => QSelf
+
+pub Type: ast::Type = {
+    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
+    TypePath => ast::Type::Path(<>),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
+};
+
 LiteralExpression: ast::Expr = {
     Lit => ast::Expr::Lit(<>),
 };
-
-PathExpression: ast::Expr = Path => ast::Expr::Path(<>);
-
 
 Statement: ast::Stmt = {
     Item => ast::Stmt::Item(<>),
@@ -451,21 +469,21 @@ TupleIndexingExpression: ast::Expr = {
 };
 
 FieldValue: ast::FieldValue = {
-    <named:Ident> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr, },
-    <unnamed:Int> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr, },
-    <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: ast::Expr::Path(ast::Path { leading_colon: None, segments: vec![named] }), },
+    <named:Ident> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr: Some(expr), },
+    <unnamed:Int> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr: Some(expr), },
+    <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: None, },
 };
 
 StructExpression: ast::Expr = {
-    <path:Path> BraceOpen <first:FieldValue> <mut rest:(Comma <FieldValue>)*> <base:((Comma DotDot <Expr>)? Comma?)> BraceClose => {
+    <path:PathInExpression> BraceOpen <first:FieldValue> <mut rest:(Comma <FieldValue>)*> <base:((Comma DotDot <Expr>)? Comma?)> BraceClose => {
         let mut fields = vec![first];
         fields.append(&mut rest);
         ast::Expr::Struct(path, fields.into(), base.0.map(Box::new))
     },
-    <path:Path> BraceOpen <base:(DotDot <Expr> Comma?)> BraceClose => {
+    <path:PathInExpression> BraceOpen <base:(DotDot <Expr> Comma?)> BraceClose => {
         ast::Expr::Struct(path, vec![].into(), Some(Box::new(base)))
     },
-    <path:Path> BraceOpen BraceClose => {
+    <path:PathInExpression> BraceOpen BraceClose => {
         ast::Expr::Struct(path, vec![].into(), None)
     },
 };
@@ -473,8 +491,8 @@ StructExpression: ast::Expr = {
 CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
 
 MethodCallExpression: ast::Expr = {
-    <receiver:ExprWithBlock> Dot <method:PathIdentSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
-    <receiver:ExprWithoutBlockOrOperator> Dot <method:PathIdentSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithBlock> Dot <method:PathExprSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithoutBlockOrOperator> Dot <method:PathExprSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
 };
 
 FieldExpression: ast::Expr = {
@@ -511,7 +529,7 @@ ReturnExpression: ast::Expr = Return <Expr?> => ast::Expr::Return(<>.map(Box::ne
 
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
-    PathExpression,
+    PathInExpression => ast::Expr::Path(<>),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
@@ -560,7 +578,7 @@ Visibility: ast::Vis = {
     Pub ParenOpen Super ParenClose => ast::Vis::Pub,
     Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
     Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
-    Pub ParenOpen In <Path> ParenClose => ast::Vis::Restricted(<>),
+    Pub ParenOpen In <SimplePath> ParenClose => ast::Vis::Restricted(<>),
 };
 
 Field: ast::Field = <ident: Ident> Colon <ty:Type> => ast::Field { ident, ty };
@@ -573,7 +591,7 @@ Fields: ast::Fields = {
 Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:(Eq <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> Colon <add:VecAdd<Path>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
     Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
 };
 Generics: ast::Generics = Le <VecComma<GenericParam>> Ge => ast::Generics { params: <> };
@@ -609,6 +627,7 @@ ImplItem: ast::ImplItem = {
     <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
 };
 
+/// https://doc.rust-lang.org/reference/tokens.html
 Token: &'input str = {
     If,
     Else,
@@ -854,6 +873,6 @@ Item: ast::Item = {
 
     <vis:Visibility?> Use <colon:PathSep?> <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), colon.is_some(), tree),
 
-    Impl <generics:Generics?> <path:(<Path> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
+    Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
     <vis:Visibility?> Macro Not <ident:Ident> <rules:MacroRulesDef> => ast::Item::Macro(vis.unwrap_or_default(), ident, rules),
 };
