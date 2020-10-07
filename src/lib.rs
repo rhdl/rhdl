@@ -17,7 +17,7 @@ mod tests {
                     $(
                         assert_eq!(IntLitParser::new().parse($input), Ok(Lit::Int {
                             val: rug::Integer::from($expected),
-                            type_hint: None,
+                            suffix: None,
                         }));
                     )+
                 )+
@@ -44,6 +44,7 @@ mod tests {
                         let res = FloatParser::new().parse(&input);
                         let expected = Ok(Lit::Float {
                             val: rug::Float::with_val($prec, $expected),
+                            suffix: None,
                         });
                         assert_eq!(res, expected);
                     )+

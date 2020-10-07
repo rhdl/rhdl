@@ -175,8 +175,8 @@ pub enum Lit {
     Int {
         val: Int,
         /// i.e. i32
-        type_hint: Option<(char, usize)>,
+        suffix: Option<Ident>,
     },
     #[display(fmt = "{}", val)]
-    Float { val: Float },
+    Float { val: Float, suffix: Option<Ident> },
 }
