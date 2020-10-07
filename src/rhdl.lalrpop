@@ -564,6 +564,7 @@ FnArgs: ast::Comma<ast::FnArg> = {
     VecComma<FnArg>,
 };
 FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
+PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat, ty };
 
 /// https://doc.rust-lang.org/reference/items/structs.html
 Fields: ast::Fields = {
@@ -901,9 +902,55 @@ pub Expr: ast::Expr = {
     StructExpression,
 };
 
-PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat: Box::new(pat), ty };
 
+/// https://doc.rust-lang.org/reference/patterns.html
 pub Pat: ast::Pat = {
-    Ident => ast::Pat::Ident(<>),
-    IntLit => ast::Pat::Lit(<>),
-}
+    /// https://doc.rust-lang.org/reference/patterns.html#literal-patterns
+    Lit => ast::Pat::Lit(<>),
+    /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
+    PathInExpression => {
+        if <>.leading_colon.is_none() && <>.qself.is_none() && <>.segments.len() == 1 {
+            if let Some(ast::ExprPathSegment { ident, args: None, }) = <>.segments.first() {
+                ast::Pat::Ident(ident.clone())
+            } else {
+                ast::Pat::Path(<>)
+            }
+        } else {
+            ast::Pat::Path(<>)
+        }
+    },
+    /// https://doc.rust-lang.org/reference/patterns.html#wildcard-pattern
+    Underscore => ast::Pat::Wildcard,
+    /// https://doc.rust-lang.org/reference/patterns.html#range-patterns
+    <l:RangePatternBound> DotDot <r:RangePatternBound> => ast::Pat::Range(l, false, r),
+    <l:RangePatternBound> DotDotEq <r:RangePatternBound> => ast::Pat::Range(l, true, r),
+    /// https://doc.rust-lang.org/reference/patterns.html#struct-patterns
+    <path:PathInExpression> BraceOpen <elems:StructPatternElements> BraceClose => ast::Pat::Struct(path, elems.0, elems.1),
+    /// https://doc.rust-lang.org/reference/patterns.html#tuple-struct-patterns
+    <path: PathInExpression> ParenOpen <pats:VecComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, pats, None),
+    <path: PathInExpression> ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, ast::Comma(left), Some(right)),
+    /// https://doc.rust-lang.org/reference/patterns.html#tuple-patterns and https://doc.rust-lang.org/reference/patterns.html#grouped-patterns
+    ParenOpen <VecComma<Pat>> ParenClose => ast::Pat::Tuple(<>, None),
+    ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::Tuple(ast::Comma(left), Some(right)),
+    /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
+    BraceOpen <VecComma<Pat>> BraceClose => ast::Pat::Slice(<>),
+
+    // MacroInvocation => ast::Pat::Macro(<>),
+};
+
+RangePatternBound: ast::Expr = {
+    LiteralExpression,
+    PathInExpression => ast::Expr::Path(<>),
+};
+
+StructPatternElements: (ast::Comma<ast::StructPatternField>, Option<()>) = {
+    DotDot => (ast::Comma(vec![]), Some(())),
+    <first:StructPatternField> <mut rest:(Comma <StructPatternField>)*> Comma? => (ast::Comma({ rest.insert(0, first); rest }), None),
+    <first:StructPatternField> <mut rest:(Comma <StructPatternField>)*> Comma DotDot => (ast::Comma({ rest.insert(0, first); rest }), Some(())),
+};
+
+StructPatternField: ast::StructPatternField = {
+    <val:Int> <pat:Pat> => ast::StructPatternField::TuplePat(val, Box::new(pat)),
+    <ident:Ident> <pat:Pat> => ast::StructPatternField::IdentPat(ident, Box::new(pat)),
+    Ident => ast::StructPatternField::Ident(<>),
+};
