@@ -153,6 +153,91 @@ Ident: ast::Ident = Identifier => ast::Ident {
     inner: <>.to_string()
 };
 
+
+/// https://doc.rust-lang.org/reference/tokens.html
+Token: &'input str = {
+    If,
+    Else,
+    As,
+    Match,
+    Let,
+    Return,
+    Fn,
+    Mut,
+    In,
+    Pub,
+    Mod,
+    Struct,
+    Entity,
+    Enum,
+    Const,
+    Impl,
+    Bag,
+    Ring,
+    Crate,
+    Super,
+    LowerSelf,
+    UpperSelf,
+    TokenType,
+    Use,
+    Macro,
+    For,
+    Plus,
+    Minus,
+    Star,
+    StarStar,
+    Slash,
+    Percent,
+    Caret,
+    Not,
+    And,
+    Or,
+    AndAnd,
+    OrOr,
+    Shl,
+    Shr,
+    PlusEq,
+    MinusEq,
+    StarEq,
+    StarStarEq,
+    SlashEq,
+    PercentEq,
+    CaretEq,
+    AndEq,
+    OrEq,
+    ShlEq,
+    ShrEq,
+    Eq,
+    EqEq,
+    Ne,
+    Gt,
+    Lt,
+    Ge,
+    Le,
+    At,
+    Underscore,
+    Dot,
+    DotDot,
+    DotDotEq,
+    Comma,
+    Semi,
+    Colon,
+    PathSep,
+    RArrow,
+    FatArrow,
+    Pound,
+    Dollar,
+    Question,
+    Identifier,
+    Integer,
+    DecimalInteger,
+    HexInteger,
+    OctalInteger,
+    BinaryInteger,
+    BaseInteger,
+    FloatingPoint,
+};
+
 // i.e. 1_234_567_890
 Int: Int = Integer => Int::parse(<>).unwrap().into();
 
@@ -268,6 +353,257 @@ TypePath: ast::ExprPath = PathInExpression;
 // QualifiedPathInExpression: ast::ExprPath = QualifiedPathType (PathSep PathExprSegment)+;
 // QualifiedPathType: = Lt <ty:Type> (As <as:TypePath>)? Gt => QSelf
 
+/// https://doc.rust-lang.org/reference/macros.html
+// MacroInvocation: ast::MacroInvocation = <path:SimplePath> Not <tree:DelimTokenTree> => ast::MacroInvocation(path, tree);
+// MacroInvocationSemi: ast::MacroInvocation = {
+//     <path:SimplePath> Not ParenOpen <tree:TokenTree*> ParenClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+//     <path:SimplePath> Not BracketOpen <tree:TokenTree*> BracketClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+//     <path:SimplePath> Not BraceOpen <tree:TokenTree*> BraceClose => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
+// };
+
+TokenTree: Vec<String> = {
+    DelimTokenTree,
+    Token => vec![<>.to_string()],
+}
+
+DelimTokenTree: Vec<String> = {
+    ParenOpen <TokenTree*> ParenClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
+    BracketOpen <TokenTree*> BracketClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
+    BraceOpen <TokenTree*> BraceClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
+};
+
+/// https://doc.rust-lang.org/reference/macros-by-example.html
+MacroRulesDef: ast::Semi<ast::MacroRule> = {
+    ParenOpen <MacroRules> ParenClose Semi,
+    BracketOpen <MacroRules> BracketClose Semi,
+    BraceOpen <MacroRules> BraceClose,
+};
+MacroRules: ast::Semi<ast::MacroRule> = VecSemi<MacroRule>;
+MacroRule: ast::MacroRule = <matcher:MacroMatcher> FatArrow <transcriber:MacroTranscriber> => ast::MacroRule(matcher, transcriber);
+MacroTranscriber: Vec<String> = DelimTokenTree;
+MacroMatcher: ast::MacroMatcher = {
+    ParenOpen <MacroMatch*> ParenClose => ast::MacroMatcher(ast::Implicit(<>)),
+    BracketOpen <MacroMatch*> BracketClose => ast::MacroMatcher(ast::Implicit(<>)),
+    BraceOpen <MacroMatch*> BraceClose => ast::MacroMatcher(ast::Implicit(<>)),
+};
+MacroMatch: ast::MacroMatch = {
+    MacroMatchToken => ast::MacroMatch::Token(<>.to_string()),
+    Dollar <ident:Ident> Colon <spec:MacroFragSpec> => ast::MacroMatch::Fragment(ident, ast::MacroFragSpec::from_str(spec).unwrap()),
+    Dollar ParenOpen <matches:MacroMatch+> ParenClose <sep:MacroRepSep?> <op:MacroRepOp> => ast::MacroMatch::Rep(ast::Implicit(matches), sep.map(str::to_string), ast::MacroRepOp::from_str(op).unwrap()),
+    MacroMatcher => ast::MacroMatch::Matcher(<>),
+};
+
+MacroFragSpec: &'input str = {
+    BlockTok,
+    ExprTok,
+    IdentTok,
+    ItemTok,
+    LitTok,
+    MetaTok,
+    PatTok,
+    PathTok,
+    StmtTok,
+    TokenTreeTok,
+    TypeTok,
+    VisTok,
+};
+MacroRepOp: &'input str = { Plus, Star, Question };
+MacroRepSep: &'input str = {
+    // Plus,
+    Minus,
+    // Star,
+    StarStar,
+    Slash,
+    Percent,
+    Caret,
+    Not,
+    And,
+    Or,
+    AndAnd,
+    OrOr,
+    Shl,
+    Shr,
+    PlusEq,
+    MinusEq,
+    StarEq,
+    StarStarEq,
+    SlashEq,
+    PercentEq,
+    CaretEq,
+    AndEq,
+    OrEq,
+    ShlEq,
+    ShrEq,
+    Eq,
+    EqEq,
+    Ne,
+    Gt,
+    Lt,
+    Ge,
+    Le,
+    At,
+    Underscore,
+    Dot,
+    DotDot,
+    DotDotEq,
+    Comma,
+    Semi,
+    Colon,
+    PathSep,
+    RArrow,
+    FatArrow,
+    Pound,
+    Dollar,
+    // Question,
+};
+
+MacroMatchToken: &'input str = {
+    Plus,
+    Minus,
+    Star,
+    StarStar,
+    Slash,
+    Percent,
+    Caret,
+    Not,
+    And,
+    Or,
+    AndAnd,
+    OrOr,
+    Shl,
+    Shr,
+    PlusEq,
+    MinusEq,
+    StarEq,
+    StarStarEq,
+    SlashEq,
+    PercentEq,
+    CaretEq,
+    AndEq,
+    OrEq,
+    ShlEq,
+    ShrEq,
+    Eq,
+    EqEq,
+    Ne,
+    Gt,
+    Lt,
+    Ge,
+    Le,
+    At,
+    Underscore,
+    Dot,
+    DotDot,
+    DotDotEq,
+    Comma,
+    Semi,
+    Colon,
+    PathSep,
+    RArrow,
+    FatArrow,
+    Pound,
+    // Dollar,
+    Question,
+};
+
+/// https://doc.rust-lang.org/reference/items.html
+Item: ast::Item = {
+    /// https://doc.rust-lang.org/reference/items/modules.html
+    <vis:Visibility?> Mod <ident:Ident> BraceOpen <items:Item*> BraceClose => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
+    <vis:Visibility?> Mod <ident:Ident> Semi => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
+
+    /// https://doc.rust-lang.org/reference/items/use-declarations.html
+    <vis:Visibility?> Use <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), tree),
+
+    /// https://doc.rust-lang.org/reference/items/functions.html
+    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
+
+    /// https://doc.rust-lang.org/reference/items/type-aliases.html
+    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> Eq <ty:Type> Semi => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
+
+    /// https://doc.rust-lang.org/reference/items/structs.html
+    <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+
+    /// https://doc.rust-lang.org/reference/items/enumerations.html
+    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
+
+    /// https://doc.rust-lang.org/reference/items/constant-items.html
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
+
+    /// https://doc.rust-lang.org/reference/items/implementations.html
+    Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
+
+    <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+    <vis:Visibility?> Bag <ident:Ident> ParenOpen <lits:VecComma<Lit>> ParenClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
+    <vis:Visibility?> Ring <ident:Ident> ParenOpen <begin:Lit> DotDot <inclusive:Eq?> <end:Lit> ParenClose => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
+
+    <vis:Visibility?> Macro Not <ident:Ident> <rules:MacroRulesDef> => ast::Item::Macro(vis.unwrap_or_default(), ident, rules),
+};
+
+/// https://doc.rust-lang.org/reference/items/use-declarations.html
+UseTree: ast::UseTree = {
+    // <path:(<SimplePath> PathSep)> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
+    // <path:(<SimplePath> PathSep)> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
+    // <path:(<SimplePath> PathSep)> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(path, rename))),
+    SimplePath => ast::UseTree::Name(<>),
+};
+
+/// https://doc.rust-lang.org/reference/items/functions.html
+Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> ParenClose <output:(RArrow <Type>)?> => ast::Sig {
+    ident,
+    generics: generics.unwrap_or_default(),
+    inputs,
+    output,
+};
+FnArgs: ast::Comma<ast::FnArg> = {
+    <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
+    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
+        args.0.insert(0, ast::FnArg::Receiver);
+        args
+    },
+    VecComma<FnArg>,
+};
+FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
+
+/// https://doc.rust-lang.org/reference/items/structs.html
+Fields: ast::Fields = {
+    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <VecComma<UnnamedField>> ParenClose => ast::Fields::Unnamed(<>),
+};
+NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> Colon <ty:Type> => ast::NamedField { vis: vis.unwrap_or_default(), ident, ty };
+UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis: vis.unwrap_or_default(), ty };
+
+/// https://doc.rust-lang.org/reference/items/enumerations.html
+Variant: ast::Variant = {
+    <ident:Ident> <fields:Fields?> => ast::Variant::Field(ident, fields.unwrap_or(ast::Fields::Unit)),
+    <ident:Ident> Eq <discriminant:Expr> => ast::Variant::Discrim(ident, discriminant),
+};
+
+/// https://doc.rust-lang.org/reference/items/implementations.html
+ImplItem: ast::ImplItem = {
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
+    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
+};
+
+/// https://doc.rust-lang.org/reference/items/generics.html
+Generics: ast::Generics = Lt <VecComma<GenericParam>> Gt => ast::Generics { params: <> };
+
+GenericParam: ast::GenericParam = {
+    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
+};
+
+/// https://doc.rust-lang.org/reference/visibility-and-privacy.html
+/// decided not to support crate keyword
+Visibility: ast::Vis = {
+    Pub => ast::Vis::Pub,
+    Pub ParenOpen Super ParenClose => ast::Vis::Pub,
+    Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
+    Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
+    Pub ParenOpen In <SimplePath> ParenClose => ast::Vis::Restricted(<>),
+};
+
+/// https://doc.rust-lang.org/reference/types.html
 pub Type: ast::Type = {
     BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
     TypePath => ast::Type::Path(<>),
@@ -571,308 +907,3 @@ pub Pat: ast::Pat = {
     Ident => ast::Pat::Ident(<>),
     IntLit => ast::Pat::Lit(<>),
 }
-
-Visibility: ast::Vis = {
-    Pub => ast::Vis::Pub,
-    Crate => ast::Vis::Crate,
-    Pub ParenOpen Super ParenClose => ast::Vis::Pub,
-    Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
-    Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
-    Pub ParenOpen In <SimplePath> ParenClose => ast::Vis::Restricted(<>),
-};
-
-Field: ast::Field = <ident: Ident> Colon <ty:Type> => ast::Field { ident, ty };
-
-Fields: ast::Fields = {
-    BraceOpen <VecComma<Field>> BraceClose => ast::Fields::Named(<>),
-    ParenOpen <VecComma<Type>> ParenClose => ast::Fields::Unnamed(<>),
-};
-
-Variant: ast::Variant = <ident:Ident> <fields:Fields?> <discriminant:(Eq <Expr>)?> => ast::Variant { ident, fields: fields.unwrap_or(ast::Fields::Unit), discriminant };
-
-GenericParam: ast::GenericParam = {
-    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
-    Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
-};
-Generics: ast::Generics = Le <VecComma<GenericParam>> Ge => ast::Generics { params: <> };
-
-FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
-
-FnArgs: ast::Comma<ast::FnArg> = {
-    <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
-    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
-        args.0.insert(0, ast::FnArg::Receiver);
-        args
-    },
-    VecComma<FnArg>,
-};
-
-Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> ParenClose <output:(RArrow <Type>)?> => ast::Sig {
-    ident,
-    generics: generics.unwrap_or_default(),
-    inputs,
-    output,
-};
-
-UseTree: ast::UseTree = {
-    <path:(<Ident> PathSep)> <tree:UseTree> => ast::UseTree::Path(path, Box::new(tree)),
-    <group:(BraceOpen <VecComma<UseTree>> BraceClose)> => ast::UseTree::Group(group),
-    <name:Ident> As <rename:Ident> => ast::UseTree::Rename(name, rename),
-    Star => ast::UseTree::Glob,
-    Ident => ast::UseTree::Name(<>),
-};
-
-ImplItem: ast::ImplItem = {
-    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
-    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
-};
-
-/// https://doc.rust-lang.org/reference/tokens.html
-Token: &'input str = {
-    If,
-    Else,
-    As,
-    Match,
-    Let,
-    Return,
-    Fn,
-    Mut,
-    In,
-    Pub,
-    Mod,
-    Struct,
-    Entity,
-    Enum,
-    Const,
-    Impl,
-    Bag,
-    Ring,
-    Crate,
-    Super,
-    LowerSelf,
-    UpperSelf,
-    TokenType,
-    Use,
-    Macro,
-    For,
-    Plus,
-    Minus,
-    Star,
-    StarStar,
-    Slash,
-    Percent,
-    Caret,
-    Not,
-    And,
-    Or,
-    AndAnd,
-    OrOr,
-    Shl,
-    Shr,
-    PlusEq,
-    MinusEq,
-    StarEq,
-    StarStarEq,
-    SlashEq,
-    PercentEq,
-    CaretEq,
-    AndEq,
-    OrEq,
-    ShlEq,
-    ShrEq,
-    Eq,
-    EqEq,
-    Ne,
-    Gt,
-    Lt,
-    Ge,
-    Le,
-    At,
-    Underscore,
-    Dot,
-    DotDot,
-    DotDotEq,
-    Comma,
-    Semi,
-    Colon,
-    PathSep,
-    RArrow,
-    FatArrow,
-    Pound,
-    Dollar,
-    Question,
-    Identifier,
-    Integer,
-    DecimalInteger,
-    HexInteger,
-    OctalInteger,
-    BinaryInteger,
-    BaseInteger,
-    FloatingPoint,
-};
-
-TokenTree: Vec<String> = {
-    DelimTokenTree,
-    Token => vec![<>.to_string()],
-}
-
-DelimTokenTree: Vec<String> = {
-    ParenOpen <TokenTree*> ParenClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-    BracketOpen <TokenTree*> BracketClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-    BraceOpen <TokenTree*> BraceClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-};
-
-MacroFragSpec: &'input str = {
-    BlockTok,
-    ExprTok,
-    IdentTok,
-    ItemTok,
-    LitTok,
-    MetaTok,
-    PatTok,
-    PathTok,
-    StmtTok,
-    TokenTreeTok,
-    TypeTok,
-    VisTok,
-};
-MacroRepOp: &'input str = { Plus, Star, Question };
-MacroRepSep: &'input str = {
-    // Plus,
-    Minus,
-    // Star,
-    StarStar,
-    Slash,
-    Percent,
-    Caret,
-    Not,
-    And,
-    Or,
-    AndAnd,
-    OrOr,
-    Shl,
-    Shr,
-    PlusEq,
-    MinusEq,
-    StarEq,
-    StarStarEq,
-    SlashEq,
-    PercentEq,
-    CaretEq,
-    AndEq,
-    OrEq,
-    ShlEq,
-    ShrEq,
-    Eq,
-    EqEq,
-    Ne,
-    Gt,
-    Lt,
-    Ge,
-    Le,
-    At,
-    Underscore,
-    Dot,
-    DotDot,
-    DotDotEq,
-    Comma,
-    Semi,
-    Colon,
-    PathSep,
-    RArrow,
-    FatArrow,
-    Pound,
-    Dollar,
-    // Question,
-};
-
-MacroMatchToken: &'input str = {
-    Plus,
-    Minus,
-    Star,
-    StarStar,
-    Slash,
-    Percent,
-    Caret,
-    Not,
-    And,
-    Or,
-    AndAnd,
-    OrOr,
-    Shl,
-    Shr,
-    PlusEq,
-    MinusEq,
-    StarEq,
-    StarStarEq,
-    SlashEq,
-    PercentEq,
-    CaretEq,
-    AndEq,
-    OrEq,
-    ShlEq,
-    ShrEq,
-    Eq,
-    EqEq,
-    Ne,
-    Gt,
-    Lt,
-    Ge,
-    Le,
-    At,
-    Underscore,
-    Dot,
-    DotDot,
-    DotDotEq,
-    Comma,
-    Semi,
-    Colon,
-    PathSep,
-    RArrow,
-    FatArrow,
-    Pound,
-    // Dollar,
-    Question,
-};
-MacroMatch: ast::MacroMatch = {
-    MacroMatchToken => ast::MacroMatch::Token(<>.to_string()),
-    Dollar <ident:Ident> Colon <spec:MacroFragSpec> => ast::MacroMatch::Fragment(ident, ast::MacroFragSpec::from_str(spec).unwrap()),
-    Dollar ParenOpen <matches:MacroMatch+> ParenClose <sep:MacroRepSep?> <op:MacroRepOp> => ast::MacroMatch::Rep(ast::Implicit(matches), sep.map(str::to_string), ast::MacroRepOp::from_str(op).unwrap()),
-    MacroMatcher => ast::MacroMatch::Matcher(<>),
-}
-MacroMatcher: ast::MacroMatcher = {
-    ParenOpen <MacroMatch*> ParenClose => ast::MacroMatcher(ast::Implicit(<>)),
-    BracketOpen <MacroMatch*> BracketClose => ast::MacroMatcher(ast::Implicit(<>)),
-    BraceOpen <MacroMatch*> BraceClose => ast::MacroMatcher(ast::Implicit(<>)),
-};
-MacroTranscriber: Vec<String> = DelimTokenTree;
-MacroRule: ast::MacroRule = <matcher:MacroMatcher> FatArrow <transcriber:MacroTranscriber> => ast::MacroRule(matcher, transcriber);
-MacroRules: ast::Semi<ast::MacroRule> = VecSemi<MacroRule>;
-MacroRulesDef: ast::Semi<ast::MacroRule> = {
-    ParenOpen <MacroRules> ParenClose Semi,
-    BracketOpen <MacroRules> BracketClose Semi,
-    BraceOpen <MacroRules> BraceClose,
-};
-
-Item: ast::Item = {
-    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
-
-    <vis:Visibility?> Mod <ident:Ident> BraceOpen <items:Item*> BraceClose => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
-    <vis:Visibility?> Mod <ident:Ident> Semi => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
-
-    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
-
-    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> Eq <ty:Type> Semi => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
-
-    <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-    <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
-
-    <vis:Visibility?> Bag <ident:Ident> ParenOpen <lits:VecComma<Lit>> ParenClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
-    <vis:Visibility?> Ring <ident:Ident> ParenOpen <begin:Lit> DotDot <inclusive:Eq?> <end:Lit> ParenClose => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
-
-    <vis:Visibility?> Use <colon:PathSep?> <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), colon.is_some(), tree),
-
-    Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
-    <vis:Visibility?> Macro Not <ident:Ident> <rules:MacroRulesDef> => ast::Item::Macro(vis.unwrap_or_default(), ident, rules),
-};

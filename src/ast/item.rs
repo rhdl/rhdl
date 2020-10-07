@@ -69,32 +69,35 @@ impl Default for Generics {
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
-#[display(fmt = "{}: {}", ident, ty)]
-pub struct Field {
+#[display(fmt = "{}{}: {}", vis, ident, ty)]
+pub struct NamedField {
+    pub vis: Vis,
     pub ident: Ident,
+    pub ty: Type,
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}{}", vis, ty)]
+pub struct UnnamedField {
+    pub vis: Vis,
     pub ty: Type,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Fields {
     #[display(fmt = "{{ {} }}", _0)]
-    Named(Comma<Field>),
+    Named(Comma<NamedField>),
     #[display(fmt = "({})", _0)]
-    Unnamed(Comma<Type>),
+    Unnamed(Comma<UnnamedField>),
     Unit,
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
-#[display(
-    fmt = "{}{}{}",
-    ident,
-    fields,
-    "discriminant.as_ref().map(|x| format!(\"= {}\", x)).unwrap_or_default()"
-)]
-pub struct Variant {
-    pub ident: Ident,
-    pub fields: Fields,
-    pub discriminant: Option<Expr>,
+pub enum Variant {
+    #[display(fmt = "{}{}", _0, _1)]
+    Field(Ident, Fields),
+    #[display(fmt = "{} = {}", _0, _1)]
+    Discrim(Ident, Expr),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
@@ -131,14 +134,14 @@ pub enum ImplItem {
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum UseTree {
     #[display(fmt = "{}::{}", _0, _1)]
-    Path(Ident, Box<Self>),
+    Path(SimplePath, Box<Self>),
     #[display(fmt = "{}", _0)]
-    Name(Ident),
+    Name(SimplePath),
     #[display(fmt = "{} as {}", _0, _1)]
-    Rename(Ident, Ident),
+    Rename(SimplePath, Ident),
     #[display(fmt = "*")]
     Glob,
-    #[display(fmt = "{}", _0)]
+    #[display(fmt = "{{ {} }}", _0)]
     Group(Comma<UseTree>),
 }
 
@@ -201,8 +204,8 @@ pub enum Item {
     /// todo: implement traits in ast and grammar
     Trait,
     /// Import entities, functions, etc. from other modules
-    #[display(fmt = "{}use {}{};", _0, "if *_1 { \"::\" } else { \"\" }", _2)]
-    Use(Vis, bool, UseTree),
+    #[display(fmt = "{}use {};", _0, _1)]
+    Use(Vis, UseTree),
     /// Don't repeat yourself
     #[display(fmt = "{}macro! {} {{ {} }}", _0, _1, _2)]
     Macro(Vis, Ident, Semi<MacroRule>),
