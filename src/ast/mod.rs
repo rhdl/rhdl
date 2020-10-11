@@ -2,6 +2,7 @@ use derive_more::Display;
 
 use std::fmt::{self, Debug, Display, Formatter};
 
+
 macro_rules! punct {
     ($ident: ident, $punct:expr, $delimit_last: expr) => {
         #[derive(Clone, Debug, PartialEq, Default)]
@@ -59,13 +60,14 @@ pub struct Block(pub Vec<Stmt>);
 
 impl Display for Block {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        write!(f, "{{ ")?;
         for stmt in self.0.iter().take(self.0.len().saturating_sub(1)) {
             write!(f, "{} ", stmt)?;
         }
         if let Some(stmt) = self.0.last() {
-            write!(f, "{}", stmt)?;
+            write!(f, "{} ", stmt)?;
         }
-        Ok(())
+        write!(f, "}}")
     }
 }
 
@@ -102,7 +104,7 @@ impl Display for SimplePath {
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Stmt {
     #[display(
-        fmt = "(let {}{} {});",
+        fmt = "let {} = {} {};",
         _0,
         "_1.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()",
         "_2.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"

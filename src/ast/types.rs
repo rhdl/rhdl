@@ -2,7 +2,7 @@ use derive_more::Display;
 
 use super::*;
 
-pub type TypePath = ExprPath;
+pub type TypePath = SimplePath;
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Type {

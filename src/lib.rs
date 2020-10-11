@@ -74,20 +74,23 @@ mod tests {
         }
         for op in UnOp::variants().iter().map(ToString::to_string) {
             parse!(
-                format!("{}a", op) => format!("({} a)", op),
-                format!("{}0", op) => format!("({} 0)", op),
-                format!("{}{{0}}", op) => format!("({} 0)", op)
+                format!("{}a", op) => format!("{}a", op),
+                format!("{}0", op) => format!("{}0", op),
+                format!("{}{{0}}", op) => format!("{}{{ 0 }}", op)
             );
         }
-        for op in BinOp::variants()
-            .iter()
-            .map(ToString::to_string)
-            .chain(AssOp::variants().iter().map(ToString::to_string))
-        {
+        for op in BinOp::variants().iter().map(ToString::to_string) {
             parse!(
-                format!("a {} 0", op) => format!("({} a 0)", op),
-                format!("a {} b", op) => format!("({} a b)", op),
-                format!("a {} {{ b }}", op) => format!("({} a b)", op)
+                format!("a {} 0", op) => format!("a {} 0", op),
+                format!("a {} b", op) => format!("a {} b", op),
+                format!("a {} {{ b }}", op) => format!("a {} {{ b }}", op)
+            );
+        }
+        for op in AssOp::variants().iter().map(ToString::to_string) {
+            parse!(
+                format!("{{ a {} 0; }}", op) => format!("{{ a {} 0; }}", op),
+                format!("{{ a {} b; }}", op) => format!("{{ a {} b; }}", op),
+                format!("{{ a {} {{ b }}; }}", op) => format!("{{ a {} {{ b }}; }}", op)
             );
         }
     }
@@ -102,19 +105,42 @@ mod tests {
             };
         }
         parse!(
-            "{}" => "",
+            "{}" => "{ }",
             "a" => "a",
-            "{ a }" => "a",
-            "if a >= 4 {}" => "(if (>= a 4) )",
-            "if a >= 4 {} else {}" => "(if (>= a 4)  (else ))",
-            "if a >= 4 {} else if a < 0 {} else if a > 0 {} else {}" => "(if (>= a 4)  (else (if (< a 0)  (else (if (> a 0)  (else ))))))",
-            "a = b == c | d ^ e & f << g + h * i ** !j" => "(= a (== b (| c (^ d (& e (<< f (+ g (* h (** i (! j))))))))))",
-            "a += !b ** c * d + e << f & g ^ h | i == j" => "(+= a (== (| (^ (& (<< (+ (* (** (! b) c) d) e) f) g) h) i) j))",
-            "if a >= 4 { a = 4; b } else if a < 0 { a = 0; c } else { a +=1; d }" => "(if (>= a 4) (= a 4); b (else (if (< a 0) (= a 0); c (else (+= a 1); d))))",
-            "{ let x: u2 = 0; match x { 0 => a(), 1 => b(), 2 => c(), 3 => d(), }; }" => "(let x: u2 0); (match x (=> 0 a()), (=> 1 b()), (=> 2 c()), (=> 3 d()));",
-            "{ let x = if a { 0 } else { 1 }; }" => "(let x (if a 0 (else 1)));",
-            "{ if a { 0 } else { 1 }; }" => "(if a 0 (else 1));",
-            "x += if a { 0 } else { 1 }" => "(+= x (if a 0 (else 1)))"
+            "4" => "4",
+            "{ a }" => "{ a }",
+            "[4; 5 ]" => "[4; 5]",
+            "0..=9" => "0..=9",
+            "point.x" => "point.x",
+            "call()" => "call()",
+            "x.call()" => "x.call()",
+            "x[0]" => "x[0]",
+            "[0,1,2,3,4,5]" => "[0, 1, 2, 3, 4, 5]",
+            "(0,1,2,3,4,4.5)" => "(0, 1, 2, 3, 4, 4.5)",
+            "x as y" => "x as y",
+            "if a >= 4 {}" => "if a >= 4 { }",
+            "if a >= 4 {} else {}" => "if a >= 4 { } else { }",
+            "if a >= 4 {} else if a < 0 {} else if a > 0 {} else {}" => "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
+            "match x { 0 => {}, 1 => { y }, _ if x != 2 => { }, 2 => { } }" => "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
+            "{ return a; }" => "{ return a; }",
+            "Struct { x, y, z }" => "Struct { x, y, z }",
+            "Struct { x: a, y: b, z: c }" => "Struct { x: a, y: b, z: c }",
+            "Struct { x, .. z }" => "Struct { x, .. z }",
+            "Struct { .. z }" => "Struct { .. z }"
         );
     }
+
+    // #[test]
+    // fn file_parser() {
+    //     macro_rules! parse {
+    //         ($($input: expr => $expected: expr),+) => {
+    //             $(
+    //                 assert_eq!(FileParser::new().parse($input).map(|output| format!("{}", output)), Ok($expected.to_string()));
+    //             )+
+    //         };
+    //     }
+    //     parse!(
+    //         include_str!("../examples/tmds_channel.rhdl") => ""
+    //     );
+    // }
 }

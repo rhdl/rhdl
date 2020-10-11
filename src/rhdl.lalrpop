@@ -153,91 +153,6 @@ Ident: ast::Ident = Identifier => ast::Ident {
     inner: <>.to_string()
 };
 
-
-/// https://doc.rust-lang.org/reference/tokens.html
-// Token: &'input str = {
-//     If,
-//     Else,
-//     As,
-//     Match,
-//     Let,
-//     Return,
-//     Fn,
-//     Mut,
-//     In,
-//     Pub,
-//     Mod,
-//     Struct,
-//     Entity,
-//     Enum,
-//     Const,
-//     Impl,
-//     Bag,
-//     Ring,
-//     Crate,
-//     Super,
-//     LowerSelf,
-//     UpperSelf,
-//     TokenType,
-//     Use,
-//     Macro,
-//     For,
-//     Plus,
-//     Minus,
-//     Star,
-//     StarStar,
-//     Slash,
-//     Percent,
-//     Caret,
-//     Not,
-//     And,
-//     Or,
-//     AndAnd,
-//     OrOr,
-//     Shl,
-//     Shr,
-//     PlusEq,
-//     MinusEq,
-//     StarEq,
-//     StarStarEq,
-//     SlashEq,
-//     PercentEq,
-//     CaretEq,
-//     AndEq,
-//     OrEq,
-//     ShlEq,
-//     ShrEq,
-//     Eq,
-//     EqEq,
-//     Ne,
-//     Gt,
-//     Lt,
-//     Ge,
-//     Le,
-//     At,
-//     Underscore,
-//     Dot,
-//     DotDot,
-//     DotDotEq,
-//     Comma,
-//     Semi,
-//     Colon,
-//     PathSep,
-//     RArrow,
-//     FatArrow,
-//     Pound,
-//     Dollar,
-//     Question,
-//     Identifier,
-//     Integer,
-//     DecimalInteger,
-//     HexInteger,
-//     OctalInteger,
-//     BinaryInteger,
-//     BaseInteger,
-//     FloatingPoint,
-// };
-
 // i.e. 1_234_567_890
 Int: Int = Integer => Int::parse(<>).unwrap().into();
 
@@ -319,332 +234,65 @@ Lit: ast::Lit = {
 };
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
-SimplePath: ast::SimplePath = <leading_colon:PathSep?> <mut segments:(<SimplePathSegment> PathSep)*> <last:SimplePathSegment> => {
-    segments.push(last);
-    ast::SimplePath { leading_colon: leading_colon.map(|_| ()), segments, }
+Path: ast::SimplePath = {
+    <leading_colon:PathSep?> <path:(<PathSegment> PathSep)*> <final_path:PathSegment> => {
+        let mut v = path;
+        v.push(final_path);
+        ast::SimplePath {
+            leading_colon: leading_colon.map(|_| ()),
+            segments: v,
+        }
+    }
 };
-SimplePathSegment: ast::Ident = {
+
+PathSegment: ast::Ident = {
     Identifier => ast::Ident { inner: <>.to_string() },
     LowerSelf => ast::Ident { inner: <>.to_string() },
     Super => ast::Ident { inner: <>.to_string() },
     Crate => ast::Ident { inner: <>.to_string() },
 };
 
-/// https://doc.rust-lang.org/reference/paths.html#paths-in-expressions
-PathInExpression: ast::ExprPath = <leading_colon:PathSep?> <mut segments:(<PathExprSegment> PathSep)*> <last:PathExprSegment> => {
-    segments.push(last);
-    ast::ExprPath { leading_colon: leading_colon.map(|_| ()), segments, qself: None, }
-};
-PathExprSegment: ast::ExprPathSegment = SimplePathSegment => ast::ExprPathSegment { ident: <>, args: None, };
-GenericArgs: ast::GenericArgs = {
-    Lt Gt => ast::GenericArgs { tys: vec![].into(), bindings: vec![].into() },
-    Lt <VecComma<Type>> Gt => ast::GenericArgs { tys: <>, bindings: vec![].into() },
-    Lt <VecComma<GenericArgsBinding>> Gt => ast::GenericArgs { tys: vec![].into(), bindings: <> },
-    Lt <first:Type> <mut rest:(Comma <Type>)*> Comma <bindings:VecComma<GenericArgsBinding>> Gt => ast::GenericArgs { tys: { rest.insert(0, first); ast::Comma(rest) }, bindings, },
-};
-GenericArgsBinding: ast::GenericArgsBinding = <ident:Ident> Eq <ty:Type> => ast::GenericArgsBinding { ident, ty: Box::new(ty) };
-
-/// TODO: Short-circuit this for now and revisit later
-/// https://doc.rust-lang.org/reference/paths.html#qualified-paths
-TypePath: ast::ExprPath = PathInExpression;
-
-/// TODO: implement qself
-/// https://doc.rust-lang.org/reference/paths.html#qualified-paths
-// QualifiedPathInExpression: ast::ExprPath = QualifiedPathType (PathSep PathExprSegment)+;
-// QualifiedPathType: = Lt <ty:Type> (As <as:TypePath>)? Gt => QSelf
-
-// TODO: allow macros in grammar
-// /// https://doc.rust-lang.org/reference/macros.html
-// MacroInvocation: ast::MacroInvocation = <path:SimplePath> Not <tree:DelimTokenTree> => ast::MacroInvocation(path, tree);
-// MacroInvocationSemi: ast::MacroInvocation = {
-//     <path:SimplePath> Not ParenOpen <tree:TokenTree*> ParenClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-//     <path:SimplePath> Not BracketOpen <tree:TokenTree*> BracketClose Semi => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-//     <path:SimplePath> Not BraceOpen <tree:TokenTree*> BraceClose => ast::MacroInvocation(path, tree.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>()),
-// };
-
-// TokenTree: Vec<String> = {
-//     DelimTokenTree,
-//     Token => vec![<>.to_string()],
-// }
-
-// DelimTokenTree: Vec<String> = {
-//     ParenOpen <TokenTree*> ParenClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-//     BracketOpen <TokenTree*> BracketClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-//     BraceOpen <TokenTree*> BraceClose => <>.iter().flatten().map(|x| x.to_string()).collect::<Vec<String>>(),
-// };
-
-// /// https://doc.rust-lang.org/reference/macros-by-example.html
-// MacroRulesDef: ast::Semi<ast::MacroRule> = {
-//     ParenOpen <MacroRules> ParenClose Semi,
-//     BracketOpen <MacroRules> BracketClose Semi,
-//     BraceOpen <MacroRules> BraceClose,
-// };
-// MacroRules: ast::Semi<ast::MacroRule> = VecSemi<MacroRule>;
-// MacroRule: ast::MacroRule = <matcher:MacroMatcher> FatArrow <transcriber:MacroTranscriber> => ast::MacroRule(matcher, transcriber);
-// MacroTranscriber: Vec<String> = DelimTokenTree;
-// MacroMatcher: ast::MacroMatcher = {
-//     ParenOpen <MacroMatch*> ParenClose => ast::MacroMatcher(ast::Implicit(<>)),
-//     BracketOpen <MacroMatch*> BracketClose => ast::MacroMatcher(ast::Implicit(<>)),
-//     BraceOpen <MacroMatch*> BraceClose => ast::MacroMatcher(ast::Implicit(<>)),
-// };
-// MacroMatch: ast::MacroMatch = {
-//     MacroMatchToken => ast::MacroMatch::Token(<>.to_string()),
-//     Dollar <ident:Ident> Colon <spec:MacroFragSpec> => ast::MacroMatch::Fragment(ident, ast::MacroFragSpec::from_str(spec).unwrap()),
-//     Dollar ParenOpen <matches:MacroMatch+> ParenClose <sep:MacroRepSep?> <op:MacroRepOp> => ast::MacroMatch::Rep(ast::Implicit(matches), sep.map(str::to_string), ast::MacroRepOp::from_str(op).unwrap()),
-//     MacroMatcher => ast::MacroMatch::Matcher(<>),
-// };
-
-// MacroFragSpec: &'input str = {
-//     BlockTok,
-//     ExprTok,
-//     IdentTok,
-//     ItemTok,
-//     LitTok,
-//     MetaTok,
-//     PatTok,
-//     PathTok,
-//     StmtTok,
-//     TokenTreeTok,
-//     TypeTok,
-//     VisTok,
-// };
-// MacroRepOp: &'input str = { Plus, Star, Question };
-// MacroRepSep: &'input str = {
-//     // Plus,
-//     Minus,
-//     // Star,
-//     StarStar,
-//     Slash,
-//     Percent,
-//     Caret,
-//     Not,
-//     And,
-//     Or,
-//     AndAnd,
-//     OrOr,
-//     Shl,
-//     Shr,
-//     PlusEq,
-//     MinusEq,
-//     StarEq,
-//     StarStarEq,
-//     SlashEq,
-//     PercentEq,
-//     CaretEq,
-//     AndEq,
-//     OrEq,
-//     ShlEq,
-//     ShrEq,
-//     Eq,
-//     EqEq,
-//     Ne,
-//     Gt,
-//     Lt,
-//     Ge,
-//     Le,
-//     At,
-//     Underscore,
-//     Dot,
-//     DotDot,
-//     DotDotEq,
-//     Comma,
-//     Semi,
-//     Colon,
-//     PathSep,
-//     RArrow,
-//     FatArrow,
-//     Pound,
-//     Dollar,
-//     // Question,
-// };
-
-// MacroMatchToken: &'input str = {
-//     Plus,
-//     Minus,
-//     Star,
-//     StarStar,
-//     Slash,
-//     Percent,
-//     Caret,
-//     Not,
-//     And,
-//     Or,
-//     AndAnd,
-//     OrOr,
-//     Shl,
-//     Shr,
-//     PlusEq,
-//     MinusEq,
-//     StarEq,
-//     StarStarEq,
-//     SlashEq,
-//     PercentEq,
-//     CaretEq,
-//     AndEq,
-//     OrEq,
-//     ShlEq,
-//     ShrEq,
-//     Eq,
-//     EqEq,
-//     Ne,
-//     Gt,
-//     Lt,
-//     Ge,
-//     Le,
-//     At,
-//     Underscore,
-//     Dot,
-//     DotDot,
-//     DotDotEq,
-//     Comma,
-//     Semi,
-//     Colon,
-//     PathSep,
-//     RArrow,
-//     FatArrow,
-//     Pound,
-//     // Dollar,
-//     Question,
-// };
-
-/// https://doc.rust-lang.org/reference/items.html
-Item: ast::Item = {
-    /// https://doc.rust-lang.org/reference/items/modules.html
-    <vis:Visibility?> Mod <ident:Ident> BraceOpen <items:Item*> BraceClose => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Implicit(items))),
-    <vis:Visibility?> Mod <ident:Ident> Semi => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
-
-    /// https://doc.rust-lang.org/reference/items/use-declarations.html
-    <vis:Visibility?> Use <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), tree),
-
-    /// https://doc.rust-lang.org/reference/items/functions.html
-    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
-
-    /// https://doc.rust-lang.org/reference/items/type-aliases.html
-    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> Eq <ty:Type> Semi => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
-
-    /// https://doc.rust-lang.org/reference/items/structs.html
-    <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-
-    /// https://doc.rust-lang.org/reference/items/enumerations.html
-    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
-
-    /// https://doc.rust-lang.org/reference/items/constant-items.html
-    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
-
-    /// https://doc.rust-lang.org/reference/items/implementations.html
-    Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Implicit(items)),
-
-    <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:Fields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-    <vis:Visibility?> Bag <ident:Ident> ParenOpen <lits:VecComma<Lit>> ParenClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
-    <vis:Visibility?> Ring <ident:Ident> ParenOpen <begin:Lit> DotDot <inclusive:Eq?> <end:Lit> ParenClose => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, inclusive.is_some()),
-
-    // <vis:Visibility?> Macro Not <ident:Ident> <rules:MacroRulesDef> => ast::Item::Macro(vis.unwrap_or_default(), ident, rules),
-    // MacroInvocationSemi => ast::Item::MacroInvocation(<>),
-};
-
-/// https://doc.rust-lang.org/reference/items/use-declarations.html
-UseTree: ast::UseTree = {
-    // <path:(<SimplePath> PathSep)> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
-    // <path:(<SimplePath> PathSep)> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
-    // <path:(<SimplePath> PathSep)> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(path, rename))),
-    SimplePath => ast::UseTree::Name(<>),
-};
-
-/// https://doc.rust-lang.org/reference/items/functions.html
-Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> ParenClose <output:(RArrow <Type>)?> => ast::Sig {
-    ident,
-    generics: generics.unwrap_or_default(),
-    inputs,
-    output,
-};
-FnArgs: ast::Comma<ast::FnArg> = {
-    <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
-    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
-        args.0.insert(0, ast::FnArg::Receiver);
-        args
-    },
-    VecComma<FnArg>,
-};
-FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
-PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat, ty };
-
-/// https://doc.rust-lang.org/reference/items/structs.html
-Fields: ast::Fields = {
-    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
-    ParenOpen <VecComma<UnnamedField>> ParenClose => ast::Fields::Unnamed(<>),
-};
-NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> Colon <ty:Type> => ast::NamedField { vis: vis.unwrap_or_default(), ident, ty };
-UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis: vis.unwrap_or_default(), ty };
-
-/// https://doc.rust-lang.org/reference/items/enumerations.html
-Variant: ast::Variant = {
-    <ident:Ident> <fields:Fields?> => ast::Variant::Field(ident, fields.unwrap_or(ast::Fields::Unit)),
-    <ident:Ident> Eq <discriminant:Expr> => ast::Variant::Discrim(ident, discriminant),
-};
-
-/// https://doc.rust-lang.org/reference/items/implementations.html
-ImplItem: ast::ImplItem = {
-    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
-    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
-};
-
-/// https://doc.rust-lang.org/reference/items/generics.html
-Generics: ast::Generics = Lt <VecComma<GenericParam>> Gt => ast::Generics { params: <> };
-
-GenericParam: ast::GenericParam = {
-    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
-    Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
-};
-
 /// https://doc.rust-lang.org/reference/visibility-and-privacy.html
-/// decided not to support crate keyword
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub,
     Pub ParenOpen Super ParenClose => ast::Vis::Pub,
     Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
     Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
-    Pub ParenOpen In <SimplePath> ParenClose => ast::Vis::Restricted(<>),
+    Pub ParenOpen In <Path> ParenClose => ast::Vis::Restricted(<>),
 };
 
-/// https://doc.rust-lang.org/reference/types.html
-pub Type: ast::Type = {
-    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
-    TypePath => ast::Type::Path(<>),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
-    // MacroInvocation => ast::Type::MacroInvocation(<>),
-};
+/// https://doc.rust-lang.org/reference/expressions/literal-expr.html
+LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
+/// https://doc.rust-lang.org/reference/expressions/path-expr.html
+PathInExpression: ast::SimplePath = Path;
 
-LiteralExpression: ast::Expr = {
-    Lit => ast::Expr::Lit(<>),
-};
+/// https://doc.rust-lang.org/reference/expressions/block-expr.html
+BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
 
+Block: ast::Block = BraceOpen <v:Statements?> BraceClose => ast::Block(v.unwrap_or_default());
+
+/// https://doc.rust-lang.org/reference/statements.html
 Statement: ast::Stmt = {
-    Item => ast::Stmt::Item(<>),
+    /// https://doc.rust-lang.org/reference/statements.html#item-declarations
+    // Item => ast::Stmt::Item(<>),
+    /// https://doc.rust-lang.org/reference/statements.html#let-statements
     Let <pat:Pat> <ty:(Colon <Type>)?> <expr:(Eq <Expr>)?> Semi => ast::Stmt::Local(pat, ty, expr),
-    <expr:ExprWithoutBlockWithReturn> Semi => ast::Stmt::Expr(expr, true),
+    /// https://doc.rust-lang.org/reference/statements.html#expression-statements
+    <expr:ExprStmt> Semi => ast::Stmt::Expr(expr, true),
     <expr:ExprWithBlock> <semi:Semi?> => ast::Stmt::Expr(expr, semi.is_some()),
-    // MacroInvocation => ast::Stmt::MacroInvocation(<>),
 };
 
+/// https://doc.rust-lang.org/reference/expressions/block-expr.html
 Statements: Vec<ast::Stmt> = {
     <Statement+>,
-    <mut v:Statement+> <e:ExprWithoutBlockWithReturn> => {
+    <mut v:Statement+> <e:ExprStmt> => {
         v.push(ast::Stmt::Expr(e, false));
         v
     },
-    ExprWithoutBlockWithReturn => vec![ast::Stmt::Expr(<>, false)],
+    ExprStmt => vec![ast::Stmt::Expr(<>, false)],
 };
 
-Block: ast::Block = {
-    BraceOpen <mut v:Statements?> BraceClose => {
-        let v = v.unwrap_or_default();
-        ast::Block(v)
-    },
-};
-BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
-
-
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#negation-operators
 Unary: ast::Expr = {
     Minus <expr:ExprWithoutBlockOrOperator> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
     Minus <expr:ExprWithBlock> => ast::Expr::Unary(ast::UnOp::Neg, Box::new(expr)),
@@ -655,6 +303,7 @@ Unary: ast::Expr = {
     ExprWithoutBlockOrOperator,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 Cast: ast::Expr = {
     <expr:Unary> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
     <expr:ExprWithBlock> As <ty:Type> => ast::Expr::Cast(Box::new(expr), Box::new(ty)),
@@ -669,6 +318,7 @@ Arith0: ast::Expr = {
     Cast,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Arith1: ast::Expr = {
     <l:Arith1> Slash <r:Arith0> => ast::Expr::Binary(Box::new(l), ast::BinOp::Div, Box::new(r)),
     <l:Arith1> Slash <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Div, Box::new(r)),
@@ -682,6 +332,7 @@ Arith1: ast::Expr = {
     Arith0,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Arith2: ast::Expr = {
     <l:Arith2> Plus <r:Arith1> => ast::Expr::Binary(Box::new(l), ast::BinOp::Add, Box::new(r)),
     <l:Arith2> Plus <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Add, Box::new(r)),
@@ -692,6 +343,7 @@ Arith2: ast::Expr = {
     Arith1,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Bin0: ast::Expr = {
     <l:Bin0> Shr <r:Arith2> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shr, Box::new(r)),
     <l:Bin0> Shr <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Shr, Box::new(r)),
@@ -702,6 +354,7 @@ Bin0: ast::Expr = {
     Arith2,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Bin1: ast::Expr = {
     <l:Bin1> And <r:Bin0> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
     <l:Bin1> And <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitAnd, Box::new(r)),
@@ -709,6 +362,7 @@ Bin1: ast::Expr = {
     Bin0,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Bin2: ast::Expr = {
     <l:Bin2> Caret <r:Bin1> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
     <l:Bin2> Caret <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitXor, Box::new(r)),
@@ -716,6 +370,7 @@ Bin2: ast::Expr = {
     Bin1,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#arithmetic-and-logical-binary-operators
 Bin3: ast::Expr = {
     <l:Bin3> Or <r:Bin2> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
     <l:Bin3> Or <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::BitOr, Box::new(r)),
@@ -723,6 +378,7 @@ Bin3: ast::Expr = {
     Bin2,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#comparison-operators
 ComparisonExpression: ast::Expr = {
     <l:Bin3> EqEq <r:Bin3> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
     <l:Bin3> EqEq <r:ExprWithBlock> => ast::Expr::Binary(Box::new(l), ast::BinOp::Eq, Box::new(r)),
@@ -744,6 +400,8 @@ ComparisonExpression: ast::Expr = {
     Bin3,
 };
 
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#assignment-expressions
+/// https://doc.rust-lang.org/reference/expressions/operator-expr.html#compound-assignment-expressions
 AssignExpression: ast::Expr = {
     <l:ComparisonExpression> Eq <r:ComparisonExpression> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
     <l:ComparisonExpression> Eq <r:ExprWithBlock> => ast::Expr::Assign(Box::new(l), ast::AssOp::Eq, Box::new(r)),
@@ -784,37 +442,34 @@ AssignExpression: ast::Expr = {
     ComparisonExpression,
 };
 
-OperatorExpression: ast::Expr = AssignExpression;
-
+/// https://doc.rust-lang.org/reference/expressions/grouped-expr.html
 GroupedExpression: ast::Expr = ParenOpen <Expr> ParenClose;
 
+/// https://doc.rust-lang.org/reference/expressions/array-expr.html#array-expressions
 ArrayExpression: ast::Expr = {
     BracketOpen <val:Expr> Semi <repeat:Expr> BracketClose => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
     BracketOpen <VecComma<Expr>> BracketClose => ast::Expr::Array(<>),
 };
 
+/// https://doc.rust-lang.org/reference/expressions/array-expr.html#array-and-slice-indexing-expressions
 IndexExpression: ast::Expr = <on:ExprWithoutBlockOrOperator> BracketOpen <index:Expr> BracketClose => ast::Expr::Index(Box::new(on), Box::new(index));
 
+/// https://doc.rust-lang.org/reference/expressions/tuple-expr.html#tuple-expressions
+TupleExpression: ast::Expr = ParenOpen <TupleElements?> ParenClose => ast::Expr::Tuple(ast::Comma(<>.unwrap_or_default()));
 TupleElements: Vec<ast::Expr> = <mut v:(<Expr> Comma)+> <e:Expr?> => {
     if let Some(e) = e {
         v.push(e);
     }
     v
 };
-TupleExpression: ast::Expr = ParenOpen <TupleElements?> ParenClose => ast::Expr::Tuple(ast::Comma(<>.unwrap_or_default()));
 
-
+/// https://doc.rust-lang.org/reference/expressions/tuple-expr.html#tuple-indexing-expressions
 TupleIndexingExpression: ast::Expr = {
     <base:ExprWithBlock> Dot <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
     <base:ExprWithoutBlockOrOperator> Dot <unnamed:Int> => ast::Expr::Field(Box::new(base), ast::Member::Unnamed(unnamed)),
 };
 
-FieldValue: ast::FieldValue = {
-    <named:Ident> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr: Some(expr), },
-    <unnamed:Int> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr: Some(expr), },
-    <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: None, },
-};
-
+/// https://doc.rust-lang.org/reference/expressions/struct-expr.html#struct-expressions
 StructExpression: ast::Expr = {
     <path:PathInExpression> BraceOpen <first:FieldValue> <mut rest:(Comma <FieldValue>)*> <base:((Comma DotDot <Expr>)? Comma?)> BraceClose => {
         let mut fields = vec![first];
@@ -829,13 +484,23 @@ StructExpression: ast::Expr = {
     },
 };
 
-CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
-
-MethodCallExpression: ast::Expr = {
-    <receiver:ExprWithBlock> Dot <method:PathExprSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
-    <receiver:ExprWithoutBlockOrOperator> Dot <method:PathExprSegment> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+FieldValue: ast::FieldValue = {
+    <named:Ident> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Named(named), expr: Some(expr), },
+    <unnamed:Int> Colon <expr:Expr> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr: Some(expr), },
+    <named:Ident> => ast::FieldValue { member: ast::Member::Named(named.clone()), expr: None, },
 };
 
+/// https://doc.rust-lang.org/reference/expressions/call-expr.html
+CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
+
+/// https://doc.rust-lang.org/reference/expressions/method-call-expr.html
+MethodCallExpression: ast::Expr = {
+    // TODO: should blocks be allowed for method calls?
+    <receiver:ExprWithBlock> Dot <method:Ident> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithoutBlockOrOperator> Dot <method:Ident> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+};
+
+/// https://doc.rust-lang.org/reference/expressions/field-expr.html
 FieldExpression: ast::Expr = {
     <base:ExprWithBlock> Dot <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
     <base:ExprWithoutBlockOrOperator> Dot <named:Ident> => ast::Expr::Field(Box::new(base), ast::Member::Named(named)),
@@ -843,18 +508,23 @@ FieldExpression: ast::Expr = {
 
 // todo: closure expression
 
+/// https://doc.rust-lang.org/reference/expressions/range-expr.html
 RangeExpression: ast::Expr = {
     <l:LiteralExpression?> DotDot <r:LiteralExpression?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
     <l:LiteralExpression?> DotDotEq <r:LiteralExpression> => ast::Expr::Range(l.map(|l| Box::new(l)), Some(Box::new(r)), true),
 };
 
-CondIf: ast::Expr = If <ExprWithoutStruct>;
-
 // todo: if let expression
-pub IfExpression: ast::Expr = {
-    <c:CondIf> <b:BlockExpression> <els:(Else <IfExpression>)> => ast::Expr::If(Box::new(c), Box::new(b), Some(Box::new(els))),
-    <c:CondIf> <b:BlockExpression> <els:(Else <BlockExpression>)?> => ast::Expr::If(Box::new(c), Box::new(b), els.map(Box::new)),
+/// https://doc.rust-lang.org/reference/expressions/if-expr.html
+IfExpression: ast::Expr = {
+    <c:CondIf> <b:Block> <els:(Else <IfExpression>)> => ast::Expr::If(Box::new(c), b, Some(Box::new(els))),
+    <c:CondIf> <b:Block> <els:(Else <BlockExpression>)?> => ast::Expr::If(Box::new(c), b, els.map(Box::new)),
 };
+
+CondIf: ast::Expr = If <ExprIf>;
+
+/// https://doc.rust-lang.org/reference/expressions/match-expr.html
+MatchExpression: ast::Expr = Match <e:ExprIf> BraceOpen <arms:VecComma<MatchArm>> BraceClose => ast::Expr::Match(Box::new(e), arms);
 
 MatchArm: ast::Arm = {
     <pat:Pat> <guard:CondIf?> FatArrow <body:Expr> => ast::Arm {
@@ -864,8 +534,7 @@ MatchArm: ast::Arm = {
     },
 };
 
-MatchExpression: ast::Expr = Match <e:ExprWithoutStruct> BraceOpen <arms:VecComma<MatchArm>> BraceClose => ast::Expr::Match(Box::new(e), arms);
-
+/// https://doc.rust-lang.org/reference/expressions/return-expr.html
 ReturnExpression: ast::Expr = Return <Expr?> => ast::Expr::Return(<>.map(Box::new));
 
 ExprWithoutFieldOrBlock: ast::Expr = {
@@ -874,11 +543,11 @@ ExprWithoutFieldOrBlock: ast::Expr = {
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
+    TupleExpression,
     TupleIndexingExpression,
     CallExpression,
     MethodCallExpression,
     RangeExpression,
-    // MacroInvocation => ast::Expr::MacroInvocation(<>),
 };
 
 ExprWithoutBlockOrOperator: ast::Expr = {
@@ -886,27 +555,31 @@ ExprWithoutBlockOrOperator: ast::Expr = {
     FieldExpression,
 };
 
-ExprWithoutBlockWithReturn: ast::Expr = {
-    OperatorExpression,
+ExprStmt: ast::Expr = {
+    AssignExpression,
     ReturnExpression,
 };
 
+/// https://doc.rust-lang.org/reference/expressions.html
 ExprWithBlock: ast::Expr = {
     BlockExpression,
     IfExpression,
     MatchExpression,
+    // StructExpression,
 };
 
-ExprWithoutStruct: ast::Expr = {
-    OperatorExpression,
+ExprIf: ast::Expr = {
+    ComparisonExpression,
     ExprWithBlock,
 };
 
+/// https://doc.rust-lang.org/reference/expressions.html
 pub Expr: ast::Expr = {
-    ExprWithoutStruct,
+    ComparisonExpression,
+    ExprWithBlock,
+    // TODO: add struct expression to arithmetic tree in a way that it won't conflict with if/match statements
     StructExpression,
 };
-
 
 /// https://doc.rust-lang.org/reference/patterns.html
 pub Pat: ast::Pat = {
@@ -914,9 +587,9 @@ pub Pat: ast::Pat = {
     Lit => ast::Pat::Lit(<>),
     /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
     PathInExpression => {
-        if <>.leading_colon.is_none() && <>.qself.is_none() && <>.segments.len() == 1 {
-            if let Some(ast::ExprPathSegment { ident, args: None, }) = <>.segments.first() {
-                ast::Pat::Ident(ident.clone())
+        if <>.leading_colon.is_none() && <>.segments.len() == 1 {
+            if let Some(segment) = <>.segments.first() {
+                ast::Pat::Ident(segment.clone())
             } else {
                 ast::Pat::Path(<>)
             }
@@ -959,4 +632,13 @@ StructPatternField: ast::StructPatternField = {
     <val:Int> <pat:Pat> => ast::StructPatternField::TuplePat(val, Box::new(pat)),
     <ident:Ident> <pat:Pat> => ast::StructPatternField::IdentPat(ident, Box::new(pat)),
     Ident => ast::StructPatternField::Ident(<>),
+};
+
+/// https://doc.rust-lang.org/reference/types.html
+pub Type: ast::Type = {
+    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
+    Path => ast::Type::Path(<>),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
+    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
+    // MacroInvocation => ast::Type::MacroInvocation(<>),
 };
