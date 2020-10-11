@@ -46,11 +46,8 @@ pub struct Newline<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
 
 impl<T: Clone + Display + Debug + PartialEq> Display for Newline<T> {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        if let Some(item) = self.0.first() {
-            write!(f, "{}", item)?;
-        }
-        for item in self.0.iter().skip(1) {
-            write!(f, "\n{}", item)?;
+        for item in self.0.iter() {
+            write!(f, "{}\n", item)?;
         }
         Ok(())
     }
@@ -92,7 +89,7 @@ pub struct Ident {
 
 #[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub struct SimplePath {
-    pub leading_colon: Option<()>,
+    pub leading_sep: Option<()>,
     pub segments: Vec<Ident>,
 }
 
@@ -102,7 +99,7 @@ impl Display for SimplePath {
             write!(
                 f,
                 "{}{}",
-                if i != 0 || self.leading_colon.is_some() {
+                if i != 0 || self.leading_sep.is_some() {
                     "::"
                 } else {
                     ""

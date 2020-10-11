@@ -249,11 +249,11 @@ Lit: ast::Lit = {
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
 Path: ast::SimplePath = {
-    <leading_colon:PathSep?> <path:(<PathSegment> PathSep)*> <final_path:PathSegment> => {
+    <leading_sep:PathSep?> <path:(<PathSegment> PathSep)*> <final_path:PathSegment> => {
         let mut v = path;
         v.push(final_path);
         ast::SimplePath {
-            leading_colon: leading_colon.map(|_| ()),
+            leading_sep: leading_sep.map(|_| ()),
             segments: v,
         }
     }
@@ -301,12 +301,19 @@ Item: ast::Item = {
     <vis:Visibility?> Ring <ident:Ident> Eq <begin:Lit> DotDotEq <end:Lit> Semi => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, true),
 };
 
+#[inline]
+UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <segments:(<PathSegment> PathSep)+> => ast::SimplePath { leading_sep: leading_sep.map(|_| ()), segments, };
 /// https://doc.rust-lang.org/reference/items/use-declarations.html
 UseTree: ast::UseTree = {
-    // <path:(<SimplePath> PathSep)> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
-    // <path:(<SimplePath> PathSep)> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
-    // <path:(<SimplePath> PathSep)> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(path, rename))),
-    Path => ast::UseTree::Name(<>),
+    Star => ast::UseTree::Glob,
+    BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Group(group),
+    <name:PathSegment> As <rename:Ident> => ast::UseTree::Rename(name, rename),
+    <name:PathSegment> => ast::UseTree::Name(name),
+
+    <path:UseTreePath> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
+    <path:UseTreePath> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
+    <path:UseTreePath> <name:PathSegment> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(name, rename))),
+    <path:UseTreePath> <name:PathSegment> => ast::UseTree::Path(path, Box::new(ast::UseTree::Name(name))),
 };
 
 /// https://doc.rust-lang.org/reference/items/functions.html
@@ -694,7 +701,7 @@ pub Pat: ast::Pat = {
     Lit => ast::Pat::Lit(<>),
     /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
     PathInExpression => {
-        if <>.leading_colon.is_none() && <>.segments.len() == 1 {
+        if <>.leading_sep.is_none() && <>.segments.len() == 1 {
             if let Some(segment) = <>.segments.first() {
                 ast::Pat::Ident(segment.clone())
             } else {

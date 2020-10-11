@@ -141,9 +141,9 @@ pub enum UseTree {
     #[display(fmt = "{}::{}", _0, _1)]
     Path(SimplePath, Box<Self>),
     #[display(fmt = "{}", _0)]
-    Name(SimplePath),
+    Name(Ident),
     #[display(fmt = "{} as {}", _0, _1)]
-    Rename(SimplePath, Ident),
+    Rename(Ident, Ident),
     #[display(fmt = "*")]
     Glob,
     #[display(fmt = "{{ {} }}", _0)]

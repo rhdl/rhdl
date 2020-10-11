@@ -144,6 +144,8 @@ mod tests {
         }
         parse!(
             r#"use super::X;
+use crate::Y;
+use crate::{ first::{ self, Type }, second::Type as AnotherType };
 pub const ROM_SIZE: uint = 64 * 1024 * 1024;
 mod in_another_file;
 mod in_this_file { }
@@ -155,7 +157,8 @@ enum Z { A(X), B(Y), C(u12) }
 enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
 enum States { Uninitialized, Ready, Busy, Error }
 pub(self) bag AudioFrequency { 32_000, 41_000, 48_000 }
-ring AudioBitWidth = 16..=24;"#
+ring AudioBitWidth = 16..=24;
+"#
         );
     }
 }
