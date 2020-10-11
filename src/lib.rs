@@ -8,6 +8,7 @@ lalrpop_util::lalrpop_mod!(pub rhdl);
 #[cfg(test)]
 mod tests {
     use super::{ast::*, rhdl::*};
+    use pretty_assertions::assert_eq;
 
     #[test]
     fn int_parser() {
@@ -18,6 +19,7 @@ mod tests {
                         assert_eq!(IntLitParser::new().parse($input), Ok(Lit::Int {
                             val: rug::Integer::from($expected),
                             suffix: None,
+                            raw: $input.to_string(),
                         }));
                     )+
                 )+
@@ -45,6 +47,7 @@ mod tests {
                         let expected = Ok(Lit::Float {
                             val: rug::Float::with_val($prec, $expected),
                             suffix: None,
+                            raw: input.to_string(),
                         });
                         assert_eq!(res, expected);
                     )+
@@ -66,31 +69,31 @@ mod tests {
     #[test]
     fn expr_parser_parses_all_ops() {
         macro_rules! parse {
-            ($($input: expr => $expected: expr),+) => {
+            ($($input: expr),+) => {
                 $(
-                    assert_eq!(ExprParser::new().parse(&$input).map(|output| format!("{}", output)), Ok($expected.to_string()));
+                    assert_eq!(ExprParser::new().parse(&$input).map(|output| format!("{}", output)), Ok($input.to_string()));
                 )+
             };
         }
         for op in UnOp::variants().iter().map(ToString::to_string) {
             parse!(
-                format!("{}a", op) => format!("{}a", op),
-                format!("{}0", op) => format!("{}0", op),
-                format!("{}{{0}}", op) => format!("{}{{ 0 }}", op)
+                format!("{}a", op),
+                format!("{}0", op),
+                format!("{}{{ 0 }}", op)
             );
         }
         for op in BinOp::variants().iter().map(ToString::to_string) {
             parse!(
-                format!("a {} 0", op) => format!("a {} 0", op),
-                format!("a {} b", op) => format!("a {} b", op),
-                format!("a {} {{ b }}", op) => format!("a {} {{ b }}", op)
+                format!("a {} 0", op),
+                format!("a {} b", op),
+                format!("a {} {{ b }}", op)
             );
         }
         for op in AssOp::variants().iter().map(ToString::to_string) {
             parse!(
-                format!("{{ a {} 0; }}", op) => format!("{{ a {} 0; }}", op),
-                format!("{{ a {} b; }}", op) => format!("{{ a {} b; }}", op),
-                format!("{{ a {} {{ b }}; }}", op) => format!("{{ a {} {{ b }}; }}", op)
+                format!("{{ a {} 0; }}", op),
+                format!("{{ a {} b; }}", op),
+                format!("{{ a {} {{ b }}; }}", op)
             );
         }
     }
@@ -98,49 +101,61 @@ mod tests {
     #[test]
     fn expr_parser() {
         macro_rules! parse {
-            ($($input: expr => $expected: expr),+) => {
+            ($($input: expr),+) => {
                 $(
-                    assert_eq!(ExprParser::new().parse($input).map(|output| format!("{}", output)), Ok($expected.to_string()));
+                    assert_eq!(ExprParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
                 )+
             };
         }
         parse!(
-            "{}" => "{ }",
-            "a" => "a",
-            "4" => "4",
-            "{ a }" => "{ a }",
-            "[4; 5 ]" => "[4; 5]",
-            "0..=9" => "0..=9",
-            "point.x" => "point.x",
-            "call()" => "call()",
-            "x.call()" => "x.call()",
-            "x[0]" => "x[0]",
-            "[0,1,2,3,4,5]" => "[0, 1, 2, 3, 4, 5]",
-            "(0,1,2,3,4,4.5)" => "(0, 1, 2, 3, 4, 4.5)",
-            "x as y" => "x as y",
-            "if a >= 4 {}" => "if a >= 4 { }",
-            "if a >= 4 {} else {}" => "if a >= 4 { } else { }",
-            "if a >= 4 {} else if a < 0 {} else if a > 0 {} else {}" => "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
-            "match x { 0 => {}, 1 => { y }, _ if x != 2 => { }, 2 => { } }" => "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
-            "{ return a; }" => "{ return a; }",
-            "Struct { x, y, z }" => "Struct { x, y, z }",
-            "Struct { x: a, y: b, z: c }" => "Struct { x: a, y: b, z: c }",
-            "Struct { x, .. z }" => "Struct { x, .. z }",
-            "Struct { .. z }" => "Struct { .. z }"
+            "{ }",
+            "a",
+            "4",
+            "{ a }",
+            "[4; 5]",
+            "0..=9",
+            "point.x",
+            "call()",
+            "x.call()",
+            "x[0]",
+            "[0, 1, 2, 3, 4, 5]",
+            "(0, 1, 2, 3, 4, 4.5)",
+            "x as y",
+            "if a >= 4 { }",
+            "if a >= 4 { } else { }",
+            "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
+            "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
+            "{ return a; }",
+            "Struct { x, y, z }",
+            "Struct { x: a, y: b, z: c }",
+            "Struct { x, .. z }",
+            "Struct { .. z }"
         );
     }
 
-    // #[test]
-    // fn file_parser() {
-    //     macro_rules! parse {
-    //         ($($input: expr => $expected: expr),+) => {
-    //             $(
-    //                 assert_eq!(FileParser::new().parse($input).map(|output| format!("{}", output)), Ok($expected.to_string()));
-    //             )+
-    //         };
-    //     }
-    //     parse!(
-    //         include_str!("../examples/tmds_channel.rhdl") => ""
-    //     );
-    // }
+    #[test]
+    fn file_parser() {
+        macro_rules! parse {
+            ($($input: expr),+) => {
+                $(
+                    assert_eq!(FileParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
+                )+
+            };
+        }
+        parse!(
+            r#"use super::X;
+pub const ROM_SIZE: uint = 64 * 1024 * 1024;
+mod in_another_file;
+mod in_this_file { }
+fn x(x: X) { }
+type AliasForX = X;
+pub struct NamedWrapper { x: X }
+struct UnnamedWrapper(X);
+enum Z { A(X), B(Y), C(u12) }
+enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
+enum States { Uninitialized, Ready, Busy, Error }
+pub(self) bag AudioFrequency { 32_000, 41_000, 48_000 }
+ring AudioBitWidth = 16..=24;"#
+        );
+    }
 }

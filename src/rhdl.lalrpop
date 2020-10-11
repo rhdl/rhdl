@@ -103,10 +103,11 @@ match {
     "r#self" => RawLowerSelf,
     "r#Self" => RawUpperSelf,
     "r#super" => RawSuper,
+    r"(0|[1-9]\d*)" => Integer,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-zA-Z0-9_]+)" => NonKeywordIdentifier,
     r"r#(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-zA-Z0-9_]+)" => RawIdentifier,
-    r"(0|[1-9]\d*(?:_\d+)*)" => Integer,
+    r"(0|[1-9]\d*(?:_\d+)*)" => IntegerForLiteral,
     r"0d\d+(?:_\d+)*" => DecimalInteger,
     r"0x[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*" => HexInteger,
     r"0o[0-7]+(?:_[0-7]+)*" => OctalInteger,
@@ -157,7 +158,14 @@ Ident: ast::Ident = Identifier => ast::Ident {
 Int: Int = Integer => Int::parse(<>).unwrap().into();
 
 pub IntLit: ast::Lit = {
-    <val:Int> => ast::Lit::Int { val, suffix: None },
+    <val:Int> => ast::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string() },
+    IntegerForLiteral => {
+        ast::Lit::Int {
+            val: Int::parse(<>).unwrap().into(),
+            suffix: None,
+            raw: <>.to_string(),
+        }
+    },
 
     // i.e. 0d123
     DecimalInteger => {
@@ -166,6 +174,7 @@ pub IntLit: ast::Lit = {
         ast::Lit::Int {
             val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
+            raw: <>.to_string(),
         }
     },
 
@@ -176,6 +185,7 @@ pub IntLit: ast::Lit = {
         ast::Lit::Int {
             val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
+            raw: <>.to_string(),
         }
     },
 
@@ -186,6 +196,7 @@ pub IntLit: ast::Lit = {
         ast::Lit::Int {
             val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
+            raw: <>.to_string(),
         }
     },
 
@@ -196,6 +207,7 @@ pub IntLit: ast::Lit = {
         ast::Lit::Int {
             val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
+            raw: <>.to_string(),
         }
     },
 
@@ -206,6 +218,7 @@ pub IntLit: ast::Lit = {
         ast::Lit::Int {
             val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
             suffix: None,
+            raw: <>.to_string(),
         }
     },
 };
@@ -225,6 +238,7 @@ pub Float: ast::Lit = FloatingPoint => {
     ast::Lit::Float {
         val: Float::with_val(precision, float),
         suffix: None,
+        raw: <>.to_string(),
     }
 };
 
@@ -252,11 +266,104 @@ PathSegment: ast::Ident = {
     Crate => ast::Ident { inner: <>.to_string() },
 };
 
+pub File: ast::Newline<ast::Item> = Item* => ast::Newline(<>);
+
+/// https://doc.rust-lang.org/reference/items.html
+Item: ast::Item = {
+    /// https://doc.rust-lang.org/reference/items/modules.html
+    <vis:Visibility?> Mod <ident:Ident> BraceOpen <items:Item*> BraceClose => ast::Item::Mod(vis.unwrap_or_default(), ident, Some(ast::Newline(items))),
+    <vis:Visibility?> Mod <ident:Ident> Semi => ast::Item::Mod(vis.unwrap_or_default(), ident, None),
+
+    /// https://doc.rust-lang.org/reference/items/use-declarations.html
+    <vis:Visibility?> Use <tree:UseTree> Semi => ast::Item::Use(vis.unwrap_or_default(), tree),
+
+    /// https://doc.rust-lang.org/reference/items/functions.html
+    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::Item::Fn(vis.unwrap_or_default(), sig, block),
+
+    /// https://doc.rust-lang.org/reference/items/type-aliases.html
+    <vis:Visibility?> TokenType <ident:Ident> <generics:Generics?> Eq <ty:Type> Semi => ast::Item::Type(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), ty),
+
+    /// https://doc.rust-lang.org/reference/items/structs.html
+    <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:StructFields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+
+    /// https://doc.rust-lang.org/reference/items/enumerations.html
+    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
+
+    /// https://doc.rust-lang.org/reference/items/constant-items.html
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
+
+    /// https://doc.rust-lang.org/reference/items/implementations.html
+    Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Newline(items)),
+
+    <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:StructFields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
+    <vis:Visibility?> Bag <ident:Ident> BraceOpen <lits:VecComma<Lit>> BraceClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
+    <vis:Visibility?> Ring <ident:Ident> Eq <begin:Lit> DotDot <end:Lit> Semi => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, false),
+    <vis:Visibility?> Ring <ident:Ident> Eq <begin:Lit> DotDotEq <end:Lit> Semi => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, true),
+};
+
+/// https://doc.rust-lang.org/reference/items/use-declarations.html
+UseTree: ast::UseTree = {
+    // <path:(<SimplePath> PathSep)> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
+    // <path:(<SimplePath> PathSep)> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
+    // <path:(<SimplePath> PathSep)> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(path, rename))),
+    Path => ast::UseTree::Name(<>),
+};
+
+/// https://doc.rust-lang.org/reference/items/functions.html
+Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> ParenClose <output:(RArrow <Type>)?> => ast::Sig {
+    ident,
+    generics: generics.unwrap_or_default(),
+    inputs,
+    output,
+};
+FnArgs: ast::Comma<ast::FnArg> = {
+    <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
+    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
+        args.0.insert(0, ast::FnArg::Receiver);
+        args
+    },
+    VecComma<FnArg>,
+};
+FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
+PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat, ty };
+
+/// https://doc.rust-lang.org/reference/items/structs.html
+StructFields: ast::Fields = {
+    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <VecComma<UnnamedField>> ParenClose Semi => ast::Fields::Unnamed(<>),
+};
+NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> Colon <ty:Type> => ast::NamedField { vis: vis.unwrap_or_default(), ident, ty };
+UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis: vis.unwrap_or_default(), ty };
+
+/// https://doc.rust-lang.org/reference/items/enumerations.html
+Variant: ast::Variant = {
+    <ident:Ident> <fields:EnumFields?> => ast::Variant::Field(ident, fields.unwrap_or(ast::Fields::Unit)),
+    <ident:Ident> Eq <discriminant:Expr> => ast::Variant::Discrim(ident, discriminant),
+};
+EnumFields: ast::Fields = {
+    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <VecComma<UnnamedField>> ParenClose => ast::Fields::Unnamed(<>),
+};
+
+/// https://doc.rust-lang.org/reference/items/implementations.html
+ImplItem: ast::ImplItem = {
+    <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::ImplItem::Const(vis.unwrap_or_default(), ident, ty, expr),
+    <vis:Visibility?> Fn <sig:Sig> <block:Block> => ast::ImplItem::Method(vis.unwrap_or_default(), sig, block),
+};
+
+/// https://doc.rust-lang.org/reference/items/generics.html
+Generics: ast::Generics = Lt <VecComma<GenericParam>> Gt => ast::Generics { params: <> };
+
+GenericParam: ast::GenericParam = {
+    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
+};
+
 /// https://doc.rust-lang.org/reference/visibility-and-privacy.html
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub,
-    Pub ParenOpen Super ParenClose => ast::Vis::Pub,
-    Pub ParenOpen LowerSelf ParenClose => ast::Vis::Inherited,
+    Pub ParenOpen Super ParenClose => ast::Vis::Super,
+    Pub ParenOpen LowerSelf ParenClose => ast::Vis::ExplicitInherited,
     Pub ParenOpen Crate ParenClose => ast::Vis::Crate,
     Pub ParenOpen In <Path> ParenClose => ast::Vis::Restricted(<>),
 };
@@ -612,9 +719,6 @@ pub Pat: ast::Pat = {
     ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::Tuple(ast::Comma(left), Some(right)),
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
     BraceOpen <VecComma<Pat>> BraceClose => ast::Pat::Slice(<>),
-
-    /// https://doc.rust-lang.org/reference/macros.html#macro-invocation
-    // MacroInvocation => ast::Pat::Macro(<>),
 };
 
 RangePatternBound: ast::Expr = {
@@ -637,8 +741,8 @@ StructPatternField: ast::StructPatternField = {
 /// https://doc.rust-lang.org/reference/types.html
 pub Type: ast::Type = {
     BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
-    Path => ast::Type::Path(<>),
+    TypePath => ast::Type::Path(<>),
     Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
     Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
-    // MacroInvocation => ast::Type::MacroInvocation(<>),
 };
+TypePath: ast::SimplePath = Path;

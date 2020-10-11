@@ -2,7 +2,6 @@ use derive_more::Display;
 
 use std::fmt::{self, Debug, Display, Formatter};
 
-
 macro_rules! punct {
     ($ident: ident, $punct:expr, $delimit_last: expr) => {
         #[derive(Clone, Debug, PartialEq, Default)]
@@ -40,8 +39,22 @@ macro_rules! punct {
 punct!(Comma, ',', false);
 punct!(Add, '+', false);
 punct!(Pipe, '|', false);
-punct!(Implicit, "", false);
-punct!(Semi, ";", true);
+punct!(Semi, ';', true);
+
+#[derive(Clone, Debug, PartialEq, Default)]
+pub struct Newline<T: Clone + Display + Debug + PartialEq>(pub Vec<T>);
+
+impl<T: Clone + Display + Debug + PartialEq> Display for Newline<T> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        if let Some(item) = self.0.first() {
+            write!(f, "{}", item)?;
+        }
+        for item in self.0.iter().skip(1) {
+            write!(f, "\n{}", item)?;
+        }
+        Ok(())
+    }
+}
 
 mod expr;
 mod item;

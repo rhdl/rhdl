@@ -8,8 +8,12 @@ use super::*;
 pub enum Vis {
     #[display(fmt = "pub ")]
     Pub,
-    #[display(fmt = "crate ")]
+    #[display(fmt = "pub(crate) ")]
     Crate,
+    #[display(fmt = "pub(super) ")]
+    Super,
+    #[display(fmt = "pub(self) ")]
+    ExplicitInherited,
     #[display(fmt = "pub({}) ", _0)]
     Restricted(SimplePath),
     #[display(fmt = "")]
@@ -89,6 +93,7 @@ pub enum Fields {
     Named(Comma<NamedField>),
     #[display(fmt = "({})", _0)]
     Unnamed(Comma<UnnamedField>),
+    #[display(fmt = "")]
     Unit,
 }
 
@@ -148,29 +153,37 @@ pub enum UseTree {
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Item {
     /// const x: u3 = 0b000;
-    #[display(fmt = "{}const {}: {} = {}", _0, _1, _2, _3)]
+    #[display(fmt = "{}const {}: {} = {};", _0, _1, _2, _3)]
     Const(Vis, Ident, Type, Expr),
     #[display(
         fmt = "{}mod {}{}",
         _0,
         _1,
-        "_2.as_ref().map(|x| format!(\" {{ {} }}\", x)).unwrap_or(\";\".to_string())"
+        "_2.as_ref().map(|x| format!(\" {{ {}{}}}\", x, if x.0.is_empty() { \"\" } else { \" \" })).unwrap_or(\";\".to_string())"
     )]
-    Mod(Vis, Ident, Option<Implicit<Item>>),
-    #[display(fmt = "{}fn {}{{ {} }}", _0, _1, _2)]
+    Mod(Vis, Ident, Option<Newline<Item>>),
+    #[display(fmt = "{}fn {} {}", _0, _1, _2)]
     Fn(Vis, Sig, Block),
-    #[display(fmt = "{}type {}{} = {}", _0, _1, _2, _3)]
+    #[display(fmt = "{}type {}{} = {};", _0, _1, _2, _3)]
     Type(Vis, Ident, Generics, Type),
-    #[display(fmt = "{}struct {}{}{}", _0, _1, _2, _3)]
+    #[display(
+        fmt = "{}struct {}{}{}{}{}",
+        _0,
+        _1,
+        _2,
+        "if let Fields::Named(_) = _3 { \" \" } else { \"\" }",
+        _3,
+        "if let Fields::Unnamed(_) = _3 { \";\" } else { \"\" }"
+    )]
     Struct(Vis, Ident, Generics, Fields),
-    #[display(fmt = "{}entity {}{}{}", _0, _1, _2, _3)]
+    #[display(fmt = "{}entity {}{} {}", _0, _1, _2, _3)]
     Entity(Vis, Ident, Generics, Fields),
     /// A special type useful for keeping track of state,
     /// sending named commands, etc.
     /// A discriminant is inferred according to the enum size
     /// and the backing register will be as large as the largest variant.
     /// If all variants are unit variants, an explicit discriminant can be specified.
-    #[display(fmt = "{}enum {}{}{}", _0, _1, _2, _3)]
+    #[display(fmt = "{}enum {}{} {{ {} }}", _0, _1, _2, _3)]
     Enum(Vis, Ident, Generics, Comma<Variant>),
     /// impl X {
     /// }
@@ -181,7 +194,7 @@ pub enum Item {
         _2,
         _3
     )]
-    Impl(Generics, Option<TypePath>, Box<Type>, Implicit<ImplItem>),
+    Impl(Generics, Option<TypePath>, Box<Type>, Newline<ImplItem>),
     /// A type representing a "bag" of allowed literal values for compile-time parameters
     #[display(fmt = "{}bag {} {{ {} }}", _0, _1, _2)]
     Bag(Vis, Ident, Comma<Lit>),
@@ -190,11 +203,11 @@ pub enum Item {
     /// Can be cast to a primitive type where it will have the appropriate bitwise representation.
     /// It is not possible to cast a primitive into a ring.
     #[display(
-        fmt = "{}ring {} {{ {}..{}{} }}",
+        fmt = "{}ring {} = {}..{}{};",
         _0,
         _1,
         _2,
-        "if *_4 { \"..\" } else { \"\" }",
+        "if *_4 { \"=\" } else { \"\" }",
         _3
     )]
     Ring(Vis, Ident, Lit, Lit, bool),

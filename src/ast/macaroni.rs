@@ -71,12 +71,12 @@ pub enum MacroMatch {
     Matcher(MacroMatcher),
     #[display(fmt = "${}: {}", _0, _1)]
     Fragment(Ident, MacroFragSpec),
-    #[display(fmt = "$({}){}{}", _0, "_1.as_ref().cloned().unwrap_or_default()", _2)]
-    Rep(Implicit<Self>, Option<String>, MacroRepOp),
+    #[display(fmt = "$(???){}{}", "_1.as_ref().cloned().unwrap_or_default()", _2)]
+    Rep(Vec<Self>, Option<String>, MacroRepOp),
 }
 
 #[derive(Clone, Debug, PartialEq, Display)]
-pub struct MacroMatcher(pub Implicit<MacroMatch>);
+pub struct MacroMatcher(pub Newline<MacroMatch>);
 
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(fmt = "{} => {}", _0, "_1.iter().cloned().collect::<String>()")]

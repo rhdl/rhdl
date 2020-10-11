@@ -255,12 +255,17 @@ op_enum!(AssOp {
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Lit {
-    #[display(fmt = "{}", val)]
+    #[display(fmt = "{}", raw)]
     Int {
         val: Int,
         /// i.e. i32
         suffix: Option<Ident>,
+        raw: String,
     },
-    #[display(fmt = "{}", val)]
-    Float { val: Float, suffix: Option<Ident> },
+    #[display(fmt = "{}", raw)]
+    Float {
+        val: Float,
+        suffix: Option<Ident>,
+        raw: String,
+    },
 }
