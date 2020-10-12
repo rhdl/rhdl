@@ -14,7 +14,7 @@ pub enum Vis {
     Super,
     #[display(fmt = "pub(self) ")]
     ExplicitInherited,
-    #[display(fmt = "pub({}) ", _0)]
+    #[display(fmt = "pub(in {}) ", _0)]
     Restricted(SimplePath),
     #[display(fmt = "")]
     Inherited,
