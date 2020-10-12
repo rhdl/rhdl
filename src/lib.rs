@@ -134,6 +134,36 @@ mod tests {
     }
 
     #[test]
+    fn pat_parser() {
+        macro_rules! parse {
+            ($($input: expr),+) => {
+                $(
+                    assert_eq!(PatParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
+                )+
+            };
+        }
+        parse!(
+            "0",
+            "a",
+            "module::Enum",
+            "_",
+            "0..10",
+            "0..=10",
+            "0..super::RAM_SIZE",
+            "Struct { a, b, c, .. }",
+            "Struct { a: x, b: y, c: z, .. }",
+            "Struct { a, b, c, d, e, f, g, h }",
+            "Struct { .. }",
+            "StructTup { 0: first, 1: second, 2: third }",
+            "Tup(a, b, c, d, .., z)",
+            "Tup(x, y, z)",
+            "(left, right)",
+            "(zero, .., hundred)",
+            "[1, _, _]"
+        );
+    }
+
+    #[test]
     fn file_parser() {
         macro_rules! parse {
             ($($input: expr),+) => {

@@ -725,7 +725,7 @@ pub Pat: ast::Pat = {
     ParenOpen <VecComma<Pat>> ParenClose => ast::Pat::Tuple(<>, None),
     ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::Tuple(ast::Comma(left), Some(right)),
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
-    BraceOpen <VecComma<Pat>> BraceClose => ast::Pat::Slice(<>),
+    BracketOpen <VecComma<Pat>> BracketClose => ast::Pat::Slice(<>),
 };
 
 RangePatternBound: ast::Expr = {
@@ -740,8 +740,8 @@ StructPatternElements: (ast::Comma<ast::StructPatternField>, Option<()>) = {
 };
 
 StructPatternField: ast::StructPatternField = {
-    <val:Int> <pat:Pat> => ast::StructPatternField::TuplePat(val, Box::new(pat)),
-    <ident:Ident> <pat:Pat> => ast::StructPatternField::IdentPat(ident, Box::new(pat)),
+    <val:Int> Colon <pat:Pat> => ast::StructPatternField::TuplePat(val, Box::new(pat)),
+    <ident:Ident> Colon <pat:Pat> => ast::StructPatternField::IdentPat(ident, Box::new(pat)),
     Ident => ast::StructPatternField::Ident(<>),
 };
 

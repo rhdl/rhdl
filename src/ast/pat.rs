@@ -33,23 +33,25 @@ pub enum Pat {
     #[display(fmt = "{}{}{}", _0, "if *_1 { \"..=\"} else { \"..\" }", _2)]
     Range(Expr, bool, Expr),
     #[display(
-        fmt = "{}{}{}",
+        fmt = "{} {{ {}{}{}{}}}",
         _0,
         _1,
-        "_2.as_ref().map(|x| \",..\".to_string()).unwrap_or_default()"
+        "if !_1.0.is_empty() && _2.is_some() { \", \" } else { \"\" }",
+        "if _2.is_some() { \"..\" } else { \"\" }",
+        "if _1.0.is_empty() && _2.is_none() { \"\" } else { \" \" }"
     )]
     Struct(ExprPath, Comma<StructPatternField>, Option<()>),
     #[display(
-        fmt = "{}{}{}",
+        fmt = "{}({}{})",
         _0,
         _1,
-        "_2.as_ref().map(|x| format!(\", ..,{}\", x)).unwrap_or_default()"
+        "_2.as_ref().map(|x| format!(\", .., {}\", x)).unwrap_or_default()"
     )]
     TupleStruct(ExprPath, Comma<Pat>, Option<Comma<Pat>>),
     #[display(
-        fmt = "{}{}",
+        fmt = "({}{})",
         _0,
-        "_1.as_ref().map(|x| format!(\"..{}\", x)).unwrap_or_default()"
+        "_1.as_ref().map(|x| format!(\", .., {}\", x)).unwrap_or_default()"
     )]
     Tuple(Comma<Pat>, Option<Comma<Pat>>),
     #[display(fmt = "[{}]", _0)]
