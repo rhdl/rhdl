@@ -622,6 +622,10 @@ FieldExpression: ast::Expr = {
 
 // todo: closure expression
 
+IteratorLoopExpression: ast::Expr = {
+    For <pat:Pat> In <expr:ExprIf> <block:Block> => ast::Expr::For(Box::new(pat), Box::new(expr), block),
+}
+
 /// https://doc.rust-lang.org/reference/expressions/range-expr.html
 RangeExpression: ast::Expr = {
     <l:LiteralExpression?> DotDot <r:LiteralExpression?> => ast::Expr::Range(l.map(|l| Box::new(l)), r.map(|r| Box::new(r)), false),
@@ -679,6 +683,7 @@ ExprWithBlock: ast::Expr = {
     BlockExpression,
     IfExpression,
     MatchExpression,
+    IteratorLoopExpression,
     // StructExpression,
 };
 

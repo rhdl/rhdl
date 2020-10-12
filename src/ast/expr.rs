@@ -111,6 +111,8 @@ pub enum Expr {
     Tuple(Comma<Expr>),
     #[display(fmt = "{} as {}", _0, _1)]
     Cast(Box<Expr>, Box<Type>),
+    #[display(fmt = "for {} in {} {}", _0, _1, _2)]
+    For(Box<Pat>, Box<Expr>, Block),
     #[display(
         fmt = "if {} {}{}",
         _0,

@@ -129,7 +129,8 @@ mod tests {
             "Struct { x, y, z }",
             "Struct { x: a, y: b, z: c }",
             "Struct { x, .. z }",
-            "Struct { .. z }"
+            "Struct { .. z }",
+            "for x in 0..16 { }"
         );
     }
 
