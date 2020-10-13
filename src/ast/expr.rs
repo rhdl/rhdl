@@ -159,7 +159,7 @@ pub struct Arm {
     pub body: Expr,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
+#[derive(Clone, Debug, Hash, PartialEq, Display)]
 pub enum Member {
     #[display(fmt = "{}", _0)]
     Named(Ident),

@@ -2,6 +2,16 @@ use derive_more::Display;
 
 use std::fmt::{self, Debug, Display, Formatter};
 
+#[derive(Clone, Debug, PartialEq, Hash)]
+pub struct Span(pub usize, pub usize);
+
+impl std::ops::Add for Span {
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self {
+        Self(self.0.min(rhs.0), self.1.max(rhs.1))
+    }
+}
+
 macro_rules! punct {
     ($ident: ident, $punct:expr, $delimit_last: expr) => {
         #[derive(Clone, Debug, PartialEq, Default)]
@@ -81,13 +91,14 @@ impl Display for Block {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq, Display)]
+#[derive(Clone, Debug, Hash, PartialEq, Display)]
 #[display(fmt = "{}", inner)]
 pub struct Ident {
     pub inner: String,
+    pub span: Span,
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Hash, PartialEq)]
 pub struct SimplePath {
     pub leading_sep: Option<()>,
     pub segments: Vec<Ident>,

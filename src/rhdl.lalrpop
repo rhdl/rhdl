@@ -8,6 +8,9 @@ grammar;
 
 /// https://doc.rust-lang.org/reference/tokens.html
 match {
+    r"//[^\n]*\n" => { },
+    r"\s*" => { },
+} else {
     "if" => If,
     "else" => Else,
     "as" => As,
@@ -150,8 +153,10 @@ VecAdd<T>: ast::Add<T> = {
 
 /// https://doc.rust-lang.org/reference/identifiers.html
 Identifier: &'input str = { NonKeywordIdentifier, RawIdentifier };
-Ident: ast::Ident = Identifier => ast::Ident {
-    inner: <>.to_string()
+Ident: ast::Ident = <lo:@L> <ident:Identifier> <hi:@R> => ast::Ident {
+    inner: ident.to_string(),
+    span: ast::Span(lo, hi),
+
 };
 
 // i.e. 1_234_567_890
@@ -260,10 +265,10 @@ Path: ast::SimplePath = {
 };
 
 PathSegment: ast::Ident = {
-    Identifier => ast::Ident { inner: <>.to_string() },
-    LowerSelf => ast::Ident { inner: <>.to_string() },
-    Super => ast::Ident { inner: <>.to_string() },
-    Crate => ast::Ident { inner: <>.to_string() },
+    Ident,
+    <lo:@L> <ident:LowerSelf> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
+    <lo:@L> <ident:Super> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
+    <lo:@L> <ident:Crate> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
 };
 
 pub File: ast::Newline<ast::Item> = Item* => ast::Newline(<>);
