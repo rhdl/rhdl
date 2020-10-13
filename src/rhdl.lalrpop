@@ -367,6 +367,7 @@ GenericParam: ast::GenericParam = {
 };
 
 /// https://doc.rust-lang.org/reference/visibility-and-privacy.html
+#[inline]
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub,
     Pub ParenOpen Super ParenClose => ast::Vis::Super,
@@ -378,7 +379,16 @@ Visibility: ast::Vis = {
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
-PathInExpression: ast::SimplePath = Path;
+PathInExpression: ast::SimplePath = {
+    <leading_sep:PathSep?> <path:(<PathSegment> PathSep)*> <final_path:Ident> => {
+        let mut v = path;
+        v.push(final_path);
+        ast::SimplePath {
+            leading_sep: leading_sep.map(|_| ()),
+            segments: v,
+        }
+    }
+};
 
 /// https://doc.rust-lang.org/reference/expressions/block-expr.html
 BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
@@ -752,9 +762,32 @@ StructPatternField: ast::StructPatternField = {
 
 /// https://doc.rust-lang.org/reference/types.html
 pub Type: ast::Type = {
-    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
+    /// https://doc.rust-lang.org/reference/types.html#parenthesized-types
+    ParenOpen <Type> ParenClose => ast::Type::Parenthesized(Box::new(<>)),
+
+    /// https://doc.rust-lang.org/reference/paths.html#paths-in-types
     TypePath => ast::Type::Path(<>),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose RArrow <ret:Type> => ast::Type::Fn(args, Some(Box::new(ret))),
-    Fn ParenOpen <args:VecComma<Type>> ParenClose => ast::Type::Fn(args, None),
+
+    /// https://doc.rust-lang.org/reference/types/tuple.html#tuple-types
+    ParenOpen ParenClose => ast::Type::Tuple(ast::Comma(vec![])),
+    ParenOpen <mut tys:(<Type> Comma)+> <last:Type?> ParenClose => {
+        if let Some(last) = last {
+            tys.push(last);
+        }
+        ast::Type::Tuple(ast::Comma(tys))
+    },
+
+    /// https://doc.rust-lang.org/reference/types/array.html
+    BracketOpen <ty:Type> Semi <expr:IntLit> BracketClose => ast::Type::Array(Box::new(ty), Box::new(expr)),
+
+    /// https://doc.rust-lang.org/reference/types/slice.html
+    BracketOpen <Type> BracketClose => ast::Type::Slice(Box::new(<>)),
+
+    /// https://doc.rust-lang.org/reference/types/inferred.html
+    Underscore => ast::Type::Infer,
+
+    /// https://doc.rust-lang.org/reference/types/function-pointer.html
+    /// TODO: support named params "MaybeNamedParam"
+    Fn ParenOpen <args:VecComma<Type>> ParenClose <ret:(RArrow <Type>)?> => ast::Type::Fn(args, ret.map(Box::new)),
 };
-TypePath: ast::SimplePath = Path;
+TypePath: ast::SimplePath = PathInExpression;

@@ -189,6 +189,7 @@ enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
 enum States { Uninitialized, Ready, Busy, Error }
 pub(self) bag AudioFrequency { 32_000, 41_000, 48_000 }
 ring AudioBitWidth = 16..=24;
+fn everything(parenthesized: (Type), typePath: Type, tuple1: (), tuple2: (u9, i9), array: [u4; 32], slice: [u8], infer: _, function: fn(u8), function_ret: fn(u10) -> u16) { }
 "#
         );
     }
