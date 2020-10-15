@@ -2,16 +2,6 @@ use derive_more::Display;
 
 use std::fmt::{self, Debug, Display, Formatter};
 
-#[derive(Clone, Debug, PartialEq, Hash)]
-pub struct Span(pub usize, pub usize);
-
-impl std::ops::Add for Span {
-    type Output = Self;
-    fn add(self, rhs: Self) -> Self {
-        Self(self.0.min(rhs.0), self.1.max(rhs.1))
-    }
-}
-
 macro_rules! punct {
     ($ident: ident, $punct:expr, $delimit_last: expr) => {
         #[derive(Clone, Debug, PartialEq, Default)]
@@ -67,6 +57,7 @@ mod expr;
 mod item;
 mod macaroni;
 mod pat;
+mod token;
 mod types;
 
 pub use expr::*;
@@ -74,6 +65,7 @@ pub use item::*;
 pub use macaroni::*;
 pub use pat::*;
 pub use types::*;
+pub use token::{Lit, Ident, Span};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Block(pub Vec<Stmt>);
@@ -89,13 +81,6 @@ impl Display for Block {
         }
         write!(f, "}}")
     }
-}
-
-#[derive(Clone, Debug, Hash, PartialEq, Display)]
-#[display(fmt = "{}", inner)]
-pub struct Ident {
-    pub inner: String,
-    pub span: Span,
 }
 
 #[derive(Clone, Debug, Hash, PartialEq)]

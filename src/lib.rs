@@ -20,6 +20,7 @@ mod tests {
                             val: rug::Integer::from($expected),
                             suffix: None,
                             raw: $input.to_string(),
+                            span: Span(0, $input.len())
                         }));
                     )+
                 )+
@@ -48,6 +49,7 @@ mod tests {
                             val: rug::Float::with_val($prec, $expected),
                             suffix: None,
                             raw: input.to_string(),
+                            span: Span(0, $input.len()),
                         });
                         assert_eq!(res, expected);
                     )+

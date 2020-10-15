@@ -8,6 +8,8 @@ grammar;
 
 /// https://doc.rust-lang.org/reference/tokens.html
 match {
+    r"///[^\n]*\n" => Docstring,
+} else {
     r"//[^\n]*\n" => { },
     r"\s*" => { },
 } else {
@@ -90,18 +92,6 @@ match {
     ")" => ParenClose,
     "{" => BraceOpen,
     "}" => BraceClose,
-    "block" => BlockTok,
-    "expr" => ExprTok,
-    "ident" => IdentTok,
-    "item" => ItemTok,
-    "literal" => LitTok,
-    "meta" => MetaTok,
-    "pat" => PatTok,
-    "path" => PathTok,
-    "stmt" => StmtTok,
-    "tt" => TokenTreeTok,
-    "ty" => TypeTok,
-    "vis" => VisTok,
     "r#crate" => RawCrate,
     "r#self" => RawLowerSelf,
     "r#Self" => RawUpperSelf,
@@ -153,83 +143,89 @@ VecAdd<T>: ast::Add<T> = {
 
 /// https://doc.rust-lang.org/reference/identifiers.html
 Identifier: &'input str = { NonKeywordIdentifier, RawIdentifier };
-Ident: ast::Ident = <lo:@L> <ident:Identifier> <hi:@R> => ast::Ident {
+Ident: ast::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::Ident {
     inner: ident.to_string(),
-    span: ast::Span(lo, hi),
-
+    span: ast::Span(left, right),
 };
 
 // i.e. 1_234_567_890
-Int: Int = Integer => Int::parse(<>).unwrap().into();
+Int: Int = <left:@L> <val:Integer> <right:@R> => Int::parse(val).unwrap().into();
 
 pub IntLit: ast::Lit = {
-    <val:Int> => ast::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string() },
-    IntegerForLiteral => {
+    <left:@L> <val:Int> <right:@R> => ast::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string(), span: ast::Span(left, right), },
+
+    <left:@L> <val:IntegerForLiteral> <right: @R> => {
         ast::Lit::Int {
-            val: Int::parse(<>).unwrap().into(),
+            val: Int::parse(val).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 
     // i.e. 0d123
-    DecimalInteger => {
+    <left:@L> <val:DecimalInteger> <right: @R> => {
         const BASE_CHAR: char = 'd';
         const BASE: i32 = 10;
         ast::Lit::Int {
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
+            val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 
     // i.e. 0xC0FFEE_CAFE
-    HexInteger => {
+    <left:@L> <val:HexInteger> <right: @R> => {
         const BASE_CHAR: char = 'x';
         const BASE: i32 = 16;
         ast::Lit::Int {
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
+            val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 
     // i.e. 0o72
-    OctalInteger => {
+    <left:@L> <val:OctalInteger> <right: @R> => {
         const BASE_CHAR: char = 'o';
         const BASE: i32 = 8;
         ast::Lit::Int {
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
+            val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 
     // i.e. 0b00110010_00101011_00110010_00111101_00110101
-    BinaryInteger => {
+    <left:@L> <val:BinaryInteger> <right: @R> => {
         const BASE_CHAR: char = 'b';
         const BASE: i32 = 2;
         ast::Lit::Int {
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
+            val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 
     // i.e. 36#HI, an Int in base 36
-    BaseInteger => {
+    <left:@L> <val:BaseInteger> <right: @R> => {
         const BASE_CHAR: char = '#';
-        let base = <>.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
+        let base = val.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
         ast::Lit::Int {
-            val: Int::parse_radix(&<>.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
+            val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
             suffix: None,
-            raw: <>.to_string(),
+            raw: val.to_string(),
+            span: ast::Span(left, right),
         }
     },
 };
 
-pub Float: ast::Lit = FloatingPoint => {
-    let format = <>.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
+pub Float: ast::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
+    let format = val.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
     let precision = match format {
         16 => 11,
         32 => 24,
@@ -239,11 +235,12 @@ pub Float: ast::Lit = FloatingPoint => {
         256 => 237,
         _ => unreachable!()
     };
-    let float = Float::parse(<>.split('f').next().unwrap()).unwrap();
+    let float = Float::parse(val.split('f').next().unwrap()).unwrap();
     ast::Lit::Float {
         val: Float::with_val(precision, float),
         suffix: None,
-        raw: <>.to_string(),
+        raw: val.to_string(),
+        span: ast::Span(left, right),
     }
 };
 
@@ -266,9 +263,9 @@ Path: ast::SimplePath = {
 
 PathSegment: ast::Ident = {
     Ident,
-    <lo:@L> <ident:LowerSelf> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
-    <lo:@L> <ident:Super> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
-    <lo:@L> <ident:Crate> <hi:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(lo, hi) },
+    <left:@L> <ident:LowerSelf> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
+    <left:@L> <ident:Super> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
+    <left:@L> <ident:Crate> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
 };
 
 pub File: ast::Newline<ast::Item> = Item* => ast::Newline(<>);

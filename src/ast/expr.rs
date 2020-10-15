@@ -1,5 +1,5 @@
 use derive_more::Display;
-use rug::{Float, Integer as Int};
+use rug::Integer as Int;
 
 use std::str::FromStr;
 
@@ -254,20 +254,3 @@ op_enum!(AssOp {
     ShlEq => "<<=",
     ShrEq => ">>="
 });
-
-#[derive(Clone, Debug, PartialEq, Display)]
-pub enum Lit {
-    #[display(fmt = "{}", raw)]
-    Int {
-        val: Int,
-        /// i.e. i32
-        suffix: Option<Ident>,
-        raw: String,
-    },
-    #[display(fmt = "{}", raw)]
-    Float {
-        val: Float,
-        suffix: Option<Ident>,
-        raw: String,
-    },
-}
