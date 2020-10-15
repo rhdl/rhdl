@@ -62,7 +62,7 @@ pub trait Spanned {
     fn span(&self) -> Span;
 }
 
-impl<'a, T: ToTokens> Spanned for T {
+impl<T: ToTokens> Spanned for T {
     fn span(&self) -> Span {
         let tokens = self.to_tokens();
         let mut acc = tokens.first().unwrap().span();
@@ -78,12 +78,12 @@ macro_rules! token {
         #[derive(Debug, PartialEq, Display)]
         #[display(fmt = $format)]
         pub struct $variant {
-            span: Span,
+            pub start: usize,
         }
 
         impl Spanned for $variant {
             fn span(&self) -> Span {
-                self.span.clone()
+                Span(self.start, self.start + $format.len())
             }
         }
     };
