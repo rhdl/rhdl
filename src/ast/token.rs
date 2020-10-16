@@ -3,8 +3,7 @@ use super::*;
 use derive_more::Display;
 use rug::{Float, Integer as Int};
 
-#[derive(Clone, Debug, PartialEq, Hash, Display)]
-#[display(fmt = "{}:{}", _0, _1)]
+#[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct Span(pub usize, pub usize);
 
 impl std::ops::Add for Span {
@@ -54,7 +53,7 @@ impl Spanned for Lit {
     }
 }
 
-pub trait ToTokens {
+pub trait ToTokens: Display {
     fn to_tokens(&self) -> Vec<Tok>;
 }
 
@@ -74,7 +73,7 @@ impl<T: ToTokens> Spanned for T {
 }
 
 macro_rules! token {
-    ($variant: ident => $format: expr) => {
+    ($format: literal => $variant: ident) => {
         #[derive(Debug, PartialEq, Display)]
         #[display(fmt = $format)]
         pub struct $variant {
@@ -91,20 +90,20 @@ macro_rules! token {
         #[derive(Debug, PartialEq, Display)]
         #[display(fmt = stringify!($variant))]
         pub struct $variant {
-            span: Span,
+            pub start: usize,
         }
         impl Spanned for $variant {
             fn span(&self) -> Span {
-                self.span.clone()
+                Span(self.start, self.start + stringify!($variant).len())
             }
         }
     };
 }
 
 macro_rules! tokens {
-    ($($variant: ident $( => $format: expr)?),*) => {
+    ($($($format: literal =>)? $variant: ident),*) => {
         $(
-            token!($variant $(=> $format)?);
+            token!($($format =>)? $variant);
         )*
         #[derive(Debug, PartialEq, Display)]
         pub enum Tok {
@@ -153,8 +152,8 @@ tokens! {
     Pub,
     Ref,
     Return,
-    LowerSelf => "self",
-    UpperSelf => "Self",
+    "self" => LowerSelf,
+    "Self" => UpperSelf,
     Static,
     Struct,
     Super,
@@ -190,56 +189,56 @@ tokens! {
     Bag,
     Ring,
 
-    Plus => "+",
-    Minus => "-",
-    Star => "*",
-    StarStar => "**",
-    Slash => "/",
-    Percent => "%",
-    Caret => "^",
-    Not => "!",
-    And => "&",
-    Or => "|",
-    AndAnd => "&&",
-    OrOr => "||",
-    Shl => "<<",
-    Shr => ">>",
-    PlusEq => "+=",
-    MinusEq => "-=",
-    StarEq => "*=",
-    StarStarEq => "**=",
-    SlashEq => "/=",
-    PercentEq => "%=",
-    CaretEq => "^=",
-    AndEq => "&=",
-    OrEq => "|=",
-    ShlEq => "<<=",
-    ShrEq => ">>=",
-    Eq => "=",
-    EqEq => "==",
-    Ne => "!=",
-    Gt => ">",
-    Lt => "<",
-    Ge => ">=",
-    Le => "<=",
-    At => "@",
-    Underscore => "_",
-    Dot => ".",
-    DotDot => "..",
-    DotDotEq => "..=",
-    Comma => ",",
-    Semi => ";",
-    Colon => ":",
-    PathSep => "::",
-    RArrow => "->",
-    FatArrow => "=>",
-    Pound => "#",
-    Dollar => "$",
-    Question => "?",
-    BracketOpen => "[",
-    BracketClose => "]",
-    ParenOpen => "(",
-    ParenClose => ")",
-    BraceOpen => "{{",
-    BraceClose => "}}"
+    "+" => Plus,
+    "-" => Minus,
+    "*" => Star,
+    "**" => StarStar,
+    "/" => Slash,
+    "%" => Percent,
+    "^" => Caret,
+    "!" => Not,
+    "&" => And,
+    "|" => Or,
+    "&&" => AndAnd,
+    "||" => OrOr,
+    "<<" => Shl,
+    ">>" => Shr,
+    "+=" => PlusEq,
+    "-=" => MinusEq,
+    "*=" => StarEq,
+    "**=" => StarStarEq,
+    "/=" => SlashEq,
+    "%=" => PercentEq,
+    "^=" => CaretEq,
+    "&=" => AndEq,
+    "|=" => OrEq,
+    "<<=" => ShlEq,
+    ">>=" => ShrEq,
+    "=" => Eq,
+    "==" => EqEq,
+    "!=" => Ne,
+    ">" => Gt,
+    "<" => Lt,
+    ">=" => Ge,
+    "<=" => Le,
+    "@" => At,
+    "_" => Underscore,
+    "." => Dot,
+    ".." => DotDot,
+    "..=" => DotDotEq,
+    "," => Comma,
+    ";" => Semi,
+    ":" => Colon,
+    "::" => PathSep,
+    "->" => RArrow,
+    "=>" => FatArrow,
+    "#" => Pound,
+    "$" => Dollar,
+    "?" => Question,
+    "[" => BracketOpen,
+    "]" => BracketClose,
+    "(" => ParenOpen,
+    ")" => ParenClose,
+    "{{" => BraceOpen,
+    "}}" => BraceClose
 }
