@@ -12,6 +12,7 @@ lalrpop-util = "0.19"
 regex = "1"
 rug = "1.11"
 derive_more = "0.99"
+paste = "1"
 
 [dev-dependencies]
 pretty_assertions = "0.6.1"

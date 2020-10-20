@@ -13,6 +13,23 @@ impl std::ops::Add for Span {
     }
 }
 
+pub trait ToTokens {
+    fn to_tokens(&self) -> Vec<Tok>;
+    fn first(&self) -> Tok;
+    fn last(&self) -> Tok;
+    fn len(&self) -> usize;
+}
+
+pub trait Spanned {
+    fn span(&self) -> Span;
+}
+
+impl<T: ToTokens> Spanned for T {
+    fn span(&self) -> Span {
+        self.first().span() + self.last().span()
+    }
+}
+
 #[derive(Clone, Debug, Hash, PartialEq, Display)]
 #[display(fmt = "{}", inner)]
 pub struct Ident {
@@ -20,9 +37,21 @@ pub struct Ident {
     pub span: Span,
 }
 
-impl Spanned for Ident {
-    fn span(&self) -> Span {
-        self.span.clone()
+impl ToTokens for Ident {
+    fn to_tokens(&self) -> Vec<Tok> {
+        vec![Tok::Ident(self.clone())]
+    }
+
+    fn first(&self) -> Tok {
+        Tok::Ident(self.clone())
+    }
+
+    fn last(&self) -> Tok {
+        Tok::Ident(self.clone())
+    }
+
+    fn len(&self) -> usize {
+        1
     }
 }
 
@@ -45,56 +74,72 @@ pub enum Lit {
     },
 }
 
-impl Spanned for Lit {
-    fn span(&self) -> Span {
-        match self {
-            Self::Int { span, .. } | Self::Float { span, .. } => span.clone(),
-        }
+impl ToTokens for Lit {
+    fn to_tokens(&self) -> Vec<Tok> {
+        vec![Tok::Lit(self.clone())]
     }
-}
 
-pub trait ToTokens: Display {
-    fn to_tokens(&self) -> Vec<Tok>;
-}
+    fn first(&self) -> Tok {
+        Tok::Lit(self.clone())
+    }
 
-pub trait Spanned {
-    fn span(&self) -> Span;
-}
+    fn last(&self) -> Tok {
+        Tok::Lit(self.clone())
+    }
 
-impl<T: ToTokens> Spanned for T {
-    fn span(&self) -> Span {
-        let tokens = self.to_tokens();
-        let mut acc = tokens.first().unwrap().span();
-        for token in tokens.iter().skip(1) {
-            acc = acc + token.span();
-        }
-        acc
+    fn len(&self) -> usize {
+        1
     }
 }
 
 macro_rules! token {
     ($format: literal => $variant: ident) => {
-        #[derive(Debug, PartialEq, Display)]
+        #[derive(Debug, Hash, Clone, PartialEq, Display)]
         #[display(fmt = $format)]
         pub struct $variant {
             pub start: usize,
         }
 
-        impl Spanned for $variant {
-            fn span(&self) -> Span {
-                Span(self.start, self.start + $format.len())
+        impl ToTokens for $variant {
+            fn to_tokens(&self) -> Vec<Tok> {
+                vec![Tok::$variant(self.clone())]
+            }
+
+            fn first(&self) -> Tok {
+                Tok::$variant(self.clone())
+            }
+
+            fn last(&self) -> Tok {
+                Tok::$variant(self.clone())
+            }
+
+            fn len(&self) -> usize {
+                1
             }
         }
     };
     ($variant: ident) => {
-        #[derive(Debug, PartialEq, Display)]
+        #[derive(Debug, Clone, Hash, PartialEq, Display)]
         #[display(fmt = stringify!($variant))]
         pub struct $variant {
             pub start: usize,
         }
-        impl Spanned for $variant {
-            fn span(&self) -> Span {
-                Span(self.start, self.start + stringify!($variant).len())
+
+        impl ToTokens for $variant {
+            fn to_tokens(&self) -> Vec<Tok> {
+                vec![Tok::$variant(self.clone())]
+            }
+
+            fn first(&self) -> Tok {
+                Tok::$variant(self.clone())
+            }
+
+            fn last(&self) -> Tok {
+                Tok::$variant(self.clone())
+            }
+
+            fn len(&self) -> usize {
+                1
             }
         }
     };
@@ -105,11 +150,9 @@ macro_rules! tokens {
         $(
             token!($($format =>)? $variant);
         )*
-        #[derive(Debug, PartialEq, Display)]
+        #[derive(Debug, Clone, PartialEq, Display)]
         pub enum Tok {
-            $(
-                $variant($variant),
-            )*
+            $( $variant($variant) ),*,
             Ident(Ident),
             Lit(Lit),
         }
@@ -117,11 +160,11 @@ macro_rules! tokens {
         impl Spanned for Tok {
             fn span(&self) -> Span {
                 match self {
-                    $(
-                        Self::$variant(x) => x.span(),
-                    )*
-                    Self::Ident(ident) => ident.span(),
-                    Self::Lit(lit) => lit.span(),
+                    $( Self::$variant(x) => x.span() ),*,
+                    Self::Ident(Ident { span, ..}) => span.clone(),
+                    Self::Lit(lit) => match lit {
+                        Lit::Int { span, .. } | Lit::Float { span, .. } => span.clone(),
+                    },
                 }
             }
         }
