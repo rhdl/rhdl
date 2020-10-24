@@ -13,6 +13,15 @@ impl std::ops::Add for Span {
     }
 }
 
+impl std::ops::AddAssign for Span {
+    fn add_assign(&mut self, rhs: Self) {
+        *self = Self {
+            0: self.0.min(rhs.0),
+            1: self.1.max(rhs.1),
+        }
+    }
+}
+
 pub trait ToTokens {
     fn to_tokens(&self) -> Vec<Tok>;
     fn first(&self) -> Tok;
@@ -231,6 +240,8 @@ tokens! {
     Entity,
     Bag,
     Ring,
+    Arch,
+    When,
 
     "+" => Plus,
     "-" => Minus,

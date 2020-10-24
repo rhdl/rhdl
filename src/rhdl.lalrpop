@@ -72,6 +72,7 @@ match {
     "entity" => Entity,
     "bag" => Bag,
     "ring" => Ring,
+    "arch" => Arch,
 
     "+" => Plus,
     "-" => Minus,
@@ -143,7 +144,7 @@ match {
     r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => FloatingPoint,
 }
 
-VecComma<T>: ast::Comma<T> = {
+PunctComma<T>: ast::Punctuated<T, ast::Comma> = {
     <mut v:(<T> Comma)*> <e:T?> => {
         if let Some(e) = e {
             v.push(e);
@@ -152,7 +153,7 @@ VecComma<T>: ast::Comma<T> = {
     }
 };
 
-VecSemi<T>: ast::Semi<T> = {
+PunctSemi<T>: ast::Semi<T> = {
     <mut v:(<T> Semi)*> <e:T?> => {
         if let Some(e) = e {
             v.push(e);
@@ -161,14 +162,14 @@ VecSemi<T>: ast::Semi<T> = {
     }
 };
 
-VecPipe<T>: ast::Pipe<T> = {
+PunctPipe<T>: ast::Pipe<T> = {
     <mut v:(<T> Or)*> <e:T> => {
         v.push(e);
         ast::Pipe(v)
     }
 };
 
-VecAdd<T>: ast::Add<T> = {
+PunctAdd<T>: ast::Add<T> = {
     <mut v:(<T> Plus)*> <e:T> => {
         v.push(e);
         ast::Add(v)
@@ -323,7 +324,7 @@ Item: ast::Item = {
     <vis:Visibility?> Struct <ident:Ident> <generics:Generics?> <fields:StructFields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
 
     /// https://doc.rust-lang.org/reference/items/enumerations.html
-    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:VecComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
+    <vis:Visibility?> Enum <ident:Ident> <generics:Generics?> BraceOpen <variants:PunctComma<Variant>> BraceClose => ast::Item::Enum(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), variants),
 
     /// https://doc.rust-lang.org/reference/items/constant-items.html
     <vis:Visibility?> Const <ident:Ident> Colon <ty:Type> Eq <expr:Expr> Semi => ast::Item::Const(vis.unwrap_or_default(), ident, ty, expr),
@@ -332,7 +333,7 @@ Item: ast::Item = {
     Impl <generics:Generics?> <path:(<TypePath> For)?> <ty:Type> BraceOpen <items:ImplItem*> BraceClose => ast::Item::Impl(generics.unwrap_or_default(), path, Box::new(ty), ast::Newline(items)),
 
     <vis:Visibility?> Entity <ident:Ident> <generics:Generics?> <fields:StructFields> => ast::Item::Struct(vis.unwrap_or_default(), ident, generics.unwrap_or_default(), fields),
-    <vis:Visibility?> Bag <ident:Ident> BraceOpen <lits:VecComma<Lit>> BraceClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
+    <vis:Visibility?> Bag <ident:Ident> BraceOpen <lits:PunctComma<Lit>> BraceClose => ast::Item::Bag(vis.unwrap_or_default(), ident, lits),
     <vis:Visibility?> Ring <ident:Ident> Eq <begin:Lit> DotDot <end:Lit> Semi => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, false),
     <vis:Visibility?> Ring <ident:Ident> Eq <begin:Lit> DotDotEq <end:Lit> Semi => ast::Item::Ring(vis.unwrap_or_default(), ident, begin, end, true),
 };
@@ -342,12 +343,12 @@ UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <segments:(<PathSegment> P
 /// https://doc.rust-lang.org/reference/items/use-declarations.html
 UseTree: ast::UseTree = {
     Star => ast::UseTree::Glob,
-    BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Group(group),
+    BraceOpen <group:PunctComma<UseTree>> BraceClose => ast::UseTree::Group(group),
     <name:PathSegment> As <rename:Ident> => ast::UseTree::Rename(name, rename),
     <name:PathSegment> => ast::UseTree::Name(name),
 
     <path:UseTreePath> Star => ast::UseTree::Path(path, Box::new(ast::UseTree::Glob)),
-    <path:UseTreePath> BraceOpen <group:VecComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
+    <path:UseTreePath> BraceOpen <group:PunctComma<UseTree>> BraceClose => ast::UseTree::Path(path, Box::new(ast::UseTree::Group(group))),
     <path:UseTreePath> <name:PathSegment> As <rename:Ident> => ast::UseTree::Path(path, Box::new(ast::UseTree::Rename(name, rename))),
     <path:UseTreePath> <name:PathSegment> => ast::UseTree::Path(path, Box::new(ast::UseTree::Name(name))),
 };
@@ -361,19 +362,19 @@ Sig: ast::Sig = <ident:Ident> <generics:Generics?> ParenOpen <inputs:FnArgs> Par
 };
 FnArgs: ast::Comma<ast::FnArg> = {
     <receiver:(<LowerSelf>)> => ast::Comma(vec![ast::FnArg::Receiver]),
-    <receiver:(<LowerSelf> Comma)> <mut args:VecComma<FnArg>> => {
+    <receiver:(<LowerSelf> Comma)> <mut args:PunctComma<FnArg>> => {
         args.0.insert(0, ast::FnArg::Receiver);
         args
     },
-    VecComma<FnArg>,
+    PunctComma<FnArg>,
 };
 FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
 PatType: ast::PatType = <pat:Pat> Colon <ty:Type> => ast::PatType { pat, ty };
 
 /// https://doc.rust-lang.org/reference/items/structs.html
 StructFields: ast::Fields = {
-    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
-    ParenOpen <VecComma<UnnamedField>> ParenClose Semi => ast::Fields::Unnamed(<>),
+    BraceOpen <PunctComma<NamedField>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <PunctComma<UnnamedField>> ParenClose Semi => ast::Fields::Unnamed(<>),
 };
 NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> Colon <ty:Type> => ast::NamedField { vis: vis.unwrap_or_default(), ident, ty };
 UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis: vis.unwrap_or_default(), ty };
@@ -384,8 +385,8 @@ Variant: ast::Variant = {
     <ident:Ident> Eq <discriminant:Expr> => ast::Variant::Discrim(ident, discriminant),
 };
 EnumFields: ast::Fields = {
-    BraceOpen <VecComma<NamedField>> BraceClose => ast::Fields::Named(<>),
-    ParenOpen <VecComma<UnnamedField>> ParenClose => ast::Fields::Unnamed(<>),
+    BraceOpen <PunctComma<NamedField>> BraceClose => ast::Fields::Named(<>),
+    ParenOpen <PunctComma<UnnamedField>> ParenClose => ast::Fields::Unnamed(<>),
 };
 
 /// https://doc.rust-lang.org/reference/items/implementations.html
@@ -395,10 +396,10 @@ ImplItem: ast::ImplItem = {
 };
 
 /// https://doc.rust-lang.org/reference/items/generics.html
-Generics: ast::Generics = Lt <VecComma<GenericParam>> Gt => ast::Generics { params: <> };
+Generics: ast::Generics = Lt <PunctComma<GenericParam>> Gt => ast::Generics { params: <> };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> Colon <add:VecAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
+    <ident:Ident> Colon <add:PunctAdd<TypePath>> <ty:(Eq <Type>)?> => ast::GenericParam::Type(ident, add, ty),
     Const <ident:Ident> Colon <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(ident, ty, default),
 };
 
@@ -608,7 +609,7 @@ GroupedExpression: ast::Expr = ParenOpen <Expr> ParenClose;
 /// https://doc.rust-lang.org/reference/expressions/array-expr.html#array-expressions
 ArrayExpression: ast::Expr = {
     BracketOpen <val:Expr> Semi <repeat:Expr> BracketClose => ast::Expr::Repeat(Box::new(val), Box::new(repeat)),
-    BracketOpen <VecComma<Expr>> BracketClose => ast::Expr::Array(<>),
+    BracketOpen <PunctComma<Expr>> BracketClose => ast::Expr::Array(<>),
 };
 
 /// https://doc.rust-lang.org/reference/expressions/array-expr.html#array-and-slice-indexing-expressions
@@ -651,13 +652,13 @@ FieldValue: ast::FieldValue = {
 };
 
 /// https://doc.rust-lang.org/reference/expressions/call-expr.html
-CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
+CallExpression: ast::Expr = <func:ExprWithoutFieldOrBlock> ParenOpen <args:PunctComma<Expr>> ParenClose => ast::Expr::Call(Box::new(func), args);
 
 /// https://doc.rust-lang.org/reference/expressions/method-call-expr.html
 MethodCallExpression: ast::Expr = {
     // TODO: should blocks be allowed for method calls?
-    <receiver:ExprWithBlock> Dot <method:Ident> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
-    <receiver:ExprWithoutBlockOrOperator> Dot <method:Ident> ParenOpen <args:VecComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithBlock> Dot <method:Ident> ParenOpen <args:PunctComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
+    <receiver:ExprWithoutBlockOrOperator> Dot <method:Ident> ParenOpen <args:PunctComma<Expr>> ParenClose => ast::Expr::MethodCall(Box::new(receiver), method, args),
 };
 
 /// https://doc.rust-lang.org/reference/expressions/field-expr.html
@@ -688,7 +689,7 @@ IfExpression: ast::Expr = {
 CondIf: ast::Expr = If <ExprIf>;
 
 /// https://doc.rust-lang.org/reference/expressions/match-expr.html
-MatchExpression: ast::Expr = Match <e:ExprIf> BraceOpen <arms:VecComma<MatchArm>> BraceClose => ast::Expr::Match(Box::new(e), arms);
+MatchExpression: ast::Expr = Match <e:ExprIf> BraceOpen <arms:PunctComma<MatchArm>> BraceClose => ast::Expr::Match(Box::new(e), arms);
 
 MatchArm: ast::Arm = {
     <pat:Pat> <guard:CondIf?> FatArrow <body:Expr> => ast::Arm {
@@ -770,13 +771,13 @@ pub Pat: ast::Pat = {
     /// https://doc.rust-lang.org/reference/patterns.html#struct-patterns
     <path:PathInExpression> BraceOpen <elems:StructPatternElements> BraceClose => ast::Pat::Struct(path, elems.0, elems.1),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-struct-patterns
-    <path: PathInExpression> ParenOpen <pats:VecComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, pats, None),
-    <path: PathInExpression> ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, ast::Comma(left), Some(right)),
+    <path: PathInExpression> ParenOpen <pats:PunctComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, pats, None),
+    <path: PathInExpression> ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:PunctComma<Pat>> ParenClose => ast::Pat::TupleStruct(path, ast::Comma(left), Some(right)),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-patterns and https://doc.rust-lang.org/reference/patterns.html#grouped-patterns
-    ParenOpen <VecComma<Pat>> ParenClose => ast::Pat::Tuple(<>, None),
-    ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:VecComma<Pat>> ParenClose => ast::Pat::Tuple(ast::Comma(left), Some(right)),
+    ParenOpen <PunctComma<Pat>> ParenClose => ast::Pat::Tuple(<>, None),
+    ParenOpen <left:(<Pat> Comma)*> DotDot Comma <right:PunctComma<Pat>> ParenClose => ast::Pat::Tuple(ast::Comma(left), Some(right)),
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
-    BracketOpen <VecComma<Pat>> BracketClose => ast::Pat::Slice(<>),
+    BracketOpen <PunctComma<Pat>> BracketClose => ast::Pat::Slice(<>),
 };
 
 RangePatternBound: ast::Expr = {
@@ -824,6 +825,6 @@ pub Type: ast::Type = {
 
     /// https://doc.rust-lang.org/reference/types/function-pointer.html
     /// TODO: support named params "MaybeNamedParam"
-    Fn ParenOpen <args:VecComma<Type>> ParenClose <ret:(RArrow <Type>)?> => ast::Type::Fn(args, ret.map(Box::new)),
+    Fn ParenOpen <args:PunctComma<Type>> ParenClose <ret:(RArrow <Type>)?> => ast::Type::Fn(args, ret.map(Box::new)),
 };
 TypePath: ast::SimplePath = PathInExpression;

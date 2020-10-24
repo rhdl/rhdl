@@ -286,8 +286,9 @@ macro_rules! class_from_tokens {
 crate::class_from_tokens! {
     Stmt {
         Local {
+            r#let: Let,
             pat: Pat,
-            ty: Option<Type>,
+            ty: Option<(Colon, Type)>,
             init: Option<(Eq, Box<Expr>)>,
             semi: Semi
         },
@@ -311,20 +312,3 @@ crate::class_from_tokens! {
         }
     }
 }
-
-// #[derive(Clone, Debug, PartialEq)]
-// pub enum Stmt {
-//     #[display(
-//         fmt = "let {} = {} {};",
-//         _0,
-//         "_1.as_ref().map(|x| format!(\": {}\", x)).unwrap_or_default()",
-//         "_2.as_ref().map(|x| format!(\"{}\", x)).unwrap_or_default()"
-//     )]
-//     Local(Pat, Option<Type>, Option<Expr>),
-//     #[display(fmt = "{}", _0)]
-//     Item(Item),
-//     #[display(fmt = "{}{}", _0, "if *_1 { \";\" } else { \"\" }")]
-//     Expr(Expr, bool),
-//     #[display(fmt = "{}", _0)]
-//     MacroInvocation(MacroInvocation),
-// }
