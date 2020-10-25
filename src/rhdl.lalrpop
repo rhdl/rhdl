@@ -375,7 +375,7 @@ Lit: ast::token::Lit = {
 
 
 PunctTrail<T, P>: ast::Punctuated<T, P> = {
-    <mut inner:(T P)*> <last:T?> => {
+    <inner:(T P)*> <last:T?> => {
         ast::Punctuated {
             inner,
             last: last.map(Box::new)
@@ -384,7 +384,7 @@ PunctTrail<T, P>: ast::Punctuated<T, P> = {
 };
 
 PunctMustTrail<T, P>: ast::Punctuated<T, P> = {
-    <mut inner:(T P)*> => {
+    <inner:(T P)*> => {
         ast::Punctuated {
             inner,
             last: None
@@ -393,7 +393,7 @@ PunctMustTrail<T, P>: ast::Punctuated<T, P> = {
 };
 
 PunctNoTrail<T, P>: ast::Punctuated<T, P> = {
-    <mut inner:(T P)*> <last:T> => {
+    <inner:(T P)*> <last:T> => {
         ast::Punctuated {
             inner,
             last: Some(Box::new(last))
