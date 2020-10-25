@@ -2,30 +2,11 @@ use std::boxed::Box;
 
 use super::*;
 
-crate::inst_from_tokens! {
+crate::insts_from_tokens! {
     PatType {
         pat: Pat,
         colon: Colon,
         ty: Type
-    }
-}
-
-crate::class_from_tokens! {
-    StructPatternField {
-        TuplePat {
-            // TODO: make lit into litint + litfloat
-            index: Lit,
-            colon: Colon,
-            pat: Box<Pat>
-        },
-        IdentPat {
-            ident: Ident,
-            colon: Colon,
-            pat: Box<Pat>
-        },
-        Ident {
-            ident: Ident
-        }
     }
 }
 
@@ -37,13 +18,16 @@ crate::class_from_tokens! {
         Path {
             inner: ExprPath
         },
+        Ident {
+            inner: Ident
+        },
         Wildcard {
-            inner: Star
+            inner: Underscore
         },
         Range {
-            lower: Expr,
+            left: Expr,
             range_type: RangeType,
-            upper: Expr
+            right: Expr
         },
         Struct {
             path: ExprPath,
@@ -69,6 +53,26 @@ crate::class_from_tokens! {
             bracket_open: BracketOpen,
             subpats: Punctuated<Pat, Comma>,
             bracket_close: BracketClose
+        }
+    }
+}
+
+
+crate::class_from_tokens! {
+    StructPatternField {
+        TuplePat {
+            // TODO: make lit into litint + litfloat
+            index: Lit,
+            colon: Colon,
+            pat: Box<Pat>
+        },
+        IdentPat {
+            ident: Ident,
+            colon: Colon,
+            pat: Box<Pat>
+        },
+        Ident {
+            ident: Ident
         }
     }
 }

@@ -26,9 +26,9 @@ crate::class_from_tokens! {
             bracket_close: BracketClose
         },
         Range {
-            lower: Box<Expr>,
+            left: Option<Box<Expr>>,
             range_type: RangeType,
-            upper: Box<Expr>
+            right: Option<Box<Expr>>
         },
         Path {
             inner: SimplePath
@@ -49,7 +49,8 @@ crate::class_from_tokens! {
         },
         MethodCall {
             on: Box<Expr>,
-            name: Ident,
+            dot: Dot,
+            method: Ident,
             paren_open: ParenOpen,
             args: Punctuated<Expr, Comma>,
             paren_close: ParenClose
@@ -62,34 +63,34 @@ crate::class_from_tokens! {
         },
         Array {
             bracket_open: BracketOpen,
-            elements: Punctuated<Comma, Expr>,
+            elements: Punctuated<Expr, Comma>,
             bracket_close: BracketClose
         },
         Tuple {
             paren_open: ParenOpen,
-            elements: Punctuated<Comma, Expr>,
+            elements: Punctuated<Expr, Comma>,
             paren_close: ParenClose
         },
         Cast {
             expr: Box<Expr>,
-            r#as: As,
+            as_token: As,
             ty: Box<Type>
         },
         For {
-            r#for: For,
+            for_token: For,
             pat: Box<Pat>,
-            r#in: In,
+            in_token: In,
             expr: Box<Expr>,
-            body: Block
+            block: Block
         },
         If {
-            r#if: If,
+            if_token: If,
             expr: Box<Expr>,
-            body: Block,
-            r#else: Option<(Else, Box<Expr>)>
+            block: Block,
+            else_token: Option<(Else, Box<Expr>)>
         },
         Match {
-            r#match: Match,
+            match_token: Match,
             expr: Box<Expr>,
             brace_open: BraceOpen,
             arms: Punctuated<Arm, Comma>,
@@ -99,19 +100,26 @@ crate::class_from_tokens! {
             inner: Block
         },
         Return {
-            r#return: Return,
+            return_token: Return,
             expr: Option<Box<Expr>>
         },
         Struct {
             path: ExprPath,
             brace_open: BraceOpen,
-            fields: Punctuated<FieldValue, Comma>,
+            fields: Option<Punctuated<FieldValue, Comma>>,
+            base: Option<(Comma, DotDot, Box<Expr>)>,
+            comma: Option<Comma>,
             brace_close: BraceClose
+        },
+        Grouped {
+            paren_open: ParenOpen,
+            expr: Box<Expr>,
+            paren_close: ParenClose
         }
     }
 }
 
-crate::inst_from_tokens! {
+crate::insts_from_tokens! {
     Arm {
         pat: Pat,
         guard: Option<(If, Expr)>,
@@ -120,8 +128,7 @@ crate::inst_from_tokens! {
     },
     FieldValue {
         member: Member,
-        colon: Colon,
-        expr: Option<Expr>
+        expr: Option<(Colon, Expr)>
     }
 }
 

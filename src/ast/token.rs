@@ -26,6 +26,7 @@ pub trait ToTokens {
     fn to_tokens(&self) -> Vec<Tok>;
     fn first(&self) -> Tok;
     fn last(&self) -> Tok;
+    /// Number of contained tokens
     fn len(&self) -> usize;
 }
 
@@ -106,7 +107,7 @@ macro_rules! token {
         #[derive(Debug, Hash, Clone, PartialEq, Display)]
         #[display(fmt = $format)]
         pub struct $variant {
-            pub start: usize,
+            pub left: usize,
         }
 
         impl ToTokens for $variant {
@@ -131,7 +132,7 @@ macro_rules! token {
         #[derive(Debug, Clone, Hash, PartialEq, Display)]
         #[display(fmt = stringify!($variant))]
         pub struct $variant {
-            pub start: usize,
+            pub left: usize,
         }
 
         impl ToTokens for $variant {
@@ -238,8 +239,8 @@ tokens! {
     Union,
 
     Entity,
-    Bag,
-    Ring,
+    // Bag,
+    // Ring,
     Arch,
     When,
 

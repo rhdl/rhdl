@@ -3,18 +3,18 @@ use std::fmt::Debug;
 
 use paste::paste;
 
-pub mod expr;
-pub mod item;
+mod expr;
+mod item;
 // pub mod macaroni;
-pub mod pat;
+mod pat;
 pub mod token;
-pub mod types;
+mod types;
 
-use expr::{Expr, ExprPath};
-use item::Item;
-use pat::{Pat, PatType};
+pub use expr::*;
+pub use item::*;
+pub use pat::*;
+pub use types::*;
 use token::*;
-use types::TypePath;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Punctuated<T, P>
@@ -79,7 +79,7 @@ where
     }
 }
 
-crate::inst_from_tokens! {
+crate::insts_from_tokens! {
     Block {
         brace_open: BraceOpen,
         statements: Vec<Stmt>,
@@ -172,43 +172,65 @@ macro_rules! from_tokens_to_tokens {
 
 #[macro_export]
 macro_rules! inst_from_tokens {
+    ($inst: ident {
+            inner : $member_ty: ty
+    }) => {
+        pub type $inst = $member_ty;
+    };
+    ($inst: ident {
+        $(
+            $member_ident: ident : $member_ty: ty
+        ),*
+    }) => {
+        #[derive(Clone, Debug, PartialEq)]
+        pub struct $inst {
+            $(
+                pub $member_ident: $member_ty
+            ),*
+        }
+
+        impl ToTokens for $inst {
+            paste! {
+                fn to_tokens(&self) -> Vec<Tok> {
+                    $(
+                        let mut [<$member_ident tokens>] = crate::from_tokens_to_tokens!(self.$member_ident => $member_ty);
+                    )*
+                    let mut acc = Vec::with_capacity(0 $( + [<$member_ident tokens>].len() )*);
+                    $(
+                        acc.append(&mut [<$member_ident tokens>]);
+                    )*
+                    acc
+                }
+            }
+
+            fn first(&self) -> Tok {
+                self.to_tokens().first().cloned().unwrap()
+            }
+
+            fn last(&self) -> Tok {
+                self.to_tokens().last().cloned().unwrap()
+            }
+
+            fn len(&self) -> usize {
+                self.to_tokens().len()
+            }
+        }
+    };
+}
+
+#[macro_export]
+macro_rules! insts_from_tokens {
     ($($inst: ident {
         $(
             $member_ident: ident : $member_ty: ty
         ),*
     }),+) => {
         $(
-            #[derive(Clone, Debug, PartialEq)]
-            pub struct $inst {
-                $(
-                    pub $member_ident: $member_ty
-                ),*
-            }
-
-            impl ToTokens for $inst {
-                paste! {
-                    fn to_tokens(&self) -> Vec<Tok> {
-                        $(
-                            let mut [<$member_ident tokens>] = crate::from_tokens_to_tokens!(self.$member_ident => $member_ty);
-                        )*
-                        let mut acc = Vec::with_capacity(0 $( + [<$member_ident tokens>].len() )*);
-                        $(
-                            acc.append(&mut [<$member_ident tokens>]);
-                        )*
-                        acc
-                    }
-                }
-
-                fn first(&self) -> Tok {
-                    self.to_tokens().first().cloned().unwrap()
-                }
-
-                fn last(&self) -> Tok {
-                    self.to_tokens().last().cloned().unwrap()
-                }
-
-                fn len(&self) -> usize {
-                    self.to_tokens().len()
+            crate::inst_from_tokens! {
+                $inst {
+                    $(
+                        $member_ident: $member_ty
+                    ),*
                 }
             }
         )+
@@ -267,7 +289,7 @@ macro_rules! class_from_tokens {
         }),*
     }) => {
         paste! {
-            $(crate::inst_from_tokens! {
+            $(crate::insts_from_tokens! {
                 [<$class $variant>] {
                     $(
                         $member_ident : $member_ty
@@ -286,14 +308,14 @@ macro_rules! class_from_tokens {
 crate::class_from_tokens! {
     Stmt {
         Local {
-            r#let: Let,
+            let_token: Let,
             pat: Pat,
             ty: Option<(Colon, Type)>,
             init: Option<(Eq, Box<Expr>)>,
             semi: Semi
         },
         Item {
-            item: Item
+            inner: Item
         },
         Expr {
             expr: Expr,

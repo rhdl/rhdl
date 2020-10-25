@@ -2,8 +2,21 @@ use super::{expr::ExprRange, *};
 
 crate::class_from_tokens! {
     Item {
+        Mod {
+            vis: Option<Vis>,
+            mod_token: Mod,
+            ident: Ident,
+            content: ModContent
+        },
+        Use {
+            vis: Option<Vis>,
+            use_token: Use,
+            tree: UseTree,
+            semi: Semi
+        },
         Const {
             vis: Option<Vis>,
+            const_token: Const,
             ident: Ident,
             colon: Colon,
             ty: Type,
@@ -11,91 +24,107 @@ crate::class_from_tokens! {
             expr: Expr,
             semi: Semi
         },
-        Mod {
-            vis: Option<Vis>,
-            ident: Ident,
-            content: ModContent
-        },
         Fn {
             vis: Option<Vis>,
+            fn_token: Fn,
             sig: Sig,
             block: Block
         },
         Type {
             vis: Option<Vis>,
-            r#type: super::token::Type,
+            type_token: super::token::Type,
             ident: Ident,
-            generics: Generics,
+            generics: Option<Generics>,
             eq: Eq,
             ty: Type,
             semi: Semi
         },
         Struct {
             vis: Option<Vis>,
-            r#struct: Struct,
+            struct_token: Struct,
             ident: Ident,
-            generics: Generics,
+            generics: Option<Generics>,
             fields: Fields,
-            semi: Option<Semi>
         },
         Enum {
             vis: Option<Vis>,
-            r#enum: Enum,
+            enum_token: Enum,
             ident: Ident,
-            generics: Generics,
+            generics: Option<Generics>,
             brace_open: BraceOpen,
             variants: Punctuated<Variant, Comma>,
             brace_close: BraceClose
         },
         Impl {
-            r#impl: Impl,
-            generics: Generics,
+            impl_token: Impl,
+            generics: Option<Generics>,
             of: Option<(TypePath, For)>,
             ty: Box<Type>,
             brace_open: BraceOpen,
             items: Vec<ImplItem>,
             brace_close: BraceClose
         },
-        Use {
-            vis: Option<Vis>,
-            r#use: Use,
-            tree: UseTree,
-            semi: Semi
-        },
+
         // Macro {
         //     vis: Option<Vis>,
-        //     r#macro: Macro,
+        //     macro_token: Macro,
         //     not: Not,
 
         // }
         Entity {
             vis: Option<Vis>,
+            entity: Entity,
             ident: Ident,
             generics: Generics,
-            fields: Fields,
+            ports: Ports,
             semi: Option<Semi>
         },
-        Bag {
-            vis: Option<Vis>,
-            bag: Bag,
-            ident: Ident,
-            brace_open: BraceOpen,
-            literals: Punctuated<Lit, Comma>,
-            brace_close: BraceClose
-        },
-        Ring {
-            vis: Option<Vis>,
-            ring: Ring,
-            ident: Ident,
-            eq: Eq,
-            range: ExprRange,
-            semi: Semi
-        },
+        // Bag {
+        //     vis: Option<Vis>,
+        //     bag: Bag,
+        //     ident: Ident,
+        //     brace_open: BraceOpen,
+        //     literals: Punctuated<Lit, Comma>,
+        //     brace_close: BraceClose
+        // },
+        // Ring {
+        //     vis: Option<Vis>,
+        //     ring: Ring,
+        //     ident: Ident,
+        //     eq: Eq,
+        //     range: ExprRange,
+        //     semi: Semi
+        // },
         Arch {
             arch: Arch,
             ident: Ident,
             brace_open: BraceOpen,
             items: Vec<ArchItem>,
+            brace_close: BraceClose
+        }
+    }
+}
+
+crate::class_from_tokens! {
+    UseTree {
+        Path {
+            path: SimplePath,
+            tree: Box<UseTree>
+        },
+        Name {
+            inner: Ident
+        },
+        Rename {
+            name: Ident,
+            as_token: As,
+            rename: Ident
+        },
+        Glob {
+            inner: Star
+        },
+        Group {
+            brace_open: BraceOpen,
+            trees: Punctuated<UseTree, Comma>,
             brace_close: BraceClose
         }
     }
@@ -120,37 +149,37 @@ crate::class_from_tokens! {
             inner: Pub
         },
         Crate {
-            r#pub: Pub,
+            pub_token: Pub,
             paren_open: ParenOpen,
             crate_token: Crate,
             paren_close: ParenClose
         },
         Super {
-            r#pub: Pub,
+            pub_token: Pub,
             paren_open: ParenOpen,
             super_token: Super,
             paren_close: ParenClose
         },
         ExplicitInherited {
-            r#pub: Pub,
+            pub_token: Pub,
             paren_open: ParenOpen,
-            self_token: UpperSelf,
+            self_token: LowerSelf,
             paren_close: ParenClose
         },
         Restricted {
-            r#pub: Pub,
+            pub_token: Pub,
             paren_open: ParenOpen,
-            r#in: In,
+            in_token: In,
             path: SimplePath,
             paren_close: ParenClose
         }
     }
 }
 
-crate::inst_from_tokens! {
+crate::insts_from_tokens! {
     Sig {
         ident: Ident,
-        generics: Generics,
+        generics: Option<Generics>,
         paren_open: ParenOpen,
         inputs: Punctuated<FnArg, Comma>,
         paren_close: ParenClose,
@@ -158,15 +187,25 @@ crate::inst_from_tokens! {
     }
 }
 
-crate::inst_from_tokens! {
+crate::class_from_tokens! {
+    FnArg {
+        Receiver {
+            inner: LowerSelf
+        },
+        Typed {
+            inner: PatType
+        }
+    }
+}
+
+crate::insts_from_tokens! {
     Generics {
         lt: Lt,
         params: Punctuated<GenericParam, Comma>,
-        where_predicate: Option<WherePredicate>,
         gt: Gt
     },
     WherePredicate {
-        r#where: Where,
+        where_token: Where,
         params: Punctuated<GenericParam, Comma>
     }
 }
@@ -179,10 +218,10 @@ crate::class_from_tokens! {
             eq: Option<(Eq, Type)>
         },
         Const {
-            r#const: Const,
+            const_token: Const,
             ident: Ident,
             colon: Colon,
-            r#type: Type,
+            type_token: Type,
             default: Option<(Eq, Expr)>
         }
     }
@@ -198,12 +237,13 @@ crate::class_from_tokens! {
         Unnamed {
             paren_open: ParenOpen,
             inner: Punctuated<UnnamedField, Comma>,
-            paren_close: ParenClose
+            paren_close: ParenClose,
+            semi: Option<Semi>
         }
     }
 }
 
-crate::inst_from_tokens! {
+crate::insts_from_tokens! {
     NamedField {
         vis: Option<Vis>,
         ident: Ident,
@@ -222,21 +262,13 @@ crate::class_from_tokens! {
             ident: Ident,
             fields: Fields
         },
+        Unit {
+            inner: Ident
+        },
         Discrim {
             ident: Ident,
             eq: Eq,
             expr: Expr
-        }
-    }
-}
-
-crate::class_from_tokens! {
-    FnArg {
-        Receiver {
-            inner: LowerSelf
-        },
-        Typed {
-            pat: PatType
         }
     }
 }
@@ -264,31 +296,6 @@ crate::class_from_tokens! {
             when: When,
             expr: Expr,
             block: Block
-        }
-    }
-}
-
-crate::class_from_tokens! {
-    UseTree {
-        Path {
-            path: SimplePath,
-            tree: Box<UseTree>
-        },
-        Name {
-            inner: Ident
-        },
-        Rename {
-            name: Ident,
-            r#as: As,
-            rename: Ident
-        },
-        Glob {
-            inner: Star
-        },
-        Group {
-            brace_open: BraceOpen,
-            trees: Punctuated<UseTree, Comma>,
-            brace_close: BraceClose
         }
     }
 }

@@ -14,7 +14,7 @@ crate::class_from_tokens! {
         },
         Tuple {
             paren_open: ParenOpen,
-            inner: Punctuated<Type, Comma>,
+            tys: Punctuated<Type, Comma>,
             paren_close: ParenClose
 
         },
@@ -22,7 +22,7 @@ crate::class_from_tokens! {
             bracket_open: BracketOpen,
             ty: Box<Type>,
             semi: Semi,
-            lit: Box<Lit>,
+            lit: Lit,
             bracket_close: BracketClose
         },
         Slice {
@@ -34,7 +34,7 @@ crate::class_from_tokens! {
             inner: Underscore
         },
         Fn {
-            r#fn: Fn,
+            fn_token: Fn,
             paren_open: ParenOpen,
             args: Punctuated<Type, Comma>,
             paren_close: ParenClose,
