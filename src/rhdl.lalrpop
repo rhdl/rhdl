@@ -272,7 +272,7 @@ Ident: ast::token::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::token
     span: ast::Span(left, right),
 };
 
-// i.e. 1_234_567_890
+/// i.e. 1_234_567_890
 PlainLitInt: ast::token::LitInt = <left:@L> <val:Integer> <right:@R> => ast::token::LitInt { val: Int::parse(val).unwrap().into(), suffix: None, raw: val.to_string(), span: ast::Span(left, right) };
 
 pub LitInt: ast::token::LitInt = {
@@ -419,7 +419,7 @@ PathSegment: ast::token::Ident = {
     <left:@L> <ident:Crate> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
 };
 
-// pub File: Vec<ast::Item> = Item* => <>;
+pub File: Vec<ast::Item> = Item* => <>;
 
 ItemConst: ast::ItemConst = <vis:Visibility?> <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <eq:Eq> <expr:Expr> <semi:Semi> => ast::ItemConst {
     vis,
