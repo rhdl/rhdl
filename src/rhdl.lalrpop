@@ -70,8 +70,8 @@ match {
     "union" => TokUnion,
 
     "entity" => TokEntity,
-    // "bag" => TokBag,
-    // "ring" => TokRing,
+    "bag" => TokBag,
+    "ring" => TokRing,
     "arch" => TokArch,
     "when" => TokWhen,
     "out" => TokOut,
@@ -147,127 +147,127 @@ match {
     r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => FloatingPoint,
 }
 
-#[inline] As: ast::As =<left:@L> TokAs => ast::token::As { left };
-#[inline] Break: ast::Break =<left:@L> TokBreak => ast::token::Break { left };
-#[inline] Const: ast::Const =<left:@L> TokConst => ast::token::Const { left };
-#[inline] Continue: ast::Continue =<left:@L> TokContinue => ast::token::Continue { left };
-#[inline] Crate: ast::Crate =<left:@L> TokCrate => ast::token::Crate { left };
-#[inline] Else: ast::Else =<left:@L> TokElse => ast::token::Else { left };
-#[inline] Enum: ast::Enum =<left:@L> TokEnum => ast::token::Enum { left };
-#[inline] Extern: ast::Extern =<left:@L> TokExtern => ast::token::Extern { left };
-#[inline] False: ast::False =<left:@L> TokFalse => ast::token::False { left };
-#[inline] Fn: ast::Fn =<left:@L> TokFn => ast::token::Fn { left };
-#[inline] For: ast::For =<left:@L> TokFor => ast::token::For { left };
-#[inline] If: ast::If =<left:@L> TokIf => ast::token::If { left };
-#[inline] Impl: ast::Impl =<left:@L> TokImpl => ast::token::Impl { left };
-#[inline] In: ast::In =<left:@L> TokIn => ast::token::In { left };
-#[inline] Let: ast::Let =<left:@L> TokLet => ast::token::Let { left };
-#[inline] Loop: ast::Loop =<left:@L> TokLoop => ast::token::Loop { left };
-#[inline] Match: ast::Match =<left:@L> TokMatch => ast::token::Match { left };
-#[inline] Mod: ast::Mod =<left:@L> TokMod => ast::token::Mod { left };
-#[inline] Move: ast::Move =<left:@L> TokMove => ast::token::Move { left };
-#[inline] Mut: ast::Mut =<left:@L> TokMut => ast::token::Mut { left };
-#[inline] Pub: ast::Pub =<left:@L> TokPub => ast::token::Pub { left };
-#[inline] Ref: ast::Ref =<left:@L> TokRef => ast::token::Ref { left };
-#[inline] Return: ast::Return =<left:@L> TokReturn => ast::token::Return { left };
-#[inline] LowerSelf: ast::LowerSelf =<left:@L> TokLowerSelf => ast::token::LowerSelf { left };
-#[inline] UpperSelf: ast::UpperSelf =<left:@L> TokUpperSelf => ast::token::UpperSelf { left };
-#[inline] Static: ast::Static =<left:@L> TokStatic => ast::token::Static { left };
-#[inline] Struct: ast::Struct =<left:@L> TokStruct => ast::token::Struct { left };
-#[inline] Super: ast::Super =<left:@L> TokSuper => ast::token::Super { left };
-#[inline] Trait: ast::Trait =<left:@L> TokTrait => ast::token::Trait { left };
-#[inline] True: ast::True =<left:@L> TokTrue => ast::token::True { left };
-#[inline] TokenType: ast::TokenType =<left:@L> TokTokenType => ast::token::TokenType { left };
-#[inline] Unsafe: ast::Unsafe =<left:@L> TokUnsafe => ast::token::Unsafe { left };
-#[inline] Use: ast::Use =<left:@L> TokUse => ast::token::Use { left };
-#[inline] Where: ast::Where =<left:@L> TokWhere => ast::token::Where { left };
-#[inline] While: ast::While =<left:@L> TokWhile => ast::token::While { left };
+#[inline] As: ast::token::As = <left:@L> TokAs => ast::token::As { left };
+#[inline] Break: ast::token::Break = <left:@L> TokBreak => ast::token::Break { left };
+#[inline] Const: ast::token::Const = <left:@L> TokConst => ast::token::Const { left };
+#[inline] Continue: ast::token::Continue = <left:@L> TokContinue => ast::token::Continue { left };
+#[inline] Crate: ast::token::Crate = <left:@L> TokCrate => ast::token::Crate { left };
+#[inline] Else: ast::token::Else = <left:@L> TokElse => ast::token::Else { left };
+#[inline] Enum: ast::token::Enum = <left:@L> TokEnum => ast::token::Enum { left };
+#[inline] Extern: ast::token::Extern = <left:@L> TokExtern => ast::token::Extern { left };
+#[inline] False: ast::token::False = <left:@L> TokFalse => ast::token::False { left };
+#[inline] Fn: ast::token::Fn = <left:@L> TokFn => ast::token::Fn { left };
+#[inline] For: ast::token::For = <left:@L> TokFor => ast::token::For { left };
+#[inline] If: ast::token::If = <left:@L> TokIf => ast::token::If { left };
+#[inline] Impl: ast::token::Impl = <left:@L> TokImpl => ast::token::Impl { left };
+#[inline] In: ast::token::In = <left:@L> TokIn => ast::token::In { left };
+#[inline] Let: ast::token::Let = <left:@L> TokLet => ast::token::Let { left };
+#[inline] Loop: ast::token::Loop = <left:@L> TokLoop => ast::token::Loop { left };
+#[inline] Match: ast::token::Match = <left:@L> TokMatch => ast::token::Match { left };
+#[inline] Mod: ast::token::Mod = <left:@L> TokMod => ast::token::Mod { left };
+#[inline] Move: ast::token::Move = <left:@L> TokMove => ast::token::Move { left };
+#[inline] Mut: ast::token::Mut = <left:@L> TokMut => ast::token::Mut { left };
+#[inline] Pub: ast::token::Pub = <left:@L> TokPub => ast::token::Pub { left };
+#[inline] Ref: ast::token::Ref = <left:@L> TokRef => ast::token::Ref { left };
+#[inline] Return: ast::token::Return = <left:@L> TokReturn => ast::token::Return { left };
+#[inline] LowerSelf: ast::token::LowerSelf = <left:@L> TokLowerSelf => ast::token::LowerSelf { left };
+#[inline] UpperSelf: ast::token::UpperSelf = <left:@L> TokUpperSelf => ast::token::UpperSelf { left };
+#[inline] Static: ast::token::Static = <left:@L> TokStatic => ast::token::Static { left };
+#[inline] Struct: ast::token::Struct = <left:@L> TokStruct => ast::token::Struct { left };
+#[inline] Super: ast::token::Super = <left:@L> TokSuper => ast::token::Super { left };
+#[inline] Trait: ast::token::Trait = <left:@L> TokTrait => ast::token::Trait { left };
+#[inline] True: ast::token::True = <left:@L> TokTrue => ast::token::True { left };
+#[inline] TokenType: ast::token::TokenType = <left:@L> TokTokenType => ast::token::TokenType { left };
+#[inline] Unsafe: ast::token::Unsafe = <left:@L> TokUnsafe => ast::token::Unsafe { left };
+#[inline] Use: ast::token::Use = <left:@L> TokUse => ast::token::Use { left };
+#[inline] Where: ast::token::Where = <left:@L> TokWhere => ast::token::Where { left };
+#[inline] While: ast::token::While = <left:@L> TokWhile => ast::token::While { left };
 
-#[inline] Async: ast::Async =<left:@L> TokAsync => ast::token::Async { left };
-#[inline] Await: ast::Await =<left:@L> TokAwait => ast::token::Await { left };
-#[inline] Dyn: ast::Dyn =<left:@L> TokDyn => ast::token::Dyn { left };
+#[inline] Async: ast::token::Async = <left:@L> TokAsync => ast::token::Async { left };
+#[inline] Await: ast::token::Await = <left:@L> TokAwait => ast::token::Await { left };
+#[inline] Dyn: ast::token::Dyn = <left:@L> TokDyn => ast::token::Dyn { left };
 
-#[inline] Abstract: ast::Abstract =<left:@L> TokAbstract => ast::token::Abstract { left };
-#[inline] Become: ast::Become =<left:@L> TokBecome => ast::token::Become { left };
-#[inline] TokenBox: ast::TokenBox =<left:@L> TokBox => ast::token::Box { left };
-#[inline] Do: ast::Do =<left:@L> TokDo => ast::token::Do { left };
-#[inline] Final: ast::Final =<left:@L> TokFinal => ast::token::Final { left };
-#[inline] Macro: ast::Macro =<left:@L> TokMacro => ast::token::Macro { left };
-#[inline] Override: ast::Override =<left:@L> TokOverride => ast::token::Override { left };
-#[inline] Priv: ast::Priv =<left:@L> TokPriv => ast::token::Priv { left };
-#[inline] Typeof: ast::Typeof =<left:@L> TokTypeof => ast::token::Typeof { left };
-#[inline] Unsized: ast::Unsized =<left:@L> TokUnsized => ast::token::Unsized { left };
-#[inline] Virtual: ast::Virtual =<left:@L> TokVirtual => ast::token::Virtual { left };
-#[inline] Yield: ast::Yield =<left:@L> TokYield => ast::token::Yield { left };
-#[inline] Try: ast::Try =<left:@L> TokTry => ast::token::Try { left };
+#[inline] Abstract: ast::token::Abstract = <left:@L> TokAbstract => ast::token::Abstract { left };
+#[inline] Become: ast::token::Become = <left:@L> TokBecome => ast::token::Become { left };
+#[inline] TokenBox: ast::token::TokenBox = <left:@L> TokBox => ast::token::TokenBox { left };
+#[inline] Do: ast::token::Do = <left:@L> TokDo => ast::token::Do { left };
+#[inline] Final: ast::token::Final = <left:@L> TokFinal => ast::token::Final { left };
+#[inline] Macro: ast::token::Macro = <left:@L> TokMacro => ast::token::Macro { left };
+#[inline] Override: ast::token::Override = <left:@L> TokOverride => ast::token::Override { left };
+#[inline] Priv: ast::token::Priv = <left:@L> TokPriv => ast::token::Priv { left };
+#[inline] Typeof: ast::token::Typeof = <left:@L> TokTypeof => ast::token::Typeof { left };
+#[inline] Unsized: ast::token::Unsized = <left:@L> TokUnsized => ast::token::Unsized { left };
+#[inline] Virtual: ast::token::Virtual = <left:@L> TokVirtual => ast::token::Virtual { left };
+#[inline] Yield: ast::token::Yield = <left:@L> TokYield => ast::token::Yield { left };
+#[inline] Try: ast::token::Try = <left:@L> TokTry => ast::token::Try { left };
 
-#[inline] Union: ast::Union =<left:@L> TokUnion => ast::token::Union { left };
+#[inline] Union: ast::token::Union = <left:@L> TokUnion => ast::token::Union { left };
 
-#[inline] Entity: ast::Entity =<left:@L> TokEntity => ast::token::Entity { left };
-// Bag = <left:@L> TokBag => ast::token::Bag { left };
-// Ring = <left:@L> TokRing => ast::token::Ring { left };
-#[inline] Arch: ast::Arch =<left:@L> TokArch => ast::token::Arch { left };
-#[inline] When: ast::When =<left:@L> TokWhen => ast::token::When { left };
-#[inline] Out: ast::Out =<left:@L> TokOut => ast::token::When { left };
-#[inline] InOut: ast::InOut =<left:@L> TokInOut => ast::token::When { left };
+#[inline] Entity: ast::token::Entity = <left:@L> TokEntity => ast::token::Entity { left };
+#[inline] Bag: ast::token::Bag = <left:@L> TokBag => ast::token::Bag { left };
+#[inline] Ring: ast::token::Ring = <left:@L> TokRing => ast::token::Ring { left };
+#[inline] Arch: ast::token::Arch = <left:@L> TokArch => ast::token::Arch { left };
+#[inline] When: ast::token::When = <left:@L> TokWhen => ast::token::When { left };
+#[inline] Out: ast::token::Out = <left:@L> TokOut => ast::token::Out { left };
+#[inline] InOut: ast::token::InOut = <left:@L> TokInOut => ast::token::InOut { left };
 
-#[inline] Plus: ast::Plus =<left:@L> TokPlus => ast::Token::Plus { left };
-#[inline] Minus: ast::Minus =<left:@L> TokMinus => ast::Token::Minus { left };
-#[inline] Star: ast::Star =<left:@L> TokStar => ast::Token::Star { left };
-#[inline] StarStar: ast::StarStar =<left:@L> TokStarStar => ast::Token::StarStar { left };
-#[inline] Slash: ast::Slash =<left:@L> TokSlash => ast::Token::Slash { left };
-#[inline] Percent: ast::Percent =<left:@L> TokPercent => ast::Token::Percent { left };
-#[inline] Caret: ast::Caret =<left:@L> TokCaret => ast::Token::Caret { left };
-#[inline] Not: ast::Not =<left:@L> TokNot => ast::Token::Not { left };
-#[inline] And: ast::And =<left:@L> TokAnd => ast::Token::And { left };
-#[inline] Or: ast::Or =<left:@L> TokOr => ast::Token::Or { left };
-#[inline] AndAnd: ast::AndAnd =<left:@L> TokAndAnd => ast::Token::AndAnd { left };
-#[inline] OrOr: ast::OrOr =<left:@L> TokOrOr => ast::Token::OrOr { left };
-#[inline] Shl: ast::Shl =<left:@L> TokShl => ast::Token::Shl { left };
-#[inline] Shr: ast::Shr =<left:@L> TokShr => ast::Token::Shr { left };
-#[inline] PlusEq: ast::PlusEq =<left:@L> TokPlusEq => ast::Token::PlusEq { left };
-#[inline] MinusEq: ast::MinusEq =<left:@L> TokMinusEq => ast::Token::MinusEq { left };
-#[inline] StarEq: ast::StarEq =<left:@L> TokStarEq => ast::Token::StarEq { left };
-#[inline] StarStarEq: ast::StarStarEq =<left:@L> TokStarStarEq => ast::Token::StarStarEq { left };
-#[inline] SlashEq: ast::SlashEq =<left:@L> TokSlashEq => ast::Token::SlashEq { left };
-#[inline] PercentEq: ast::PercentEq =<left:@L> TokPercentEq => ast::Token::PercentEq { left };
-#[inline] CaretEq: ast::CaretEq =<left:@L> TokCaretEq => ast::Token::CaretEq { left };
-#[inline] AndEq: ast::AndEq =<left:@L> TokAndEq => ast::Token::AndEq { left };
-#[inline] OrEq: ast::OrEq =<left:@L> TokOrEq => ast::Token::OrEq { left };
-#[inline] ShlEq: ast::ShlEq =<left:@L> TokShlEq => ast::Token::ShlEq { left };
-#[inline] ShrEq: ast::ShrEq =<left:@L> TokShrEq => ast::Token::ShrEq { left };
-#[inline] Eq: ast::Eq =<left:@L> TokEq => ast::Token::Eq { left };
-#[inline] EqEq: ast::EqEq =<left:@L> TokEqEq => ast::Token::EqEq { left };
-#[inline] Ne: ast::Ne =<left:@L> TokNe => ast::Token::Ne { left };
-#[inline] Gt: ast::Gt =<left:@L> TokGt => ast::Token::Gt { left };
-#[inline] Lt: ast::Lt =<left:@L> TokLt => ast::Token::Lt { left };
-#[inline] Ge: ast::Ge =<left:@L> TokGe => ast::Token::Ge { left };
-#[inline] Le: ast::Le =<left:@L> TokLe => ast::Token::Le { left };
-#[inline] At: ast::At =<left:@L> TokAt => ast::Token::At { left };
-#[inline] Underscore: ast::Underscore =<left:@L> TokUnderscore => ast::Token::Underscore { left };
-#[inline] Dot: ast::Dot =<left:@L> TokDot => ast::Token::Dot { left };
-#[inline] DotDot: ast::DotDot =<left:@L> TokDotDot => ast::Token::DotDot { left };
-#[inline] DotDotEq: ast::DotDotEq =<left:@L> TokDotDotEq => ast::Token::DotDotEq { left };
-#[inline] Comma: ast::Comma =<left:@L> TokComma => ast::Token::Comma { left };
-#[inline] Semi: ast::Semi =<left:@L> TokSemi => ast::Token::Semi { left };
-#[inline] Colon: ast::Colon =<left:@L> TokColon => ast::Token::Colon { left };
-#[inline] PathSep: ast::PathSep =<left:@L> TokPathSep => ast::Token::PathSep { left };
-#[inline] RArrow: ast::RArrow =<left:@L> TokRArrow => ast::Token::RArrow { left };
-#[inline] FatArrow: ast::FatArrow =<left:@L> TokFatArrow => ast::Token::FatArrow { left };
-#[inline] Pound: ast::Pound =<left:@L> TokPound => ast::Token::Pound { left };
-#[inline] Dollar: ast::Dollar =<left:@L> TokDollar => ast::Token::Dollar { left };
-#[inline] Question: ast::Question =<left:@L> TokQuestion => ast::Token::Question { left };
-#[inline] BracketOpen: ast::BracketOpen =<left:@L> TokBracketOpen => ast::Token::BracketOpen { left };
-#[inline] BracketClose: ast::BracketClose =<left:@L> TokBracketClose => ast::Token::BracketClose { left };
-#[inline] ParenOpen: ast::ParenOpen =<left:@L> TokParenOpen => ast::Token::ParenOpen { left };
-#[inline] ParenClose: ast::ParenClose =<left:@L> TokParenClose => ast::Token::ParenClose { left };
-#[inline] BraceOpen: ast::BraceOpen =<left:@L> TokBraceOpen => ast::Token::BraceOpen { left };
-#[inline] BraceClose: ast::BraceClose =<left:@L> TokBraceClose => ast::Token::BraceClose { left };
+#[inline] Plus: ast::token::Plus = <left:@L> TokPlus => ast::token::Plus { left };
+#[inline] Minus: ast::token::Minus = <left:@L> TokMinus => ast::token::Minus { left };
+#[inline] Star: ast::token::Star = <left:@L> TokStar => ast::token::Star { left };
+#[inline] StarStar: ast::token::StarStar = <left:@L> TokStarStar => ast::token::StarStar { left };
+#[inline] Slash: ast::token::Slash = <left:@L> TokSlash => ast::token::Slash { left };
+#[inline] Percent: ast::token::Percent = <left:@L> TokPercent => ast::token::Percent { left };
+#[inline] Caret: ast::token::Caret = <left:@L> TokCaret => ast::token::Caret { left };
+#[inline] Not: ast::token::Not = <left:@L> TokNot => ast::token::Not { left };
+#[inline] And: ast::token::And = <left:@L> TokAnd => ast::token::And { left };
+#[inline] Or: ast::token::Or = <left:@L> TokOr => ast::token::Or { left };
+#[inline] AndAnd: ast::token::AndAnd = <left:@L> TokAndAnd => ast::token::AndAnd { left };
+#[inline] OrOr: ast::token::OrOr = <left:@L> TokOrOr => ast::token::OrOr { left };
+#[inline] Shl: ast::token::Shl = <left:@L> TokShl => ast::token::Shl { left };
+#[inline] Shr: ast::token::Shr = <left:@L> TokShr => ast::token::Shr { left };
+#[inline] PlusEq: ast::token::PlusEq = <left:@L> TokPlusEq => ast::token::PlusEq { left };
+#[inline] MinusEq: ast::token::MinusEq = <left:@L> TokMinusEq => ast::token::MinusEq { left };
+#[inline] StarEq: ast::token::StarEq = <left:@L> TokStarEq => ast::token::StarEq { left };
+#[inline] StarStarEq: ast::token::StarStarEq = <left:@L> TokStarStarEq => ast::token::StarStarEq { left };
+#[inline] SlashEq: ast::token::SlashEq = <left:@L> TokSlashEq => ast::token::SlashEq { left };
+#[inline] PercentEq: ast::token::PercentEq = <left:@L> TokPercentEq => ast::token::PercentEq { left };
+#[inline] CaretEq: ast::token::CaretEq = <left:@L> TokCaretEq => ast::token::CaretEq { left };
+#[inline] AndEq: ast::token::AndEq = <left:@L> TokAndEq => ast::token::AndEq { left };
+#[inline] OrEq: ast::token::OrEq = <left:@L> TokOrEq => ast::token::OrEq { left };
+#[inline] ShlEq: ast::token::ShlEq = <left:@L> TokShlEq => ast::token::ShlEq { left };
+#[inline] ShrEq: ast::token::ShrEq = <left:@L> TokShrEq => ast::token::ShrEq { left };
+#[inline] Eq: ast::token::Eq = <left:@L> TokEq => ast::token::Eq { left };
+#[inline] EqEq: ast::token::EqEq = <left:@L> TokEqEq => ast::token::EqEq { left };
+#[inline] Ne: ast::token::Ne = <left:@L> TokNe => ast::token::Ne { left };
+#[inline] Gt: ast::token::Gt = <left:@L> TokGt => ast::token::Gt { left };
+#[inline] Lt: ast::token::Lt = <left:@L> TokLt => ast::token::Lt { left };
+#[inline] Ge: ast::token::Ge = <left:@L> TokGe => ast::token::Ge { left };
+#[inline] Le: ast::token::Le = <left:@L> TokLe => ast::token::Le { left };
+#[inline] At: ast::token::At = <left:@L> TokAt => ast::token::At { left };
+#[inline] Underscore: ast::token::Underscore = <left:@L> TokUnderscore => ast::token::Underscore { left };
+#[inline] Dot: ast::token::Dot = <left:@L> TokDot => ast::token::Dot { left };
+#[inline] DotDot: ast::token::DotDot = <left:@L> TokDotDot => ast::token::DotDot { left };
+#[inline] DotDotEq: ast::token::DotDotEq = <left:@L> TokDotDotEq => ast::token::DotDotEq { left };
+#[inline] Comma: ast::token::Comma = <left:@L> TokComma => ast::token::Comma { left };
+#[inline] Semi: ast::token::Semi = <left:@L> TokSemi => ast::token::Semi { left };
+#[inline] Colon: ast::token::Colon = <left:@L> TokColon => ast::token::Colon { left };
+#[inline] PathSep: ast::token::PathSep = <left:@L> TokPathSep => ast::token::PathSep { left };
+#[inline] RArrow: ast::token::RArrow = <left:@L> TokRArrow => ast::token::RArrow { left };
+#[inline] FatArrow: ast::token::FatArrow = <left:@L> TokFatArrow => ast::token::FatArrow { left };
+#[inline] Pound: ast::token::Pound = <left:@L> TokPound => ast::token::Pound { left };
+#[inline] Dollar: ast::token::Dollar = <left:@L> TokDollar => ast::token::Dollar { left };
+#[inline] Question: ast::token::Question = <left:@L> TokQuestion => ast::token::Question { left };
+#[inline] BracketOpen: ast::token::BracketOpen = <left:@L> TokBracketOpen => ast::token::BracketOpen { left };
+#[inline] BracketClose: ast::token::BracketClose = <left:@L> TokBracketClose => ast::token::BracketClose { left };
+#[inline] ParenOpen: ast::token::ParenOpen = <left:@L> TokParenOpen => ast::token::ParenOpen { left };
+#[inline] ParenClose: ast::token::ParenClose = <left:@L> TokParenClose => ast::token::ParenClose { left };
+#[inline] BraceOpen: ast::token::BraceOpen = <left:@L> TokBraceOpen => ast::token::BraceOpen { left };
+#[inline] BraceClose: ast::token::BraceClose = <left:@L> TokBraceClose => ast::token::BraceClose { left };
 
 
 /// https://doc.rust-lang.org/reference/identifiers.html
 Identifier: &'input str = { NonKeywordIdentifier, RawIdentifier };
-Ident: ast::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::Ident {
+Ident: ast::token::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::token::Ident {
     inner: ident.to_string(),
     span: ast::Span(left, right),
 };
@@ -275,11 +275,11 @@ Ident: ast::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::Ident {
 // i.e. 1_234_567_890
 Int: Int = <left:@L> <val:Integer> <right:@R> => Int::parse(val).unwrap().into();
 
-pub IntLit: ast::Lit = {
-    <left:@L> <val:Int> <right:@R> => ast::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string(), span: ast::Span(left, right), },
+pub IntLit: ast::token::Lit = {
+    <left:@L> <val:Int> <right:@R> => ast::token::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string(), span: ast::Span(left, right), },
 
     <left:@L> <val:IntegerForLiteral> <right: @R> => {
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse(val).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -291,7 +291,7 @@ pub IntLit: ast::Lit = {
     <left:@L> <val:DecimalInteger> <right: @R> => {
         const BASE_CHAR: char = 'd';
         const BASE: i32 = 10;
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -303,7 +303,7 @@ pub IntLit: ast::Lit = {
     <left:@L> <val:HexInteger> <right: @R> => {
         const BASE_CHAR: char = 'x';
         const BASE: i32 = 16;
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -315,7 +315,7 @@ pub IntLit: ast::Lit = {
     <left:@L> <val:OctalInteger> <right: @R> => {
         const BASE_CHAR: char = 'o';
         const BASE: i32 = 8;
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -327,7 +327,7 @@ pub IntLit: ast::Lit = {
     <left:@L> <val:BinaryInteger> <right: @R> => {
         const BASE_CHAR: char = 'b';
         const BASE: i32 = 2;
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -339,7 +339,7 @@ pub IntLit: ast::Lit = {
     <left:@L> <val:BaseInteger> <right: @R> => {
         const BASE_CHAR: char = '#';
         let base = val.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
-        ast::Lit::Int {
+        ast::token::Lit::Int {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -348,7 +348,7 @@ pub IntLit: ast::Lit = {
     },
 };
 
-pub Float: ast::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
+pub Float: ast::token::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
     let format = val.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
     let precision = match format {
         16 => 11,
@@ -360,7 +360,7 @@ pub Float: ast::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
         _ => unreachable!()
     };
     let float = Float::parse(val.split('f').next().unwrap()).unwrap();
-    ast::Lit::Float {
+    ast::token::Lit::Float {
         val: Float::with_val(precision, float),
         suffix: None,
         raw: val.to_string(),
@@ -368,7 +368,7 @@ pub Float: ast::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
     }
 };
 
-Lit: ast::Lit = {
+Lit: ast::token::Lit = {
     IntLit,
     Float,
 };
@@ -401,6 +401,7 @@ PunctNoTrail<T, P>: ast::Punctuated<T, P> = {
     }
 };
 
+#[inline]
 Box<T>: Box<T> = T => Box::new(<>);
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
@@ -411,14 +412,14 @@ Path: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathSegmen
     }
 };
 
-PathSegment: ast::Ident = {
+PathSegment: ast::token::Ident = {
     Ident,
-    <left:@L> <ident:LowerSelf> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
-    <left:@L> <ident:Super> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
-    <left:@L> <ident:Crate> <right:@R> => ast::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
+    <left:@L> <ident:LowerSelf> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
+    <left:@L> <ident:Super> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
+    <left:@L> <ident:Crate> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
 };
 
-pub File: Vec<ast::Item> = Item* => <>;
+// pub File: Vec<ast::Item> = Item* => <>;
 
 ItemConst: ast::ItemConst = <vis:Visibility?> <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <eq:Eq> <expr:Expr> <semi:Semi> => ast::ItemConst {
     vis,
@@ -520,7 +521,7 @@ Item: ast::Item = {
     ),
 
     /// https://doc.rust-lang.org/reference/items/implementations.html
-    <impl_token:Impl> <generics:Generics?> <of:(TypePath For)?> <ty:Type> <brace_open:BraceOpen> <items:ImplItem*> <brace_close:BraceClose> => ast::Item::Impl(
+    <impl_token:Impl> <generics:Generics?> <of:(TypePath For)?> <ty:Box<Type>> <brace_open:BraceOpen> <items:ImplItem*> <brace_close:BraceClose> => ast::Item::Impl(
         ast::ItemImpl {
             impl_token,
             generics,
@@ -532,7 +533,7 @@ Item: ast::Item = {
         }
     ),
 
-    <vis:Visibility?> <entity:Entity> <ident:Ident> <generics:Generics?> <ports:Ports> => ast::Item::Entity(
+    <vis:Visibility?> <entity:Entity> <ident:Ident> <generics:Generics?> <brace_open:BraceOpen> <ports:Ports> <brace_close:BraceClose> => ast::Item::Entity(
         ast::ItemEntity {
             vis,
             entity,
@@ -578,7 +579,7 @@ UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <segments:(PathSegment Pat
 
 UseLeaf: ast::UseTree = {
     Star => ast::UseTree::Glob(<>),
-    <brace_open:BraceOpen> <tress:PunctTrail<UseTree, Comma>> <brace_close:BraceClose> => ast::UseTree::Group(
+    <brace_open:BraceOpen> <trees:PunctTrail<UseTree, Comma>> <brace_close:BraceClose> => ast::UseTree::Group(
         ast::UseTreeGroup {
             brace_open,
             trees,
@@ -623,7 +624,7 @@ Visibility: ast::Vis = {
             paren_close
         }
     ),
-    <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path_token:Path> <paren_close:ParenClose> => ast::Vis::Restricted(
+    <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path:Path> <paren_close:ParenClose> => ast::Vis::Restricted(
         ast::VisRestricted {
             pub_token,
             paren_open,
@@ -644,13 +645,13 @@ Sig: ast::Sig = <ident:Ident> <generics:Generics?> <paren_open:ParenOpen> <input
     output
 };
 
-FnArgs: ast::Punctuated<ast::FnArg, ast::Comma> = {
+FnArgs: ast::Punctuated<ast::FnArg, ast::token::Comma> = {
     <receiver:LowerSelf> => ast::Punctuated {
         inner: vec![],
         last: receiver,
     },
     <receiver:LowerSelf> <mut args:PunctTrail<FnArg, Comma>> => {
-        args.inner.insert(0, receiver)
+        args.inner.insert(0, receiver);
         args
     },
     PunctTrail<FnArg, Comma>,
@@ -662,14 +663,14 @@ PatType: ast::PatType = <pat:Pat> <colon:Colon> <ty:Type> => ast::PatType { pat,
 Generics: ast::Generics = <lt:Lt> <params:PunctTrail<GenericParam, Comma>> <gt:Gt> => ast::Generics { lt, params, gt };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)> <eq:(Eq <Type>)?> => ast::GenericParam::Type(
+    <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <eq:(Eq Type)?> => ast::GenericParam::Type(
         ast::GenericParamType {
             ident,
             bounds,
             eq,
         }
     ),
-    <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <default:(Eq <Bin3>)?> => ast::GenericParam::Const(
+    <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <default:(Eq Bin3)?> => ast::GenericParam::Const(
         ast::GenericParamConst {
             const_token,
             ident,
@@ -693,7 +694,7 @@ StructFields: ast::Fields = {
         ast::FieldsUnnamed {
             paren_open,
             inner,
-            paren_close
+            paren_close,
             semi: Some(semi)
         }
     ),
@@ -703,7 +704,7 @@ UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedFie
 
 /// https://doc.rust-lang.org/reference/items/enumerations.html
 Variant: ast::Variant = {
-    <ident:Ident> <fields:EnumFields?> => ast::Variant::Field(
+    <ident:Ident> <fields:EnumFields> => ast::Variant::Field(
         ast::VariantField {
             ident,
             fields
@@ -739,10 +740,10 @@ EnumFields: ast::Fields = {
 /// https://doc.rust-lang.org/reference/items/implementations.html
 ImplItem: ast::ImplItem = {
     ItemConst => ast::ImplItem::Const(<>),
-    ItemFn => ast::ImplItem::Fn(<>),
+    ItemFn => ast::ImplItem::Method(<>),
 };
 
-Ports: ast::Punctuated<ast::Port, ast::Comma> = PunctTrail<Port, Comma>;
+Ports: ast::Punctuated<ast::Port, ast::token::Comma> = PunctTrail<Port, Comma>;
 #[inline]
 PortType: ast::PortType = {
     In => ast::PortType::In(<>),
@@ -763,7 +764,7 @@ PathInExpression: ast::SimplePath = Path;
 
 /// https://doc.rust-lang.org/reference/expressions/block-expr.html
 BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
-Block: ast::Block = <brace_open:BraceOpen> <statements:Statements?> <brace_close:BraceClose> => ast::Block {
+Block: ast::Block = <brace_open:BraceOpen> <statements:Statements> <brace_close:BraceClose> => ast::Block {
     brace_open,
     statements,
     brace_close
@@ -772,9 +773,9 @@ Block: ast::Block = <brace_open:BraceOpen> <statements:Statements?> <brace_close
 /// https://doc.rust-lang.org/reference/statements.html
 Statement: ast::Stmt = {
     /// https://doc.rust-lang.org/reference/statements.html#item-declarations
-    Item => ast::Stmt::Item(<>),
+    // Item => ast::Stmt::Item(<>),
     /// https://doc.rust-lang.org/reference/statements.html#let-statements
-    <let_token:Let> <pat:Pat> <ty:(Colon Type)?> <init:(Eq Expr)?> <semi:Semi> => ast::Stmt::Local(
+    <let_token:Let> <pat:Pat> <ty:(Colon Type)?> <init:(Eq Box<Expr>)?> <semi:Semi> => ast::Stmt::Local(
         ast::StmtLocal {
             let_token,
             pat,
@@ -784,28 +785,28 @@ Statement: ast::Stmt = {
         }
     ),
     /// https://doc.rust-lang.org/reference/statements.html#expression-statements
-    <expr:ExprStmt> <semi:Semi> => ast::Stmt::Expr {
+    <expr:ExprStmt> <semi:Semi> => ast::Stmt::Expr (
         ast::StmtExpr {
             expr,
             semi: Some(semi)
         }
-    },
-    <expr:ExprWithBlock> <semi:Semi?> => ast::Stmt::Expr {
+    ),
+    <expr:ExprWithBlock> <semi:Semi?> => ast::Stmt::Expr (
         ast::StmtExpr {
             expr,
             semi,
         }
-    }
+    )
 };
 
 /// https://doc.rust-lang.org/reference/expressions/block-expr.html
 Statements: Vec<ast::Stmt> = {
     <Statement+>,
-    <mut v:Statement+> <e:ExprStmt> => {
-        v.push(ast::Stmt::Expr(e, false));
+    <mut v:Statement+> <expr:ExprStmt> => {
+        v.push(ast::Stmt::Expr (ast::StmtExpr { expr, semi: None }));
         v
     },
-    ExprStmt => vec![ast::Stmt::Expr(<>, false)],
+    <expr:ExprStmt> => vec![ast::Stmt::Expr(ast::StmtExpr { expr, semi: None })]
 };
 
 /// https://doc.rust-lang.org/reference/expressions/operator-expr.html#negation-operators
@@ -1157,181 +1158,181 @@ ComparisonExpression: ast::Expr = {
 AssignExpression: ast::Expr = {
     <l:ComparisonExpression> <op:Eq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::Eq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:Eq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::Eq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:PlusEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::PlusEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:PlusEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::PlusEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:MinusEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::MinusEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:MinusEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::MinusEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:StarEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::StarEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:StarEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::StarEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:StarStarEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::StarStarEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:StarStarEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::StarStarEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:SlashEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::SlashEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:SlashEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::SlashEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:PercentEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::PercentEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:PercentEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::PercentEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:AndEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::AndEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:AndEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::AndEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:OrEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::OrEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:OrEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::OrEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     
     <l:ComparisonExpression> <op:CaretEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::CaretEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:CaretEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::CaretEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:ShlEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::ShlEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:ShlEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::ShlEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
     <l:ComparisonExpression> <op:ShrEq> <r:ComparisonExpression> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::ShrEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
     <l:ComparisonExpression> <op:ShrEq> <r:ExprWithBlock> => ast::Expr::Assign(
         ast::ExprAssign {
-            left: Box::new(l),
+            lhs: Box::new(l),
             op: ast::AssOp::ShrEq(op),
-            right: Box::new(r)
+            rhs: Box::new(r)
         }
     ),
 
@@ -1349,12 +1350,12 @@ GroupedExpression: ast::Expr = <paren_open:ParenOpen> <expr:Expr> <paren_close:P
 
 /// https://doc.rust-lang.org/reference/expressions/array-expr.html#array-expressions
 ArrayExpression: ast::Expr = {
-    <bracket_open:BracketOpen> <init:Expr> <semi:Semi> <repeat:Expr> <bracket_close:BracketClose> => ast::Expr::Repeat(
+    <bracket_open:BracketOpen> <init:Box<Expr>> <semi:Semi> <repeat:Box<Expr>> <bracket_close:BracketClose> => ast::Expr::Repeat(
         ast::ExprRepeat {
             bracket_open,
-            init: Box::new(init),
+            init,
             semi,
-            repeat: Box::new(repeat),
+            repeat,
             bracket_close
         }
     ),
@@ -1378,14 +1379,14 @@ IndexExpression: ast::Expr = <on:ExprWithoutBlockOrOperator> <bracket_open:Brack
 );
 
 /// https://doc.rust-lang.org/reference/expressions/tuple-expr.html#tuple-expressions
-TupleExpression: ast::Expr = <paren_open:ParenOpen> <elements:TupleElements?> <paren_close:ParenClose> => ast::Expr::Tuple(
+TupleExpression: ast::Expr = <paren_open:ParenOpen> <elements:TupleElements> <paren_close:ParenClose> => ast::Expr::Tuple(
     ast::ExprTuple {
         paren_open,
         elements,
         paren_close
     }
 );
-TupleElements: Punctuated<ast::Expr, ast::Comma> = <mut inner:(<Expr> Comma)+> <last:Expr?> => {
+TupleElements: ast::Punctuated<ast::Expr, ast::token::Comma> = <inner:(Expr Comma)+> <last:Box<Expr>?> => {
     ast::Punctuated {
         inner,
         last
@@ -1394,14 +1395,14 @@ TupleElements: Punctuated<ast::Expr, ast::Comma> = <mut inner:(<Expr> Comma)+> <
 
 /// https://doc.rust-lang.org/reference/expressions/tuple-expr.html#tuple-indexing-expressions
 TupleIndexingExpression: ast::Expr = {
-    <on:ExprWithBlock> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
+    <on:Box<ExprWithBlock>> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
         ast::ExprField {
             on,
             dot,
             member: ast::Member::Unnamed(unnamed)
         }
     ),
-    <on:ExprWithoutBlockOrOperator> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
+    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
         ast::ExprField {
             on,
             dot,
@@ -1411,16 +1412,28 @@ TupleIndexingExpression: ast::Expr = {
 };
 
 /// https://doc.rust-lang.org/reference/expressions/struct-expr.html#struct-expressions
-StructExpression: ast::Expr = <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctNoTrail<FieldValue, Comma>?> <base:(Comma DotDot Expr)?> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
-    ast::ExprStruct {
-        path,
-        brace_open,
-        fields,
-        base,
-        comma,
-        brace_close
-    }
-);
+StructExpression: ast::Expr = {
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctMustTrail<FieldValue, Comma>> <base:(DotDot Box<Expr>)> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
+        ast::ExprStruct {
+            path,
+            brace_open,
+            fields,
+            base: Some(base),
+            comma,
+            brace_close
+        }
+    ),
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
+        ast::ExprStruct {
+            path,
+            brace_open,
+            fields,
+            base: None,
+            comma: None,
+            brace_close
+        }
+    ),
+};
 
 FieldValue: ast::FieldValue = {
     <named:Ident> <expr:(Colon Expr)?> => ast::FieldValue { member: ast::Member::Named(named), expr },
@@ -1439,7 +1452,7 @@ CallExpression: ast::Expr = <on:Box<ExprWithoutFieldOrBlock>> <paren_open:ParenO
 
 /// https://doc.rust-lang.org/reference/expressions/method-call-expr.html
 MethodCallExpression: ast::Expr = {
-    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
+    <on:Box<ExprWithBlock>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
         ast::ExprMethodCall {
             on,
             dot,
@@ -1457,7 +1470,7 @@ MethodCallExpression: ast::Expr = {
             paren_open,
             args,
             paren_close
-        }    
+        }
     )
 };
 
@@ -1514,7 +1527,7 @@ RangeExpression: ast::Expr = {
 // todo: if let expression
 /// https://doc.rust-lang.org/reference/expressions/if-expr.html
 IfExpression: ast::Expr = {
-    <if_token:If> <expr:Expr> <block:Block> <else_token:(Else Box<IfExpression>)> => ast::Expr::If(
+    <if_token:If> <expr:Box<ExprIf>> <block:Block> <else_token:(Else Box<IfExpression>)?> => ast::Expr::If(
         ast::ExprIf {
             if_token,
             expr,
@@ -1522,23 +1535,25 @@ IfExpression: ast::Expr = {
             else_token
         }
     ),
-    <if_token:If> <expr:Expr> <block:Block> <else_token:(Else Box<BlockExpression>)> => ast::Expr::If(
+    <if_token:If> <expr:Box<ExprIf>> <block:Block> <else_token:(Else Box<BlockExpression>)> => ast::Expr::If(
         ast::ExprIf {
             if_token,
             expr,
             block,
-            else_token
+            else_token: Some(else_token)
         }
     )
 };
 
 /// https://doc.rust-lang.org/reference/expressions/match-expr.html
 MatchExpression: ast::Expr = <match_token:Match> <expr:Box<ExprIf>> <brace_open:BraceOpen> <arms:PunctTrail<MatchArm, Comma>> <brace_close:BraceClose> => ast::Expr::Match(
-    match_token,
-    expr,
-    brace_open,
-    arms,
-    brace_close
+    ast::ExprMatch {
+        match_token,
+        expr,
+        brace_open,
+        arms,
+        brace_close
+    }
 );
 
 MatchArm: ast::Arm = {
@@ -1609,9 +1624,9 @@ pub Pat: ast::Pat = {
     Lit => ast::Pat::Lit(<>),
     /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
     PathInExpression => {
-        if <>.leading_sep.is_none() && <>.segments.len() == 1 {
+        if <>.leading_sep.is_none() && <>.segments.inner.is_empty() {
             if let Some(segment) = <>.segments.last {
-                ast::Pat::Ident(segment.clone())
+                ast::Pat::Ident(segment.as_ref().clone())
             } else {
                 ast::Pat::Path(<>)
             }
@@ -1629,7 +1644,7 @@ pub Pat: ast::Pat = {
             right
         }
     ),
-    <l:RangePatternBound> <dotdoteq:DotDotEq> <r:RangePatternBound> => ast::Pat::Range(
+    <left:RangePatternBound> <dotdoteq:DotDotEq> <right:RangePatternBound> => ast::Pat::Range(
         ast::PatRange {
             left,
             range_type: ast::RangeType::Closed(dotdoteq),
@@ -1670,7 +1685,7 @@ pub Pat: ast::Pat = {
         ast::PatTuple {
             paren_open,
             subpats,
-            rest_subpats: none,
+            rest_subpats: None,
             paren_close
         }
     ),
@@ -1698,10 +1713,9 @@ RangePatternBound: ast::Expr = {
     PathInExpression => ast::Expr::Path(<>),
 };
 
-StructPatternElements: (Option<ast::PunctTrail<ast::StructPatternField, ast::Comma>>, Option<DotDot>) = {
-    DotDot => (None, Some(<>)),
-    PunctTrail<StructPatternField, Comma> => (Some(<>), None),
-    <fields:PunctMustTrail<StructPatternField, Comma>> <dotdot:DotDot> => (Some(fields), Some(dotdot)),
+StructPatternElements: (ast::Punctuated<ast::StructPatternField, ast::token::Comma>, Option<ast::token::DotDot>) = {
+    PunctTrail<StructPatternField, Comma> => (<>, None),
+    <fields:PunctMustTrail<StructPatternField, Comma>> <dotdot:DotDot> => (fields, Some(dotdot)),
 };
 
 StructPatternField: ast::StructPatternField = {
@@ -1737,7 +1751,7 @@ pub Type: ast::Type = {
     TypePath => ast::Type::Path(<>),
 
     /// https://doc.rust-lang.org/reference/types/tuple.html#tuple-types
-    <paren_open:ParenOpen> <tys: PunctTrail<Type, Comma>> <paren_close:ParenClose> => ast::Type::Tuple(
+    <paren_open:ParenOpen> <tys: PunctMustTrail<Type, Comma>> <paren_close:ParenClose> => ast::Type::Tuple(
         ast::TypeTuple {
             paren_open,
             tys,

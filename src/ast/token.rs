@@ -1,5 +1,3 @@
-use super::*;
-
 use derive_more::Display;
 use rug::{Float, Integer as Int};
 
@@ -212,7 +210,7 @@ tokens! {
     Super,
     Trait,
     True,
-    Type,
+    "type" => TokenType,
     Unsafe,
     Use,
     Where,
@@ -224,7 +222,7 @@ tokens! {
 
     Abstract,
     Become,
-    Box,
+    "box" => TokenBox,
     Do,
     Final,
     Macro,
@@ -239,8 +237,8 @@ tokens! {
     Union,
 
     Entity,
-    // Bag,
-    // Ring,
+    Bag,
+    Ring,
     Arch,
     When,
     Out,

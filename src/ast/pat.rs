@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use paste::paste;
 
 use super::*;
 
@@ -32,7 +33,7 @@ crate::class_from_tokens! {
         Struct {
             path: ExprPath,
             brace_open: BraceOpen,
-            fields: Option<Punctuated<StructPatternField, Comma>>,
+            fields: Punctuated<StructPatternField, Comma>,
             remaining: Option<DotDot>,
             brace_close: BraceClose
         },
@@ -72,7 +73,7 @@ crate::class_from_tokens! {
             pat: Box<Pat>
         },
         Ident {
-            ident: Ident
+            inner: Ident
         }
     }
 }

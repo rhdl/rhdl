@@ -1,4 +1,14 @@
-use super::{expr::ExprRange, *};
+use std::boxed::Box;
+
+use paste::paste;
+
+use super::{
+    expr::{Expr, ExprRange},
+    pat::PatType,
+    token::*,
+    types::{Type, TypePath},
+    Block, Punctuated, SimplePath, StmtLocal,
+};
 
 crate::class_from_tokens! {
     Item {
@@ -32,7 +42,7 @@ crate::class_from_tokens! {
         },
         Type {
             vis: Option<Vis>,
-            type_token: super::token::Type,
+            type_token: TokenType,
             ident: Ident,
             generics: Option<Generics>,
             eq: Eq,
@@ -44,7 +54,7 @@ crate::class_from_tokens! {
             struct_token: Struct,
             ident: Ident,
             generics: Option<Generics>,
-            fields: Fields,
+            fields: Fields
         },
         Enum {
             vis: Option<Vis>,
@@ -75,9 +85,8 @@ crate::class_from_tokens! {
             vis: Option<Vis>,
             entity: Entity,
             ident: Ident,
-            generics: Generics,
-            ports: Ports,
-            semi: Option<Semi>
+            generics: Option<Generics>,
+            ports: Punctuated<Port, Comma>
         },
         // Bag {
         //     vis: Option<Vis>,
@@ -221,7 +230,7 @@ crate::class_from_tokens! {
             const_token: Const,
             ident: Ident,
             colon: Colon,
-            type_token: Type,
+            ty: Type,
             default: Option<(Eq, Expr)>
         }
     }

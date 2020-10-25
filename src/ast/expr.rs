@@ -1,4 +1,5 @@
 use std::boxed::Box;
+use paste::paste;
 
 use super::*;
 
@@ -106,8 +107,8 @@ crate::class_from_tokens! {
         Struct {
             path: ExprPath,
             brace_open: BraceOpen,
-            fields: Option<Punctuated<FieldValue, Comma>>,
-            base: Option<(Comma, DotDot, Box<Expr>)>,
+            fields: Punctuated<FieldValue, Comma>,
+            base: Option<(DotDot, Box<Expr>)>,
             comma: Option<Comma>,
             brace_close: BraceClose
         },
