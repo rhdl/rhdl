@@ -273,13 +273,13 @@ Ident: ast::token::Ident = <left:@L> <ident:Identifier> <right:@R> => ast::token
 };
 
 // i.e. 1_234_567_890
-Int: Int = <left:@L> <val:Integer> <right:@R> => Int::parse(val).unwrap().into();
+PlainLitInt: ast::token::LitInt = <left:@L> <val:Integer> <right:@R> => ast::token::LitInt { val: Int::parse(val).unwrap().into(), suffix: None, raw: val.to_string(), span: ast::Span(left, right) };
 
-pub IntLit: ast::token::Lit = {
-    <left:@L> <val:Int> <right:@R> => ast::token::Lit::Int { val: val.clone(), suffix: None, raw: val.to_string(), span: ast::Span(left, right), },
+pub LitInt: ast::token::LitInt = {
+    PlainLitInt,
 
     <left:@L> <val:IntegerForLiteral> <right: @R> => {
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse(val).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -291,7 +291,7 @@ pub IntLit: ast::token::Lit = {
     <left:@L> <val:DecimalInteger> <right: @R> => {
         const BASE_CHAR: char = 'd';
         const BASE: i32 = 10;
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -303,7 +303,7 @@ pub IntLit: ast::token::Lit = {
     <left:@L> <val:HexInteger> <right: @R> => {
         const BASE_CHAR: char = 'x';
         const BASE: i32 = 16;
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -315,7 +315,7 @@ pub IntLit: ast::token::Lit = {
     <left:@L> <val:OctalInteger> <right: @R> => {
         const BASE_CHAR: char = 'o';
         const BASE: i32 = 8;
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -327,7 +327,7 @@ pub IntLit: ast::token::Lit = {
     <left:@L> <val:BinaryInteger> <right: @R> => {
         const BASE_CHAR: char = 'b';
         const BASE: i32 = 2;
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), BASE).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -339,7 +339,7 @@ pub IntLit: ast::token::Lit = {
     <left:@L> <val:BaseInteger> <right: @R> => {
         const BASE_CHAR: char = '#';
         let base = val.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
-        ast::token::Lit::Int {
+        ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
             suffix: None,
             raw: val.to_string(),
@@ -348,7 +348,7 @@ pub IntLit: ast::token::Lit = {
     },
 };
 
-pub Float: ast::token::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
+pub LitFloat: ast::token::LitFloat = <left:@L> <val:FloatingPoint> <right: @R> => {
     let format = val.split('f').nth(1).map(usize::from_str).unwrap().unwrap();
     let precision = match format {
         16 => 11,
@@ -360,7 +360,7 @@ pub Float: ast::token::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
         _ => unreachable!()
     };
     let float = Float::parse(val.split('f').next().unwrap()).unwrap();
-    ast::token::Lit::Float {
+    ast::token::LitFloat {
         val: Float::with_val(precision, float),
         suffix: None,
         raw: val.to_string(),
@@ -369,8 +369,8 @@ pub Float: ast::token::Lit = <left:@L> <val:FloatingPoint> <right: @R> => {
 };
 
 Lit: ast::token::Lit = {
-    IntLit,
-    Float,
+    LitInt => ast::token::Lit::Int(<>),
+    LitFloat => ast::token::Lit::Float(<>),
 };
 
 
@@ -502,8 +502,8 @@ Item: ast::Item = {
             struct_token,
             ident,
             generics,
-            fields,
-            semi
+            fields: fields.0,
+            semi: fields.1
         }
     ),
 
@@ -539,7 +539,9 @@ Item: ast::Item = {
             entity,
             ident,
             generics,
-            ports
+            brace_open,
+            ports,
+            brace_close
         }
     ),
     // <vis:Visibility?> <bag:Bag> <ident:Ident> <brace_open:BraceOpen> <literals:PunctTrail<Lit, Comma>> <brace_close:BraceClose> => ast::Item::Bag(
@@ -575,7 +577,7 @@ UseTree: ast::UseTree = {
 };
 
 #[inline]
-UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <segments:(PathSegment PathSep)+> => ast::SimplePath { leading_sep, segments };
+UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> => ast::SimplePath { leading_sep, segments: ast::Punctuated { inner, last: None } };
 
 UseLeaf: ast::UseTree = {
     Star => ast::UseTree::Glob(<>),
@@ -648,10 +650,10 @@ Sig: ast::Sig = <ident:Ident> <generics:Generics?> <paren_open:ParenOpen> <input
 FnArgs: ast::Punctuated<ast::FnArg, ast::token::Comma> = {
     <receiver:LowerSelf> => ast::Punctuated {
         inner: vec![],
-        last: receiver,
+        last: Some(Box::new(ast::FnArg::Receiver(receiver))),
     },
-    <receiver:LowerSelf> <mut args:PunctTrail<FnArg, Comma>> => {
-        args.inner.insert(0, receiver);
+    <receiver:(LowerSelf Comma)> <mut args:PunctTrail<FnArg, Comma>> => {
+        args.inner.insert(0, (ast::FnArg::Receiver(receiver.0), receiver.1));
         args
     },
     PunctTrail<FnArg, Comma>,
@@ -682,22 +684,21 @@ GenericParam: ast::GenericParam = {
 };
 
 /// https://doc.rust-lang.org/reference/items/structs.html
-StructFields: ast::Fields = {
-    <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => ast::Fields::Named(
+StructFields: (ast::Fields, Option<ast::token::Semi>) = {
+    <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => (ast::Fields::Named(
         ast::FieldsNamed {
             brace_open,
             inner,
             brace_close
         }
-    ),
-    <paren_open:ParenOpen> <inner:PunctTrail<UnnamedField, Comma>> <paren_close:ParenClose> <semi:Semi> => ast::Fields::Unnamed(
+    ), None),
+    <paren_open:ParenOpen> <inner:PunctTrail<UnnamedField, Comma>> <paren_close:ParenClose> <semi:Semi> => (ast::Fields::Unnamed(
         ast::FieldsUnnamed {
             paren_open,
             inner,
-            paren_close,
-            semi: Some(semi)
+            paren_close
         }
-    ),
+    ), Some(semi))
 };
 NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> <colon:Colon> <ty:Type> => ast::NamedField { vis, ident, colon, ty };
 UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis, ty };
@@ -731,8 +732,7 @@ EnumFields: ast::Fields = {
         ast::FieldsUnnamed {
             paren_open,
             inner,
-            paren_close,
-            semi: None,
+            paren_close
         }
     ),
 };
@@ -1395,14 +1395,14 @@ TupleElements: ast::Punctuated<ast::Expr, ast::token::Comma> = <inner:(Expr Comm
 
 /// https://doc.rust-lang.org/reference/expressions/tuple-expr.html#tuple-indexing-expressions
 TupleIndexingExpression: ast::Expr = {
-    <on:Box<ExprWithBlock>> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
+    <on:Box<ExprWithBlock>> <dot:Dot> <unnamed:PlainLitInt> => ast::Expr::Field(
         ast::ExprField {
             on,
             dot,
             member: ast::Member::Unnamed(unnamed)
         }
     ),
-    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <unnamed:Int> => ast::Expr::Field(
+    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <unnamed:PlainLitInt> => ast::Expr::Field(
         ast::ExprField {
             on,
             dot,
@@ -1437,7 +1437,7 @@ StructExpression: ast::Expr = {
 
 FieldValue: ast::FieldValue = {
     <named:Ident> <expr:(Colon Expr)?> => ast::FieldValue { member: ast::Member::Named(named), expr },
-    <unnamed:Int> <expr:(Colon Expr)> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr: Some(expr) },
+    <unnamed:PlainLitInt> <expr:(Colon Expr)> => ast::FieldValue { member: ast::Member::Unnamed(unnamed), expr: Some(expr) },
 };
 
 /// https://doc.rust-lang.org/reference/expressions/call-expr.html
@@ -1719,7 +1719,7 @@ StructPatternElements: (ast::Punctuated<ast::StructPatternField, ast::token::Com
 };
 
 StructPatternField: ast::StructPatternField = {
-    <index:Int> <colon:Colon> <pat:Box<Pat>> => ast::StructPatternField::TuplePat(
+    <index:PlainLitInt> <colon:Colon> <pat:Box<Pat>> => ast::StructPatternField::TuplePat(
         ast::StructPatternFieldTuplePat {
             index,
             colon,
@@ -1760,7 +1760,7 @@ pub Type: ast::Type = {
     ),
 
     /// https://doc.rust-lang.org/reference/types/array.html
-    <bracket_open:BracketOpen> <ty:Box<Type>> <semi:Semi> <lit:IntLit> <bracket_close:BracketClose> => ast::Type::Array(
+    <bracket_open:BracketOpen> <ty:Box<Type>> <semi:Semi> <lit:PlainLitInt> <bracket_close:BracketClose> => ast::Type::Array(
         ast::TypeArray {
             bracket_open,
             ty,

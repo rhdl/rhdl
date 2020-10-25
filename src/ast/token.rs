@@ -65,21 +65,10 @@ impl ToTokens for Ident {
 
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Lit {
-    #[display(fmt = "{}", raw)]
-    Int {
-        val: Int,
-        /// i.e. i32
-        suffix: Option<Ident>,
-        raw: String,
-        span: Span,
-    },
-    #[display(fmt = "{}", raw)]
-    Float {
-        val: Float,
-        suffix: Option<Ident>,
-        raw: String,
-        span: Span,
-    },
+    #[display(fmt = "{}", _0)]
+    Int(LitInt),
+    #[display(fmt = "{}", _0)]
+    Float(LitFloat),
 }
 
 impl ToTokens for Lit {
@@ -88,11 +77,65 @@ impl ToTokens for Lit {
     }
 
     fn first(&self) -> Tok {
-        Tok::Lit(self.clone())
+        self.to_tokens().first().cloned().unwrap()
     }
 
     fn last(&self) -> Tok {
-        Tok::Lit(self.clone())
+        self.to_tokens().last().cloned().unwrap()
+    }
+
+    fn len(&self) -> usize {
+        1
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}", raw)]
+pub struct LitInt {
+    pub val: Int,
+    pub suffix: Option<Ident>,
+    pub raw: String,
+    pub span: Span,
+}
+
+impl ToTokens for LitInt {
+    fn to_tokens(&self) -> Vec<Tok> {
+        vec![Tok::Lit(Lit::Int(self.clone()))]
+    }
+
+    fn first(&self) -> Tok {
+        self.to_tokens().first().cloned().unwrap()
+    }
+
+    fn last(&self) -> Tok {
+        self.to_tokens().last().cloned().unwrap()
+    }
+
+    fn len(&self) -> usize {
+        1
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}", raw)]
+pub struct LitFloat {
+    pub val: Float,
+    pub suffix: Option<Ident>,
+    pub raw: String,
+    pub span: Span,
+}
+
+impl ToTokens for LitFloat {
+    fn to_tokens(&self) -> Vec<Tok> {
+        vec![Tok::Lit(Lit::Float(self.clone()))]
+    }
+
+    fn first(&self) -> Tok {
+        self.to_tokens().first().cloned().unwrap()
+    }
+
+    fn last(&self) -> Tok {
+        self.to_tokens().last().cloned().unwrap()
     }
 
     fn len(&self) -> usize {
@@ -171,7 +214,7 @@ macro_rules! tokens {
                     $( Self::$variant(x) => x.span() ),*,
                     Self::Ident(Ident { span, ..}) => span.clone(),
                     Self::Lit(lit) => match lit {
-                        Lit::Int { span, .. } | Lit::Float { span, .. } => span.clone(),
+                        Lit::Int(LitInt { span, .. }) | Lit::Float(LitFloat { span, .. }) => span.clone(),
                     },
                 }
             }

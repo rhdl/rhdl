@@ -22,7 +22,7 @@ crate::class_from_tokens! {
             bracket_open: BracketOpen,
             ty: Box<Type>,
             semi: Semi,
-            lit: Lit,
+            lit: LitInt,
             bracket_close: BracketClose
         },
         Slice {

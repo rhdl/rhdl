@@ -3,7 +3,7 @@ use std::boxed::Box;
 use paste::paste;
 
 use super::{
-    expr::{Expr, ExprRange},
+    expr::Expr,
     pat::PatType,
     token::*,
     types::{Type, TypePath},
@@ -54,7 +54,8 @@ crate::class_from_tokens! {
             struct_token: Struct,
             ident: Ident,
             generics: Option<Generics>,
-            fields: Fields
+            fields: Fields,
+            semi: Option<Semi>
         },
         Enum {
             vis: Option<Vis>,
@@ -86,7 +87,9 @@ crate::class_from_tokens! {
             entity: Entity,
             ident: Ident,
             generics: Option<Generics>,
-            ports: Punctuated<Port, Comma>
+            brace_open: BraceOpen,
+            ports: Punctuated<Port, Comma>,
+            brace_close: BraceClose
         },
         // Bag {
         //     vis: Option<Vis>,
@@ -246,8 +249,7 @@ crate::class_from_tokens! {
         Unnamed {
             paren_open: ParenOpen,
             inner: Punctuated<UnnamedField, Comma>,
-            paren_close: ParenClose,
-            semi: Option<Semi>
+            paren_close: ParenClose
         }
     }
 }

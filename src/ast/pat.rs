@@ -62,8 +62,7 @@ crate::class_from_tokens! {
 crate::class_from_tokens! {
     StructPatternField {
         TuplePat {
-            // TODO: make lit into litint + litfloat
-            index: Lit,
+            index: LitInt,
             colon: Colon,
             pat: Box<Pat>
         },

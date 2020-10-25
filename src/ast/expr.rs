@@ -139,8 +139,7 @@ crate::class_from_tokens! {
             inner: Ident
         },
         Unnamed {
-            // todo: lit into litint and litfloat
-            inner: Lit
+            inner: LitInt
         }
     }
 }
