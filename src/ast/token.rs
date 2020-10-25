@@ -243,6 +243,8 @@ tokens! {
     // Ring,
     Arch,
     When,
+    Out,
+    InOut,
 
     "+" => Plus,
     "-" => Minus,

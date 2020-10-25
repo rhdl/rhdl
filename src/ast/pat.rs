@@ -40,13 +40,13 @@ crate::class_from_tokens! {
             path: ExprPath,
             paren_open: ParenOpen,
             subpats: Punctuated<Pat, Comma>,
-            rest_subpats: Option<(DotDot, Punctuated<Pat, Comma>)>,
+            rest_subpats: Option<(DotDot, Comma, Punctuated<Pat, Comma>)>,
             paren_close: ParenClose
         },
         Tuple {
             paren_open: ParenOpen,
             subpats: Punctuated<Pat, Comma>,
-            rest_subpats: Option<(DotDot, Punctuated<Pat, Comma>)>,
+            rest_subpats: Option<(DotDot, Comma, Punctuated<Pat, Comma>)>,
             paren_close: ParenClose
         },
         Slice {

@@ -284,6 +284,23 @@ crate::class_from_tokens! {
     }
 }
 
+crate::class_only_from_tokens! {
+    PortType {
+        In,
+        Out,
+        InOut
+    }
+}
+
+crate::inst_from_tokens! {
+    Port {
+        port_type: PortType,
+        ident: Ident,
+        colon: Colon,
+        ty: Type
+    }
+}
+
 crate::class_from_tokens! {
     ArchItem {
         Const {

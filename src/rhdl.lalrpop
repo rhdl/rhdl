@@ -74,6 +74,8 @@ match {
     // "ring" => TokRing,
     "arch" => TokArch,
     "when" => TokWhen,
+    "out" => TokOut,
+    "inout" => TokInOut,
 
     "+" => TokPlus,
     "-" => TokMinus,
@@ -145,120 +147,122 @@ match {
     r"(?:\d+\.\d*|\d*\.\d+|\d+)(?:[eE][-+]?\d+)?f(?:16|32|64|80|128|256)" => FloatingPoint,
 }
 
-As = <left:@L> TokAs => ast::token::As { left };
-Break = <left:@L> TokBreak => ast::token::Break { left };
-Const = <left:@L> TokConst => ast::token::Const { left };
-Continue = <left:@L> TokContinue => ast::token::Continue { left };
-Crate = <left:@L> TokCrate => ast::token::Crate { left };
-Else = <left:@L> TokElse => ast::token::Else { left };
-Enum = <left:@L> TokEnum => ast::token::Enum { left };
-Extern = <left:@L> TokExtern => ast::token::Extern { left };
-False = <left:@L> TokFalse => ast::token::False { left };
-Fn = <left:@L> TokFn => ast::token::Fn { left };
-For = <left:@L> TokFor => ast::token::For { left };
-If = <left:@L> TokIf => ast::token::If { left };
-Impl = <left:@L> TokImpl => ast::token::Impl { left };
-In = <left:@L> TokIn => ast::token::In { left };
-Let = <left:@L> TokLet => ast::token::Let { left };
-Loop = <left:@L> TokLoop => ast::token::Loop { left };
-Match = <left:@L> TokMatch => ast::token::Match { left };
-Mod = <left:@L> TokMod => ast::token::Mod { left };
-Move = <left:@L> TokMove => ast::token::Move { left };
-Mut = <left:@L> TokMut => ast::token::Mut { left };
-Pub = <left:@L> TokPub => ast::token::Pub { left };
-Ref = <left:@L> TokRef => ast::token::Ref { left };
-Return = <left:@L> TokReturn => ast::token::Return { left };
-LowerSelf = <left:@L> TokLowerSelf => ast::token::LowerSelf { left };
-UpperSelf = <left:@L> TokUpperSelf => ast::token::UpperSelf { left };
-Static = <left:@L> TokStatic => ast::token::Static { left };
-Struct = <left:@L> TokStruct => ast::token::Struct { left };
-Super = <left:@L> TokSuper => ast::token::Super { left };
-Trait = <left:@L> TokTrait => ast::token::Trait { left };
-True = <left:@L> TokTrue => ast::token::True { left };
-TokenType = <left:@L> TokTokenType => ast::token::TokenType { left };
-Unsafe = <left:@L> TokUnsafe => ast::token::Unsafe { left };
-Use = <left:@L> TokUse => ast::token::Use { left };
-Where = <left:@L> TokWhere => ast::token::Where { left };
-While = <left:@L> TokWhile => ast::token::While { left };
+#[inline] As: ast::As =<left:@L> TokAs => ast::token::As { left };
+#[inline] Break: ast::Break =<left:@L> TokBreak => ast::token::Break { left };
+#[inline] Const: ast::Const =<left:@L> TokConst => ast::token::Const { left };
+#[inline] Continue: ast::Continue =<left:@L> TokContinue => ast::token::Continue { left };
+#[inline] Crate: ast::Crate =<left:@L> TokCrate => ast::token::Crate { left };
+#[inline] Else: ast::Else =<left:@L> TokElse => ast::token::Else { left };
+#[inline] Enum: ast::Enum =<left:@L> TokEnum => ast::token::Enum { left };
+#[inline] Extern: ast::Extern =<left:@L> TokExtern => ast::token::Extern { left };
+#[inline] False: ast::False =<left:@L> TokFalse => ast::token::False { left };
+#[inline] Fn: ast::Fn =<left:@L> TokFn => ast::token::Fn { left };
+#[inline] For: ast::For =<left:@L> TokFor => ast::token::For { left };
+#[inline] If: ast::If =<left:@L> TokIf => ast::token::If { left };
+#[inline] Impl: ast::Impl =<left:@L> TokImpl => ast::token::Impl { left };
+#[inline] In: ast::In =<left:@L> TokIn => ast::token::In { left };
+#[inline] Let: ast::Let =<left:@L> TokLet => ast::token::Let { left };
+#[inline] Loop: ast::Loop =<left:@L> TokLoop => ast::token::Loop { left };
+#[inline] Match: ast::Match =<left:@L> TokMatch => ast::token::Match { left };
+#[inline] Mod: ast::Mod =<left:@L> TokMod => ast::token::Mod { left };
+#[inline] Move: ast::Move =<left:@L> TokMove => ast::token::Move { left };
+#[inline] Mut: ast::Mut =<left:@L> TokMut => ast::token::Mut { left };
+#[inline] Pub: ast::Pub =<left:@L> TokPub => ast::token::Pub { left };
+#[inline] Ref: ast::Ref =<left:@L> TokRef => ast::token::Ref { left };
+#[inline] Return: ast::Return =<left:@L> TokReturn => ast::token::Return { left };
+#[inline] LowerSelf: ast::LowerSelf =<left:@L> TokLowerSelf => ast::token::LowerSelf { left };
+#[inline] UpperSelf: ast::UpperSelf =<left:@L> TokUpperSelf => ast::token::UpperSelf { left };
+#[inline] Static: ast::Static =<left:@L> TokStatic => ast::token::Static { left };
+#[inline] Struct: ast::Struct =<left:@L> TokStruct => ast::token::Struct { left };
+#[inline] Super: ast::Super =<left:@L> TokSuper => ast::token::Super { left };
+#[inline] Trait: ast::Trait =<left:@L> TokTrait => ast::token::Trait { left };
+#[inline] True: ast::True =<left:@L> TokTrue => ast::token::True { left };
+#[inline] TokenType: ast::TokenType =<left:@L> TokTokenType => ast::token::TokenType { left };
+#[inline] Unsafe: ast::Unsafe =<left:@L> TokUnsafe => ast::token::Unsafe { left };
+#[inline] Use: ast::Use =<left:@L> TokUse => ast::token::Use { left };
+#[inline] Where: ast::Where =<left:@L> TokWhere => ast::token::Where { left };
+#[inline] While: ast::While =<left:@L> TokWhile => ast::token::While { left };
 
-Async = <left:@L> TokAsync => ast::token::Async { left };
-Await = <left:@L> TokAwait => ast::token::Await { left };
-Dyn = <left:@L> TokDyn => ast::token::Dyn { left };
+#[inline] Async: ast::Async =<left:@L> TokAsync => ast::token::Async { left };
+#[inline] Await: ast::Await =<left:@L> TokAwait => ast::token::Await { left };
+#[inline] Dyn: ast::Dyn =<left:@L> TokDyn => ast::token::Dyn { left };
 
-Abstract = <left:@L> TokAbstract => ast::token::Abstract { left };
-Become = <left:@L> TokBecome => ast::token::Become { left };
-Box = <left:@L> TokBox => ast::token::Box { left };
-Do = <left:@L> TokDo => ast::token::Do { left };
-Final = <left:@L> TokFinal => ast::token::Final { left };
-Macro = <left:@L> TokMacro => ast::token::Macro { left };
-Override = <left:@L> TokOverride => ast::token::Override { left };
-Priv = <left:@L> TokPriv => ast::token::Priv { left };
-Typeof = <left:@L> TokTypeof => ast::token::Typeof { left };
-Unsized = <left:@L> TokUnsized => ast::token::Unsized { left };
-Virtual = <left:@L> TokVirtual => ast::token::Virtual { left };
-Yield = <left:@L> TokYield => ast::token::Yield { left };
-Try = <left:@L> TokTry => ast::token::Try { left };
+#[inline] Abstract: ast::Abstract =<left:@L> TokAbstract => ast::token::Abstract { left };
+#[inline] Become: ast::Become =<left:@L> TokBecome => ast::token::Become { left };
+#[inline] TokenBox: ast::TokenBox =<left:@L> TokBox => ast::token::Box { left };
+#[inline] Do: ast::Do =<left:@L> TokDo => ast::token::Do { left };
+#[inline] Final: ast::Final =<left:@L> TokFinal => ast::token::Final { left };
+#[inline] Macro: ast::Macro =<left:@L> TokMacro => ast::token::Macro { left };
+#[inline] Override: ast::Override =<left:@L> TokOverride => ast::token::Override { left };
+#[inline] Priv: ast::Priv =<left:@L> TokPriv => ast::token::Priv { left };
+#[inline] Typeof: ast::Typeof =<left:@L> TokTypeof => ast::token::Typeof { left };
+#[inline] Unsized: ast::Unsized =<left:@L> TokUnsized => ast::token::Unsized { left };
+#[inline] Virtual: ast::Virtual =<left:@L> TokVirtual => ast::token::Virtual { left };
+#[inline] Yield: ast::Yield =<left:@L> TokYield => ast::token::Yield { left };
+#[inline] Try: ast::Try =<left:@L> TokTry => ast::token::Try { left };
 
-Union = <left:@L> TokUnion => ast::token::Union { left };
+#[inline] Union: ast::Union =<left:@L> TokUnion => ast::token::Union { left };
 
-Entity = <left:@L> TokEntity => ast::token::Entity { left };
+#[inline] Entity: ast::Entity =<left:@L> TokEntity => ast::token::Entity { left };
 // Bag = <left:@L> TokBag => ast::token::Bag { left };
 // Ring = <left:@L> TokRing => ast::token::Ring { left };
-Arch = <left:@L> TokArch => ast::token::Arch { left };
-When = <left:@L> TokWhen => ast::token::When { left };
+#[inline] Arch: ast::Arch =<left:@L> TokArch => ast::token::Arch { left };
+#[inline] When: ast::When =<left:@L> TokWhen => ast::token::When { left };
+#[inline] Out: ast::Out =<left:@L> TokOut => ast::token::When { left };
+#[inline] InOut: ast::InOut =<left:@L> TokInOut => ast::token::When { left };
 
-Plus = <left:@L> TokPlus => ast::Token::Plus { left };
-Minus = <left:@L> TokMinus => ast::Token::Minus { left };
-Star = <left:@L> TokStar => ast::Token::Star { left };
-StarStar = <left:@L> TokStarStar => ast::Token::StarStar { left };
-Slash = <left:@L> TokSlash => ast::Token::Slash { left };
-Percent = <left:@L> TokPercent => ast::Token::Percent { left };
-Caret = <left:@L> TokCaret => ast::Token::Caret { left };
-Not = <left:@L> TokNot => ast::Token::Not { left };
-And = <left:@L> TokAnd => ast::Token::And { left };
-Or = <left:@L> TokOr => ast::Token::Or { left };
-AndAnd = <left:@L> TokAndAnd => ast::Token::AndAnd { left };
-OrOr = <left:@L> TokOrOr => ast::Token::OrOr { left };
-Shl = <left:@L> TokShl => ast::Token::Shl { left };
-Shr = <left:@L> TokShr => ast::Token::Shr { left };
-PlusEq = <left:@L> TokPlusEq => ast::Token::PlusEq { left };
-MinusEq = <left:@L> TokMinusEq => ast::Token::MinusEq { left };
-StarEq = <left:@L> TokStarEq => ast::Token::StarEq { left };
-StarStarEq = <left:@L> TokStarStarEq => ast::Token::StarStarEq { left };
-SlashEq = <left:@L> TokSlashEq => ast::Token::SlashEq { left };
-PercentEq = <left:@L> TokPercentEq => ast::Token::PercentEq { left };
-CaretEq = <left:@L> TokCaretEq => ast::Token::CaretEq { left };
-AndEq = <left:@L> TokAndEq => ast::Token::AndEq { left };
-OrEq = <left:@L> TokOrEq => ast::Token::OrEq { left };
-ShlEq = <left:@L> TokShlEq => ast::Token::ShlEq { left };
-ShrEq = <left:@L> TokShrEq => ast::Token::ShrEq { left };
-Eq = <left:@L> TokEq => ast::Token::Eq { left };
-EqEq = <left:@L> TokEqEq => ast::Token::EqEq { left };
-Ne = <left:@L> TokNe => ast::Token::Ne { left };
-Gt = <left:@L> TokGt => ast::Token::Gt { left };
-Lt = <left:@L> TokLt => ast::Token::Lt { left };
-Ge = <left:@L> TokGe => ast::Token::Ge { left };
-Le = <left:@L> TokLe => ast::Token::Le { left };
-At = <left:@L> TokAt => ast::Token::At { left };
-Underscore = <left:@L> TokUnderscore => ast::Token::Underscore { left };
-Dot = <left:@L> TokDot => ast::Token::Dot { left };
-DotDot = <left:@L> TokDotDot => ast::Token::DotDot { left };
-DotDotEq = <left:@L> TokDotDotEq => ast::Token::DotDotEq { left };
-Comma = <left:@L> TokComma => ast::Token::Comma { left };
-Semi = <left:@L> TokSemi => ast::Token::Semi { left };
-Colon = <left:@L> TokColon => ast::Token::Colon { left };
-PathSep = <left:@L> TokPathSep => ast::Token::PathSep { left };
-RArrow = <left:@L> TokRArrow => ast::Token::RArrow { left };
-FatArrow = <left:@L> TokFatArrow => ast::Token::FatArrow { left };
-Pound = <left:@L> TokPound => ast::Token::Pound { left };
-Dollar = <left:@L> TokDollar => ast::Token::Dollar { left };
-Question = <left:@L> TokQuestion => ast::Token::Question { left };
-BracketOpen = <left:@L> TokBracketOpen => ast::Token::BracketOpen { left };
-BracketClose = <left:@L> TokBracketClose => ast::Token::BracketClose { left };
-ParenOpen = <left:@L> TokParenOpen => ast::Token::ParenOpen { left };
-ParenClose = <left:@L> TokParenClose => ast::Token::ParenClose { left };
-BraceOpen = <left:@L> TokBraceOpen => ast::Token::BraceOpen { left };
-BraceClose = <left:@L> TokBraceClose => ast::Token::BraceClose { left };
+#[inline] Plus: ast::Plus =<left:@L> TokPlus => ast::Token::Plus { left };
+#[inline] Minus: ast::Minus =<left:@L> TokMinus => ast::Token::Minus { left };
+#[inline] Star: ast::Star =<left:@L> TokStar => ast::Token::Star { left };
+#[inline] StarStar: ast::StarStar =<left:@L> TokStarStar => ast::Token::StarStar { left };
+#[inline] Slash: ast::Slash =<left:@L> TokSlash => ast::Token::Slash { left };
+#[inline] Percent: ast::Percent =<left:@L> TokPercent => ast::Token::Percent { left };
+#[inline] Caret: ast::Caret =<left:@L> TokCaret => ast::Token::Caret { left };
+#[inline] Not: ast::Not =<left:@L> TokNot => ast::Token::Not { left };
+#[inline] And: ast::And =<left:@L> TokAnd => ast::Token::And { left };
+#[inline] Or: ast::Or =<left:@L> TokOr => ast::Token::Or { left };
+#[inline] AndAnd: ast::AndAnd =<left:@L> TokAndAnd => ast::Token::AndAnd { left };
+#[inline] OrOr: ast::OrOr =<left:@L> TokOrOr => ast::Token::OrOr { left };
+#[inline] Shl: ast::Shl =<left:@L> TokShl => ast::Token::Shl { left };
+#[inline] Shr: ast::Shr =<left:@L> TokShr => ast::Token::Shr { left };
+#[inline] PlusEq: ast::PlusEq =<left:@L> TokPlusEq => ast::Token::PlusEq { left };
+#[inline] MinusEq: ast::MinusEq =<left:@L> TokMinusEq => ast::Token::MinusEq { left };
+#[inline] StarEq: ast::StarEq =<left:@L> TokStarEq => ast::Token::StarEq { left };
+#[inline] StarStarEq: ast::StarStarEq =<left:@L> TokStarStarEq => ast::Token::StarStarEq { left };
+#[inline] SlashEq: ast::SlashEq =<left:@L> TokSlashEq => ast::Token::SlashEq { left };
+#[inline] PercentEq: ast::PercentEq =<left:@L> TokPercentEq => ast::Token::PercentEq { left };
+#[inline] CaretEq: ast::CaretEq =<left:@L> TokCaretEq => ast::Token::CaretEq { left };
+#[inline] AndEq: ast::AndEq =<left:@L> TokAndEq => ast::Token::AndEq { left };
+#[inline] OrEq: ast::OrEq =<left:@L> TokOrEq => ast::Token::OrEq { left };
+#[inline] ShlEq: ast::ShlEq =<left:@L> TokShlEq => ast::Token::ShlEq { left };
+#[inline] ShrEq: ast::ShrEq =<left:@L> TokShrEq => ast::Token::ShrEq { left };
+#[inline] Eq: ast::Eq =<left:@L> TokEq => ast::Token::Eq { left };
+#[inline] EqEq: ast::EqEq =<left:@L> TokEqEq => ast::Token::EqEq { left };
+#[inline] Ne: ast::Ne =<left:@L> TokNe => ast::Token::Ne { left };
+#[inline] Gt: ast::Gt =<left:@L> TokGt => ast::Token::Gt { left };
+#[inline] Lt: ast::Lt =<left:@L> TokLt => ast::Token::Lt { left };
+#[inline] Ge: ast::Ge =<left:@L> TokGe => ast::Token::Ge { left };
+#[inline] Le: ast::Le =<left:@L> TokLe => ast::Token::Le { left };
+#[inline] At: ast::At =<left:@L> TokAt => ast::Token::At { left };
+#[inline] Underscore: ast::Underscore =<left:@L> TokUnderscore => ast::Token::Underscore { left };
+#[inline] Dot: ast::Dot =<left:@L> TokDot => ast::Token::Dot { left };
+#[inline] DotDot: ast::DotDot =<left:@L> TokDotDot => ast::Token::DotDot { left };
+#[inline] DotDotEq: ast::DotDotEq =<left:@L> TokDotDotEq => ast::Token::DotDotEq { left };
+#[inline] Comma: ast::Comma =<left:@L> TokComma => ast::Token::Comma { left };
+#[inline] Semi: ast::Semi =<left:@L> TokSemi => ast::Token::Semi { left };
+#[inline] Colon: ast::Colon =<left:@L> TokColon => ast::Token::Colon { left };
+#[inline] PathSep: ast::PathSep =<left:@L> TokPathSep => ast::Token::PathSep { left };
+#[inline] RArrow: ast::RArrow =<left:@L> TokRArrow => ast::Token::RArrow { left };
+#[inline] FatArrow: ast::FatArrow =<left:@L> TokFatArrow => ast::Token::FatArrow { left };
+#[inline] Pound: ast::Pound =<left:@L> TokPound => ast::Token::Pound { left };
+#[inline] Dollar: ast::Dollar =<left:@L> TokDollar => ast::Token::Dollar { left };
+#[inline] Question: ast::Question =<left:@L> TokQuestion => ast::Token::Question { left };
+#[inline] BracketOpen: ast::BracketOpen =<left:@L> TokBracketOpen => ast::Token::BracketOpen { left };
+#[inline] BracketClose: ast::BracketClose =<left:@L> TokBracketClose => ast::Token::BracketClose { left };
+#[inline] ParenOpen: ast::ParenOpen =<left:@L> TokParenOpen => ast::Token::ParenOpen { left };
+#[inline] ParenClose: ast::ParenClose =<left:@L> TokParenClose => ast::Token::ParenClose { left };
+#[inline] BraceOpen: ast::BraceOpen =<left:@L> TokBraceOpen => ast::Token::BraceOpen { left };
+#[inline] BraceClose: ast::BraceClose =<left:@L> TokBraceClose => ast::Token::BraceClose { left };
 
 
 /// https://doc.rust-lang.org/reference/identifiers.html
@@ -658,7 +662,7 @@ PatType: ast::PatType = <pat:Pat> <colon:Colon> <ty:Type> => ast::PatType { pat,
 Generics: ast::Generics = <lt:Lt> <params:PunctTrail<GenericParam, Comma>> <gt:Gt> => ast::Generics { lt, params, gt };
 
 GenericParam: ast::GenericParam = {
-    <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Add>)> <eq:(Eq <Type>)?> => ast::GenericParam::Type(
+    <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)> <eq:(Eq <Type>)?> => ast::GenericParam::Type(
         ast::GenericParamType {
             ident,
             bounds,
@@ -736,6 +740,20 @@ EnumFields: ast::Fields = {
 ImplItem: ast::ImplItem = {
     ItemConst => ast::ImplItem::Const(<>),
     ItemFn => ast::ImplItem::Fn(<>),
+};
+
+Ports: ast::Punctuated<ast::Port, ast::Comma> = PunctTrail<Port, Comma>;
+#[inline]
+PortType: ast::PortType = {
+    In => ast::PortType::In(<>),
+    Out => ast::PortType::Out(<>),
+    InOut => ast::PortType::InOut(<>)
+};
+Port: ast::Port = <port_type:PortType> <ident:Ident> <colon: Colon> <ty:Type> => ast::Port {
+    port_type,
+    ident,
+    colon,
+    ty
 };
 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
@@ -1629,7 +1647,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-struct-patterns
-    <path: PathInExpression> <paren_open:ParenOpen> <subpats:PunctTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path: PathInExpression> <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1638,12 +1656,40 @@ pub Pat: ast::Pat = {
             paren_close
         }
     ),
-    <path: PathInExpression> <paren_open:ParenOpen> <left:(<Pat> Comma)*> DotDot Comma <right:PunctTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(path, ast::Comma(left), Some(right)),
+    <path: PathInExpression> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+        ast::PatTupleStruct {
+            path,
+            paren_open,
+            subpats,
+            rest_subpats,
+            paren_close
+        }
+    ),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-patterns and https://doc.rust-lang.org/reference/patterns.html#grouped-patterns
-    <paren_open:ParenOpen> <PunctTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::Tuple(<>, None),
-    <paren_open:ParenOpen> <left:(<Pat> Comma)*> DotDot Comma <right:PunctTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::Tuple(ast::Comma(left), Some(right)),
+    <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::Tuple(
+        ast::PatTuple {
+            paren_open,
+            subpats,
+            rest_subpats: none,
+            paren_close
+        }
+    ),
+    <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::Tuple(
+        ast::PatTuple {
+            paren_open,
+            subpats,
+            rest_subpats,
+            paren_close
+        }
+    ),
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
-    <bracket_open:BracketOpen> <PunctTrail<Pat, Comma>> <bracket_close:BracketClose> => ast::Pat::Slice(<>),
+    <bracket_open:BracketOpen> <subpats:PunctTrail<Pat, Comma>> <bracket_close:BracketClose> => ast::Pat::Slice(
+        ast::PatSlice {
+            bracket_open,
+            subpats,
+            bracket_close
+        }
+    ),
 };
 
 RangePatternBound: ast::Expr = {
@@ -1724,7 +1770,7 @@ pub Type: ast::Type = {
 
     /// https://doc.rust-lang.org/reference/types/function-pointer.html
     /// TODO: support named params "MaybeNamedParam"
-    <fn_token:Fn> <paren_open:ParenOpen> <args:PunctComma<Type>> <paren_close:ParenClose> <ret:(RArrow Box<Type>)?> => ast::Type::Fn(
+    <fn_token:Fn> <paren_open:ParenOpen> <args:PunctTrail<Type, Comma>> <paren_close:ParenClose> <ret:(RArrow Box<Type>)?> => ast::Type::Fn(
         ast::TypeFn {
             fn_token,
             paren_open,
