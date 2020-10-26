@@ -109,71 +109,71 @@ mod tests {
         }
     }
 
-    //     #[test]
-    //     fn expr_parser() {
-    //         macro_rules! parse {
-    //             ($($input: expr),+) => {
-    //                 $(
-    //                     assert_eq!(ExprParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
-    //                 )+
-    //             };
-    //         }
-    //         parse!(
-    //             "{ }",
-    //             "a",
-    //             "4",
-    //             "{ a }",
-    //             "[4; 5]",
-    //             "0..=9",
-    //             "point.x",
-    //             "call()",
-    //             "x.call()",
-    //             "x[0]",
-    //             "[0, 1, 2, 3, 4, 5]",
-    //             "(0, 1, 2, 3, 4, 4.5)",
-    //             "x as y",
-    //             "if a >= 4 { }",
-    //             "if a >= 4 { } else { }",
-    //             "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
-    //             "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
-    //             "{ return a; }",
-    //             "Struct { x, y, z }",
-    //             "Struct { x: a, y: b, z: c }",
-    //             "Struct { x, .. z }",
-    //             "Struct { .. z }",
-    //             "for x in 0..16 { }"
-    //         );
-    //     }
+        #[test]
+        fn expr_parser() {
+            macro_rules! parse {
+                ($($input: expr),+) => {
+                    $(
+                        assert_eq!(ExprParser::new().parse($input).map(|output| format(output.to_tokens())), Ok($input.to_string()));
+                    )+
+                };
+            }
+            parse!(
+                "{ }",
+                "a",
+                "4",
+                "{ a }",
+                "[4; 5]",
+                "0..=9",
+                "point.x",
+                "call()",
+                "x.call()",
+                "x[0]",
+                "[0, 1, 2, 3, 4, 5]",
+                "(0, 1, 2, 3, 4, 4.5)",
+                "x as y",
+                "if a >= 4 { }",
+                "if a >= 4 { } else { }",
+                "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
+                "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
+                "{ return a; }",
+                "Struct { x, y, z }",
+                "Struct { x: a, y: b, z: c }",
+                "Struct { x, .. z }",
+                "Struct { .. z }",
+                "for x in 0..16 { }"
+            );
+        }
 
-    //     #[test]
-    //     fn pat_parser() {
-    //         macro_rules! parse {
-    //             ($($input: expr),+) => {
-    //                 $(
-    //                     assert_eq!(PatParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
-    //                 )+
-    //             };
-    //         }
-    //         parse!(
-    //             "0",
-    //             "a",
-    //             "module::Enum",
-    //             "_",
-    //             "0..10",
-    //             "0..=10",
-    //             "0..super::RAM_SIZE",
-    //             "Struct { a, b, c, .. }",
-    //             "Struct { a: x, b: y, c: z, .. }",
-    //             "Struct { a, b, c, d, e, f, g, h }",
-    //             "Struct { .. }",
-    //             "StructTup { 0: first, 1: second, 2: third }",
-    //             "Tup(a, b, c, d, .., z)",
-    //             "Tup(x, y, z)",
-    //             "(left, right)",
-    //             "(zero, .., hundred)",
-    //             "[1, _, _]"
-    //         );
-    //     }
+        #[test]
+        fn pat_parser() {
+            macro_rules! parse {
+                ($($input: expr),+) => {
+                    $(
+                        assert_eq!(PatParser::new().parse($input).map(|output| format(output.to_tokens())), Ok($input.to_string()));
+                    )+
+                };
+            }
+            parse!(
+                "0",
+                "a",
+                "module::Enum",
+                "_",
+                "0..10",
+                "0..=10",
+                "0..super::RAM_SIZE",
+                "Struct { a, b, c, .. }",
+                "Struct { a: x, b: y, c: z, .. }",
+                "Struct { a, b, c, d, e, f, g, h }",
+                "Struct { .. }",
+                "StructTup { 0: first, 1: second, 2: third }",
+                "Tup(a, b, c, d, .., z)",
+                "Tup(x, y, z)",
+                "(left, right)",
+                "(zero, .., hundred)",
+                "[1, _, _]"
+            );
+        }
 
     //     #[test]
     //     fn file_parser() {

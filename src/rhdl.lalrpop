@@ -764,9 +764,9 @@ PathInExpression: ast::SimplePath = Path;
 
 /// https://doc.rust-lang.org/reference/expressions/block-expr.html
 BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
-Block: ast::Block = <brace_open:BraceOpen> <statements:Statements> <brace_close:BraceClose> => ast::Block {
+Block: ast::Block = <brace_open:BraceOpen> <statements:Statements?> <brace_close:BraceClose> => ast::Block {
     brace_open,
-    statements,
+    statements: statements.unwrap_or_default(),
     brace_close
 };
 

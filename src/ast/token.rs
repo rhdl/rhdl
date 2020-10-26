@@ -1,5 +1,8 @@
 use derive_more::Display;
 use rug::{Float, Integer as Int};
+use paste::paste;
+
+use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq)]
 pub struct Span(pub usize, pub usize);
@@ -145,10 +148,15 @@ impl ToTokens for LitFloat {
 
 macro_rules! token {
     ($format: literal => $variant: ident) => {
-        #[derive(Debug, Hash, Clone, PartialEq, Display)]
-        #[display(fmt = $format)]
+        #[derive(Debug, Hash, Clone, PartialEq)]
         pub struct $variant {
             pub left: usize,
+        }
+
+        impl fmt::Display for $variant {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                write!(f, $format)
+            }
         }
 
         impl ToTokens for $variant {
@@ -170,10 +178,17 @@ macro_rules! token {
         }
     };
     ($variant: ident) => {
-        #[derive(Debug, Clone, Hash, PartialEq, Display)]
-        #[display(fmt = stringify!($variant))]
+        #[derive(Debug, Clone, Hash, PartialEq)]
         pub struct $variant {
             pub left: usize,
+        }
+
+        paste::paste! {
+            impl fmt::Display for $variant {
+                fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                    write!(f, stringify!([<$variant:lower>]))
+                }
+            }
         }
 
         impl ToTokens for $variant {
