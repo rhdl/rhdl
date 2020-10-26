@@ -13,9 +13,9 @@ mod types;
 pub use expr::*;
 pub use item::*;
 pub use pat::*;
-pub use types::*;
-use token::*;
 pub use token::Span;
+use token::*;
+pub use types::*;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Punctuated<T, P>
@@ -277,6 +277,14 @@ macro_rules! class_only_from_tokens {
                 }
             }
         }
+
+        impl $class {
+            pub fn variants() -> Vec<String> {
+                vec![
+                    $(ToString::to_string(&$variant { left: 0 }) ),*
+                ]
+            }
+        }
     };
 }
 
@@ -304,26 +312,22 @@ macro_rules! class_from_tokens {
                     $variant([<$class $variant>])
                 ),*
             }
-    
             impl ToTokens for $class {
                 fn to_tokens(&self) -> Vec<Tok> {
                     match self {
                         $( Self::$variant(x) => x.to_tokens() ),*
                     }
                 }
-    
                 fn first(&self) -> Tok {
                     match self {
                         $( Self::$variant(x) => x.first() ),*
                     }
                 }
-    
                 fn last(&self) -> Tok {
                     match self {
                         $( Self::$variant(x) => x.last() ),*
                     }
                 }
-    
                 fn len(&self) -> usize {
                     match self {
                         $( Self::$variant(x) => x.len() ),*

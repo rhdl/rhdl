@@ -405,7 +405,7 @@ PunctNoTrail<T, P>: ast::Punctuated<T, P> = {
 Box<T>: Box<T> = T => Box::new(<>);
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
-Path: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathSegment, PathSep>> => {
+Path: ast::SimplePath = <leading_sep:PathSep?> <mut segments:PunctNoTrail<PathSegment, PathSep>> => {
     ast::SimplePath {
         leading_sep,
         segments
@@ -419,7 +419,7 @@ PathSegment: ast::token::Ident = {
     <left:@L> <ident:Crate> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
 };
 
-pub File: Vec<ast::Item> = Item* => <>;
+// pub File: Vec<ast::Item> = Item* => <>;
 
 ItemConst: ast::ItemConst = <vis:Visibility?> <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <eq:Eq> <expr:Expr> <semi:Semi> => ast::ItemConst {
     vis,

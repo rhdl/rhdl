@@ -3,15 +3,18 @@ use lalrpop_util::lalrpop_mod;
 #[macro_use]
 mod ast;
 
+mod display;
+
 lalrpop_mod!(pub rhdl);
 
 #[cfg(test)]
 mod tests {
     use super::{
         ast::{
-            token::{LitFloat, LitInt},
+            token::{LitFloat, LitInt, ToTokens},
             *,
         },
+        display::format,
         rhdl::*,
     };
     use pretty_assertions::assert_eq;
@@ -74,37 +77,37 @@ mod tests {
         assert!(LitFloatParser::new().parse("?").is_err());
     }
 
-    //     #[test]
-    //     fn expr_parser_parses_all_ops() {
-    //         macro_rules! parse {
-    //             ($($input: expr),+) => {
-    //                 $(
-    //                     assert_eq!(ExprParser::new().parse(&$input).map(|output| format!("{}", output)), Ok($input.to_string()));
-    //                 )+
-    //             };
-    //         }
-    //         for op in UnOp::variants().iter().map(ToString::to_string) {
-    //             parse!(
-    //                 format!("{}a", op),
-    //                 format!("{}0", op),
-    //                 format!("{}{{ 0 }}", op)
-    //             );
-    //         }
-    //         for op in BinOp::variants().iter().map(ToString::to_string) {
-    //             parse!(
-    //                 format!("a {} 0", op),
-    //                 format!("a {} b", op),
-    //                 format!("a {} {{ b }}", op)
-    //             );
-    //         }
-    //         for op in AssOp::variants().iter().map(ToString::to_string) {
-    //             parse!(
-    //                 format!("{{ a {} 0; }}", op),
-    //                 format!("{{ a {} b; }}", op),
-    //                 format!("{{ a {} {{ b }}; }}", op)
-    //             );
-    //         }
-    //     }
+    #[test]
+    fn expr_parser_parses_all_ops() {
+        macro_rules! parse {
+                ($($input: expr),+) => {
+                    $(
+                        assert_eq!(ExprParser::new().parse(&$input).map(|output| format(output.to_tokens())), Ok($input.to_string()));
+                    )+
+                };
+            }
+        for op in UnOp::variants() {
+            parse!(
+                format!("{}a", op),
+                format!("{}0", op),
+                format!("{}{{ 0 }}", op)
+            );
+        }
+        for op in BinOp::variants() {
+            parse!(
+                format!("a {} 0", op),
+                format!("a {} b", op),
+                format!("a {} {{ b }}", op)
+            );
+        }
+        for op in AssOp::variants() {
+            parse!(
+                format!("{{ a {} 0; }}", op),
+                format!("{{ a {} b; }}", op),
+                format!("{{ a {} {{ b }}; }}", op)
+            );
+        }
+    }
 
     //     #[test]
     //     fn expr_parser() {
