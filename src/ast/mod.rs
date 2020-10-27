@@ -53,22 +53,24 @@ where
             .collect()
     }
 
-    fn first(&self) -> Tok {
+    fn first(&self) -> Option<Tok> {
         self.inner
             .first()
             .map(|(t, _)| t)
-            .map(ToTokens::first)
-            .or(self.last.as_ref().map(Box::as_ref).map(ToTokens::first))
-            .unwrap()
+            .and_then(ToTokens::first)
+            .or(self
+                .last
+                .as_ref()
+                .map(Box::as_ref)
+                .and_then(ToTokens::first))
     }
 
-    fn last(&self) -> Tok {
+    fn last(&self) -> Option<Tok> {
         self.last
             .as_ref()
             .map(Box::as_ref)
-            .map(ToTokens::last)
-            .or(self.inner.last().map(|(t, _)| t).map(ToTokens::last))
-            .unwrap()
+            .and_then(ToTokens::last)
+            .or(self.inner.last().map(|(t, _)| t).and_then(ToTokens::last))
     }
 
     fn len(&self) -> usize {
@@ -105,14 +107,14 @@ impl ToTokens for SimplePath {
         acc
     }
 
-    fn first(&self) -> Tok {
+    fn first(&self) -> Option<Tok> {
         self.leading_sep
             .as_ref()
-            .map(ToTokens::first)
-            .unwrap_or(self.segments.first())
+            .and_then(ToTokens::first)
+            .or(self.segments.first())
     }
 
-    fn last(&self) -> Tok {
+    fn last(&self) -> Option<Tok> {
         self.segments.last()
     }
 
@@ -204,12 +206,12 @@ macro_rules! inst_from_tokens {
                 }
             }
 
-            fn first(&self) -> Tok {
-                self.to_tokens().first().cloned().unwrap()
+            fn first(&self) -> Option<Tok> {
+                self.to_tokens().first().cloned()
             }
 
-            fn last(&self) -> Tok {
-                self.to_tokens().last().cloned().unwrap()
+            fn last(&self) -> Option<Tok> {
+                self.to_tokens().last().cloned()
             }
 
             fn len(&self) -> usize {
@@ -259,13 +261,13 @@ macro_rules! class_only_from_tokens {
                 }
             }
 
-            fn first(&self) -> Tok {
+            fn first(&self) -> Option<Tok> {
                 match self {
                     $( Self::$variant(x) => x.first() ),*
                 }
             }
 
-            fn last(&self) -> Tok {
+            fn last(&self) -> Option<Tok> {
                 match self {
                     $( Self::$variant(x) => x.last() ),*
                 }
@@ -318,16 +320,18 @@ macro_rules! class_from_tokens {
                         $( Self::$variant(x) => x.to_tokens() ),*
                     }
                 }
-                fn first(&self) -> Tok {
+
+                fn first(&self) -> Option<Tok> {
                     match self {
                         $( Self::$variant(x) => x.first() ),*
                     }
                 }
-                fn last(&self) -> Tok {
+                fn last(&self) -> Option<Tok> {
                     match self {
                         $( Self::$variant(x) => x.last() ),*
                     }
                 }
+
                 fn len(&self) -> usize {
                     match self {
                         $( Self::$variant(x) => x.len() ),*

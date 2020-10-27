@@ -1,6 +1,5 @@
 use derive_more::Display;
 use rug::{Float, Integer as Int};
-use paste::paste;
 
 use std::fmt;
 
@@ -23,12 +22,30 @@ impl std::ops::AddAssign for Span {
     }
 }
 
-pub trait ToTokens {
+pub trait ToTokens: Clone {
     fn to_tokens(&self) -> Vec<Tok>;
-    fn first(&self) -> Tok;
-    fn last(&self) -> Tok;
+
+    fn first(&self) -> Option<Tok> {
+        self.to_tokens().first().cloned()
+    }
+
+    fn last(&self) -> Option<Tok> {
+        self.to_tokens().last().cloned()
+    }
+
     /// Number of contained tokens
     fn len(&self) -> usize;
+}
+
+impl<T: ToTokens> ToTokens for Vec<T> {
+    fn to_tokens(&self) -> Vec<Tok> {
+        self.iter().map(ToTokens::to_tokens).flatten().collect()
+    }
+
+    /// Number of contained tokens
+    fn len(&self) -> usize {
+        self.iter().map(ToTokens::len).sum()
+    }
 }
 
 pub trait Spanned {
@@ -37,7 +54,13 @@ pub trait Spanned {
 
 impl<T: ToTokens> Spanned for T {
     fn span(&self) -> Span {
-        self.first().span() + self.last().span()
+        if self.len() == 1 {
+            self.first().map(|x| x.span()).unwrap_or(Span(0, 0))
+        } else if self.len() == 0 {
+            Span(0, 0)
+        } else {
+            self.first().map(|x| x.span()).unwrap() + self.last().map(|x| x.span()).unwrap()
+        }
     }
 }
 
@@ -51,14 +74,6 @@ pub struct Ident {
 impl ToTokens for Ident {
     fn to_tokens(&self) -> Vec<Tok> {
         vec![Tok::Ident(self.clone())]
-    }
-
-    fn first(&self) -> Tok {
-        Tok::Ident(self.clone())
-    }
-
-    fn last(&self) -> Tok {
-        Tok::Ident(self.clone())
     }
 
     fn len(&self) -> usize {
@@ -77,14 +92,6 @@ pub enum Lit {
 impl ToTokens for Lit {
     fn to_tokens(&self) -> Vec<Tok> {
         vec![Tok::Lit(self.clone())]
-    }
-
-    fn first(&self) -> Tok {
-        self.to_tokens().first().cloned().unwrap()
-    }
-
-    fn last(&self) -> Tok {
-        self.to_tokens().last().cloned().unwrap()
     }
 
     fn len(&self) -> usize {
@@ -106,14 +113,6 @@ impl ToTokens for LitInt {
         vec![Tok::Lit(Lit::Int(self.clone()))]
     }
 
-    fn first(&self) -> Tok {
-        self.to_tokens().first().cloned().unwrap()
-    }
-
-    fn last(&self) -> Tok {
-        self.to_tokens().last().cloned().unwrap()
-    }
-
     fn len(&self) -> usize {
         1
     }
@@ -131,14 +130,6 @@ pub struct LitFloat {
 impl ToTokens for LitFloat {
     fn to_tokens(&self) -> Vec<Tok> {
         vec![Tok::Lit(Lit::Float(self.clone()))]
-    }
-
-    fn first(&self) -> Tok {
-        self.to_tokens().first().cloned().unwrap()
-    }
-
-    fn last(&self) -> Tok {
-        self.to_tokens().last().cloned().unwrap()
     }
 
     fn len(&self) -> usize {
@@ -164,14 +155,6 @@ macro_rules! token {
                 vec![Tok::$variant(self.clone())]
             }
 
-            fn first(&self) -> Tok {
-                Tok::$variant(self.clone())
-            }
-
-            fn last(&self) -> Tok {
-                Tok::$variant(self.clone())
-            }
-
             fn len(&self) -> usize {
                 1
             }
@@ -194,14 +177,6 @@ macro_rules! token {
         impl ToTokens for $variant {
             fn to_tokens(&self) -> Vec<Tok> {
                 vec![Tok::$variant(self.clone())]
-            }
-
-            fn first(&self) -> Tok {
-                Tok::$variant(self.clone())
-            }
-
-            fn last(&self) -> Tok {
-                Tok::$variant(self.clone())
             }
 
             fn len(&self) -> usize {

@@ -133,8 +133,8 @@ mod tests {
                 "(0, 1, 2, 3, 4, 4.5)",
                 "x as y",
                 "if a >= 4 { }",
-                "if a >= 4 { } else { }",
-                "if a >= 4 { } else if a < 0 { } else if a > 0 { } else { }",
+                "if a >= 4 { }\nelse { }",
+                "if a >= 4 { }\nelse if a < 0 { }\nelse if a > 0 { }\nelse { }",
                 "match x { 0 => { }, 1 => { y }, _ if x != 2 => { }, 2 => { } }",
                 "{ return a; }",
                 "Struct { x, y, z }",
@@ -175,33 +175,30 @@ mod tests {
             );
         }
 
-    //     #[test]
-    //     fn file_parser() {
-    //         macro_rules! parse {
-    //             ($($input: expr),+) => {
-    //                 $(
-    //                     assert_eq!(FileParser::new().parse($input).map(|output| format!("{}", output)), Ok($input.to_string()));
-    //                 )+
-    //             };
-    //         }
-    //         parse!(
-    //             r#"use super::X;
-    // use crate::Y;
-    // use crate::{ first::{ self, Type }, second::Type as AnotherType };
-    // pub const ROM_SIZE: uint = 64 * 1024 * 1024;
-    // mod in_another_file;
-    // mod in_this_file { }
-    // fn x(x: X) { }
-    // type AliasForX = X;
-    // pub(super) struct NamedWrapper { x: X }
-    // pub(crate) struct UnnamedWrapper(X);
-    // pub(in super::super) enum Z { A(X), B(Y), C(u12) }
-    // enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
-    // enum States { Uninitialized, Ready, Busy, Error }
-    // pub(self) bag AudioFrequency { 32_000, 41_000, 48_000 }
-    // ring AudioBitWidth = 16..=24;
-    // fn everything(parenthesized: (Type), typePath: Type, tuple1: (), tuple2: (u9, i9), array: [u4; 32], slice: [u8], infer: _, function: fn(u8), function_ret: fn(u10) -> u16) { }
-    // "#
-    //         );
-    //     }
+        #[test]
+        fn file_parser() {
+            macro_rules! parse {
+                ($($input: expr),+) => {
+                    $(
+                        assert_eq!(FileParser::new().parse($input).map(|output| format(output.to_tokens())), Ok($input.to_string()));
+                    )+
+                };
+            }
+            parse!(
+                r#"use super::X;
+use crate::Y;
+use crate::{ first::{ self, Type }, second::Type as AnotherType };
+pub const ROM_SIZE: uint = 64 * 1024 * 1024;
+mod in_another_file;
+mod in_this_file { }
+fn x(x: X) { }
+type AliasForX = X;
+pub(super) struct NamedWrapper { x: X }
+pub(crate) struct UnnamedWrapper(X);
+pub(in super::super) enum Z { A(X), B(Y), C(u12) }
+enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
+enum States { Uninitialized, Ready, Busy, Error }
+fn everything(parenthesized: (Type), typePath: Type, tuple1: (), tuple2: (u9, i9), array: [u4; 32], slice: [u8], infer: _, function: fn(u8), function_ret: fn(u10) -> u16) { }"#
+            );
+        }
 }

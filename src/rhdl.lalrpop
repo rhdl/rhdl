@@ -405,26 +405,7 @@ PunctNoTrail<T, P>: ast::Punctuated<T, P> = {
 Box<T>: Box<T> = T => Box::new(<>);
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
-Path: ast::SimplePath = {
-    <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> <last:Box<Ident>> => {
-        ast::SimplePath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner,
-                last: Some(last)
-            }
-        }
-    },
-    <leading_sep:PathSep?> <last:Box<Ident>> => {
-        ast::SimplePath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner: vec![],
-                last: Some(last)
-            }
-        }
-    },
-};
+Path: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathSegment, PathSep>> => ast::SimplePath { leading_sep, segments };
 
 PathSegment: ast::token::Ident = {
     Ident,
@@ -1752,26 +1733,30 @@ StructPatternField: ast::StructPatternField = {
 
 /// https://doc.rust-lang.org/reference/types.html
 pub Type: ast::Type = {
-    /// https://doc.rust-lang.org/reference/types.html#parenthesized-types
-    <paren_open:ParenOpen> <inner:Box<Type>> <paren_close:ParenClose> => ast::Type::Parenthesized(
-        ast::TypeParenthesized {
-            paren_open,
-            inner,
-            paren_close
-        }
-    ),
-
     /// https://doc.rust-lang.org/reference/paths.html#paths-in-types
     TypePath => ast::Type::Path(<>),
 
+    /// https://doc.rust-lang.org/reference/types.html#parenthesized-types
     /// https://doc.rust-lang.org/reference/types/tuple.html#tuple-types
-    <paren_open:ParenOpen> <tys: PunctMustTrail<Type, Comma>> <paren_close:ParenClose> => ast::Type::Tuple(
-        ast::TypeTuple {
-            paren_open,
-            tys,
-            paren_close
+    <paren_open:ParenOpen> <tys: PunctTrail<Type, Comma>> <paren_close:ParenClose> => {
+        if tys.inner.is_empty() && tys.last.is_some() {
+            ast::Type::Parenthesized(
+                ast::TypeParenthesized {
+                    paren_open,
+                    inner: tys.last.unwrap(),
+                    paren_close
+                }
+            )
+        } else {
+            ast::Type::Tuple(
+                ast::TypeTuple {
+                    paren_open,
+                    tys,
+                    paren_close
+                }
+            )
         }
-    ),
+    },
 
     /// https://doc.rust-lang.org/reference/types/array.html
     <bracket_open:BracketOpen> <ty:Box<Type>> <semi:Semi> <lit:PlainLitInt> <bracket_close:BracketClose> => ast::Type::Array(
@@ -1808,4 +1793,23 @@ pub Type: ast::Type = {
         }
     ),
 };
-TypePath: ast::SimplePath = PathInExpression;
+TypePath: ast::SimplePath = {
+    <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> <last:Box<Ident>> => {
+        ast::SimplePath {
+            leading_sep,
+            segments: ast::Punctuated {
+                inner,
+                last: Some(last)
+            }
+        }
+    },
+    <leading_sep:PathSep?> <last:Box<Ident>> => {
+        ast::SimplePath {
+            leading_sep,
+            segments: ast::Punctuated {
+                inner: vec![],
+                last: Some(last)
+            }
+        }
+    },
+};
