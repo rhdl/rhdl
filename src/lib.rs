@@ -3,6 +3,7 @@ use lalrpop_util::lalrpop_mod;
 #[macro_use]
 mod ast;
 
+#[cfg(test)]
 mod display;
 
 lalrpop_mod!(pub rhdl);
