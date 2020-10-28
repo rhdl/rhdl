@@ -309,7 +309,8 @@ crate::inst_from_tokens! {
         port_type: PortType,
         ident: Ident,
         colon: Colon,
-        ty: Type
+        ty: Type,
+        expr: Option<(Eq, Expr)>
     }
 }
 

@@ -200,9 +200,9 @@ pub(in super::super) enum Z { A(X), B(Y), C(u12) }
 enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
 enum States { Uninitialized, Ready, Busy, Error }
 fn everything(parenthesized: (Type), typePath: Type, tuple1: (), tuple2: (u9, i9), array: [u4; 32], slice: [u8], infer: _, function: fn(u8), function_ret: fn(u10) -> u16) { }
-entity Top { in clk: bit, out audio: u24 }
-arch Top { let audio_next = self.audio + 1;
-when clk.posedge { self.audio = audio_next } }"#
+entity Top { in clk: bit, out audio: u24 = 0 }
+arch Top { let level; Sawtooth { clk: self.clk, level }
+when clk.posedge { self.audio = level >> 8 } }"#
             );
         }
 }

@@ -755,11 +755,12 @@ PortType: ast::PortType = {
     Out => ast::PortType::Out(<>),
     InOut => ast::PortType::InOut(<>)
 };
-Port: ast::Port = <port_type:PortType> <ident:Ident> <colon: Colon> <ty:Type> => ast::Port {
+Port: ast::Port = <port_type:PortType> <ident:Ident> <colon: Colon> <ty:Type> <expr:(Eq Expr)?> => ast::Port {
     port_type,
     ident,
     colon,
-    ty
+    ty,
+    expr
 };
 
 ArchItem: ast::ArchItem = {
