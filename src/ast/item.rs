@@ -109,7 +109,8 @@ crate::class_from_tokens! {
         // },
         Arch {
             arch: Arch,
-            ident: Ident,
+            generics: Option<Generics>,
+            ty: Box<Type>,
             brace_open: BraceOpen,
             items: Vec<ArchItem>,
             brace_close: BraceClose
@@ -324,6 +325,19 @@ crate::class_from_tokens! {
             when: When,
             expr: Expr,
             block: Block
+        },
+        EntityExpression {
+            path: SimplePath,
+            brace_open: BraceOpen,
+            fields: Punctuated<EntityFieldValue, Comma>,
+            brace_close: BraceClose
         }
+    }
+}
+
+crate::inst_from_tokens! {
+    EntityFieldValue {
+        ident: Ident,
+        expr: Option<(Colon, Expr)>
     }
 }

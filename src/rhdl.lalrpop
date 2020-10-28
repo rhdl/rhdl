@@ -539,6 +539,16 @@ Item: ast::Item = {
             brace_close
         }
     ),
+    <arch:Arch> <generics:Generics?> <ty:Box<Type>> <brace_open:BraceOpen> <items:ArchItem*> <brace_close:BraceClose> => ast::Item::Arch(
+        ast::ItemArch {
+            arch,
+            generics,
+            ty,
+            brace_open,
+            items,
+            brace_close
+        }
+    )
     // <vis:Visibility?> <bag:Bag> <ident:Ident> <brace_open:BraceOpen> <literals:PunctTrail<Lit, Comma>> <brace_close:BraceClose> => ast::Item::Bag(
     //     ast::ItemBag {
     //         vis,
@@ -752,6 +762,28 @@ Port: ast::Port = <port_type:PortType> <ident:Ident> <colon: Colon> <ty:Type> =>
     ty
 };
 
+ArchItem: ast::ArchItem = {
+    ItemConst => ast::ArchItem::Const(<>),
+    Local => ast::ArchItem::Let(<>),
+    <when:When> <expr:ExprIf> <block:Block> => ast::ArchItem::When(
+        ast::ArchItemWhen {
+            when,
+            expr,
+            block
+        }
+    ),
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
+        ast::ArchItemEntityExpression {
+            path,
+            brace_open,
+            fields,
+            brace_close
+        }
+    )
+};
+#[inline]
+EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => ast::EntityFieldValue { ident, expr };
+
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
@@ -765,20 +797,22 @@ Block: ast::Block = <brace_open:BraceOpen> <statements:Statements?> <brace_close
     brace_close
 };
 
+/// https://doc.rust-lang.org/reference/statements.html#let-statements
+Local: ast::StmtLocal = <let_token:Let> <pat:Pat> <ty:(Colon Type)?> <init:(Eq Box<Expr>)?> <semi:Semi> => ast::StmtLocal {
+    let_token,
+    pat,
+    ty,
+    init,
+    semi
+};
+
 /// https://doc.rust-lang.org/reference/statements.html
 Statement: ast::Stmt = {
     /// https://doc.rust-lang.org/reference/statements.html#item-declarations
-    // Item => ast::Stmt::Item(<>),
+    Item => ast::Stmt::Item(<>),
     /// https://doc.rust-lang.org/reference/statements.html#let-statements
-    <let_token:Let> <pat:Pat> <ty:(Colon Type)?> <init:(Eq Box<Expr>)?> <semi:Semi> => ast::Stmt::Local(
-        ast::StmtLocal {
-            let_token,
-            pat,
-            ty,
-            init,
-            semi
-        }
-    ),
+    Local => ast::Stmt::Local(<>),
+
     /// https://doc.rust-lang.org/reference/statements.html#expression-statements
     <expr:ExprStmt> <semi:Semi> => ast::Stmt::Expr (
         ast::StmtExpr {
