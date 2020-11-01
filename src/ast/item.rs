@@ -10,6 +10,12 @@ use super::{
     Block, Punctuated, SimplePath, StmtLocal,
 };
 
+crate::inst_from_tokens! {
+    File {
+        items: Vec<Item>
+    }
+}
+
 crate::class_from_tokens! {
     Item {
         Mod {

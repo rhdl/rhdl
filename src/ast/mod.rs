@@ -7,7 +7,7 @@ mod expr;
 mod item;
 // pub mod macaroni;
 mod pat;
-pub mod token;
+pub(crate) mod token;
 mod types;
 
 pub use expr::*;
@@ -16,6 +16,7 @@ pub use pat::*;
 pub use token::Span;
 use token::*;
 pub use types::*;
+pub use token::{Ident, Lit, LitInt, LitFloat, Spanned, ToTokens};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Punctuated<T, P>
