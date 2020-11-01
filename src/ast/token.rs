@@ -22,6 +22,12 @@ impl std::ops::AddAssign for Span {
     }
 }
 
+impl Into<std::ops::Range<usize>> for Span {
+    fn into(self) -> std::ops::Range<usize> {
+        self.0..self.1
+    }
+}
+
 pub trait ToTokens: Clone {
     fn to_tokens(&self) -> Vec<Tok>;
 
