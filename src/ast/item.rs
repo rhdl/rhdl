@@ -162,6 +162,16 @@ crate::class_from_tokens! {
     }
 }
 
+impl ModContent {
+    pub fn is_file(&self) -> bool {
+        if let Self::File {..} = self {
+            true
+        } else {
+            false
+        }
+    }
+}
+
 crate::class_from_tokens! {
     Vis {
         Pub {
