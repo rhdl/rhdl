@@ -1,7 +1,7 @@
 use lalrpop_util::lalrpop_mod;
 
 #[macro_use]
-mod ast;
+pub mod ast;
 
 #[cfg(test)]
 mod display;
