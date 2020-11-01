@@ -6,7 +6,7 @@ pub mod ast;
 #[cfg(test)]
 mod display;
 
-lalrpop_mod!(pub rhdl);
+lalrpop_mod!(pub parser, "/rhdl.rs");
 
 #[cfg(test)]
 mod tests {
@@ -16,7 +16,7 @@ mod tests {
             *,
         },
         display::format,
-        rhdl::*,
+        parser::*,
     };
     use pretty_assertions::assert_eq;
 
