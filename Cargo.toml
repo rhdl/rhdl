@@ -9,9 +9,8 @@ lalrpop = { version = "0.19", features = ["lexer"] }
 
 [dependencies]
 lalrpop-util = "0.19"
-regex = "1"
 rug = "1.11"
-derive_more = "0.99"
+derive_more = { version = "0.99", features = [ "display" ] }
 paste = "1"
 
 [dev-dependencies]
