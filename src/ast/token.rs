@@ -192,7 +192,6 @@ macro_rules! token {
             }
         }
 
-
         impl ToTokens for $variant {
             fn to_tokens(&self) -> Vec<Tok> {
                 vec![Tok::$variant(self.clone())]
