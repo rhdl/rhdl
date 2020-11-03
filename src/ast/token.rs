@@ -24,7 +24,7 @@ impl std::ops::AddAssign for Span {
 
 impl Into<std::ops::Range<usize>> for Span {
     fn into(self) -> std::ops::Range<usize> {
-        self.0..self.1 + 1
+        self.0..self.1
     }
 }
 
@@ -207,7 +207,7 @@ macro_rules! tokens {
         impl Spanned for Tok {
             fn span(&self) -> Span {
                 match self {
-                    $( Self::$variant($variant { left }) => Span(*left, stringify!($variant).len()) ),*,
+                    $( Self::$variant($variant { left }) => Span(*left, *left + stringify!($variant).len()) ),*,
                     Self::Ident(Ident { span, ..}) => span.clone(),
                     Self::Lit(lit) => match lit {
                         Lit::Int(LitInt { span, .. }) | Lit::Float(LitFloat { span, .. }) => span.clone(),
