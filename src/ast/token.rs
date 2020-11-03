@@ -24,7 +24,7 @@ impl std::ops::AddAssign for Span {
 
 impl Into<std::ops::Range<usize>> for Span {
     fn into(self) -> std::ops::Range<usize> {
-        self.0..self.1
+        self.0..self.1 + 1
     }
 }
 
