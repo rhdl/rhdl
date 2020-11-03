@@ -150,6 +150,12 @@ macro_rules! token {
             pub left: usize,
         }
 
+        impl $variant {
+            fn len() -> usize {
+                $format.len()
+            }
+        }
+
         impl fmt::Display for $variant {
             fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
                 write!(f, $format)
@@ -180,6 +186,13 @@ macro_rules! token {
             }
         }
 
+        impl $variant {
+            fn len() -> usize {
+                stringify!($variant).len()
+            }
+        }
+
+
         impl ToTokens for $variant {
             fn to_tokens(&self) -> Vec<Tok> {
                 vec![Tok::$variant(self.clone())]
@@ -207,7 +220,7 @@ macro_rules! tokens {
         impl Spanned for Tok {
             fn span(&self) -> Span {
                 match self {
-                    $( Self::$variant($variant { left }) => Span(*left, *left + stringify!($variant).len()) ),*,
+                    $( Self::$variant($variant { left }) => Span(*left, *left + $variant::len()) ),*,
                     Self::Ident(Ident { span, ..}) => span.clone(),
                     Self::Lit(lit) => match lit {
                         Lit::Int(LitInt { span, .. }) | Lit::Float(LitFloat { span, .. }) => span.clone(),
