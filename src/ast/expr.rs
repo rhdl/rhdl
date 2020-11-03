@@ -1,5 +1,5 @@
-use std::boxed::Box;
 use paste::paste;
+use std::boxed::Box;
 
 use super::*;
 

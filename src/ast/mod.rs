@@ -15,8 +15,8 @@ pub use item::*;
 pub use pat::*;
 pub use token::Span;
 use token::*;
+pub use token::{Ident, Lit, LitFloat, LitInt, Spanned, ToTokens};
 pub use types::*;
-pub use token::{Ident, Lit, LitInt, LitFloat, Spanned, ToTokens};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Punctuated<T, P>

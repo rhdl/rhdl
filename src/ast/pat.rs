@@ -1,5 +1,5 @@
-use std::boxed::Box;
 use paste::paste;
+use std::boxed::Box;
 
 use super::*;
 
@@ -57,7 +57,6 @@ crate::class_from_tokens! {
         }
     }
 }
-
 
 crate::class_from_tokens! {
     StructPatternField {
