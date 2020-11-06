@@ -1,4 +1,5 @@
 use derive_more::Display;
+use paste::paste;
 use rug::{Float, Integer as Int};
 
 use std::fmt;
@@ -87,6 +88,12 @@ impl ToTokens for Ident {
     }
 }
 
+pub(crate) fn visit_ident<'ast, V>(v: &mut V, inst: &'ast Ident)
+where
+    V: crate::visit::Visit<'ast> + ?Sized,
+{
+}
+
 #[derive(Clone, Debug, PartialEq, Display)]
 pub enum Lit {
     #[display(fmt = "{}", _0)]
@@ -102,6 +109,16 @@ impl ToTokens for Lit {
 
     fn len(&self) -> usize {
         1
+    }
+}
+
+pub(crate) fn visit_lit<'ast, V>(v: &mut V, inst: &'ast Lit)
+where
+    V: crate::visit::Visit<'ast> + ?Sized,
+{
+    match inst {
+        Lit::Int(lit_int) => v.visit_lit_int(lit_int),
+        Lit::Float(lit_float) => v.visit_lit_float(lit_float),
     }
 }
 
@@ -124,6 +141,12 @@ impl ToTokens for LitInt {
     }
 }
 
+pub(crate) fn visit_lit_int<'ast, V>(v: &mut V, inst: &'ast LitInt)
+where
+    V: crate::visit::Visit<'ast> + ?Sized,
+{
+}
+
 #[derive(Clone, Debug, PartialEq, Display)]
 #[display(fmt = "{}", raw)]
 pub struct LitFloat {
@@ -143,11 +166,21 @@ impl ToTokens for LitFloat {
     }
 }
 
+pub(crate) fn visit_lit_float<'ast, V>(v: &mut V, inst: &'ast LitFloat)
+where
+    V: crate::visit::Visit<'ast> + ?Sized,
+{
+}
+
 macro_rules! token {
     ($format: literal => $variant: ident) => {
         #[derive(Debug, Hash, Clone, PartialEq)]
         pub struct $variant {
             pub left: usize,
+        }
+
+        paste! {
+            pub(crate) fn [<visit_ $variant:snake>]<'ast, V>(v: &mut V, inst: &'ast $variant) where V: crate::visit::Visit<'ast> + ?Sized { }
         }
 
         impl $variant {
@@ -176,6 +209,10 @@ macro_rules! token {
         #[derive(Debug, Clone, Hash, PartialEq)]
         pub struct $variant {
             pub left: usize,
+        }
+
+        paste! {
+            pub(crate) fn [<visit_ $variant:snake>]<'ast, V>(v: &mut V, inst: &'ast $variant) where V: crate::visit::Visit<'ast> + ?Sized { }
         }
 
         paste::paste! {

@@ -3,6 +3,8 @@ use lalrpop_util::lalrpop_mod;
 #[macro_use]
 pub mod ast;
 
+pub mod visit;
+
 #[cfg(test)]
 mod display;
 

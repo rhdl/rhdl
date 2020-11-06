@@ -13,9 +13,8 @@ mod types;
 pub use expr::*;
 pub use item::*;
 pub use pat::*;
-pub use token::Span;
 use token::*;
-pub use token::{Ident, Lit, LitFloat, LitInt, Spanned, ToTokens, Tok};
+pub use token::{Ident, Lit, LitFloat, LitInt, Span, Spanned, ToTokens, Tok};
 pub use types::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -88,43 +87,10 @@ crate::insts_from_tokens! {
         brace_open: BraceOpen,
         statements: Vec<Stmt>,
         brace_close: BraceClose
-    }
-}
-
-#[derive(Debug, Clone, PartialEq)]
-pub struct SimplePath {
-    pub leading_sep: Option<PathSep>,
-    pub segments: Punctuated<Ident, PathSep>,
-}
-
-impl ToTokens for SimplePath {
-    fn to_tokens(&self) -> Vec<Tok> {
-        let mut acc = self
-            .leading_sep
-            .as_ref()
-            .map(PathSep::to_tokens)
-            .unwrap_or_default();
-        acc.append(&mut self.segments.to_tokens());
-        acc
-    }
-
-    fn first(&self) -> Option<Tok> {
-        self.leading_sep
-            .as_ref()
-            .and_then(ToTokens::first)
-            .or(self.segments.first())
-    }
-
-    fn last(&self) -> Option<Tok> {
-        self.segments.last()
-    }
-
-    fn len(&self) -> usize {
-        self.leading_sep
-            .as_ref()
-            .map(ToTokens::len)
-            .unwrap_or_default()
-            + self.segments.len()
+    },
+    SimplePath {
+        leading_sep: Option<PathSep>,
+        segments: Punctuated<Ident, PathSep>
     }
 }
 
@@ -175,11 +141,109 @@ macro_rules! from_tokens_to_tokens {
 }
 
 #[macro_export]
+macro_rules! call_visitors {
+    ($v: expr, $field: expr => Option<($a: ty, $b: ty, Punctuated<$d: ty, $e: ty>)>) => {
+        if let Some((a, b, c)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            crate::call_visitors!($v, b => $b);
+            c.inner.iter().for_each(|(d, e)| {
+                crate::call_visitors!($v, d => $d);
+                crate::call_visitors!($v, e => $e);
+            });
+            if let Some(last) = c.last.as_ref() {
+                crate::call_visitors!($v, last.as_ref() => $d);
+            }
+        }
+    };
+
+    ($v: expr, $field: expr => Option<($a: ty, $b: ty, $c: ty)>) => {
+        if let Some((a, b, c)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            crate::call_visitors!($v, b => $b);
+            crate::call_visitors!($v, c => $c);
+        }
+    };
+
+    ($v: expr, $field: expr => Option<($a: ty, Punctuated<$c: ty, $d: ty>)>) => {
+        if let Some((a, b)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            b.inner.iter().for_each(|(c, d)| {
+                crate::call_visitors!($v, c => $c);
+                crate::call_visitors!($v, d => $d);
+            });
+            if let Some(last) = b.last.as_ref() {
+                crate::call_visitors!($v, last.as_ref() => $c);
+            }
+        }
+    };
+
+
+    ($v: expr, $field: expr => Option<($a: ty, Box<$b: ty>)>) => {
+        if let Some((a, b)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            crate::call_visitors!($v, b.as_ref() => $b);
+        }
+    };
+
+    ($v: expr, $field: expr => Option<($a: ty, $b: ty)>) => {
+        if let Some((a, b)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            crate::call_visitors!($v, b => $b);
+        }
+    };
+
+    ($v: expr, $field: expr => Vec<$ty: ty>) => {
+        for field in $field.iter() {
+            crate::call_visitors!($v, field => $ty)
+        }
+    };
+
+    ($v: expr, $field: expr => Option<Box<$ty: ty>>) => {
+        if let Some(field) = $field.as_ref() {
+            crate::call_visitors!($v, field.as_ref() => $ty);
+        }
+    };
+
+    ($v: expr, $field: expr => Option<$ty: ty>) => {
+        if let Some(field) = $field.as_ref() {
+            crate::call_visitors!($v, field => $ty);
+        }
+    };
+
+    ($v: expr, $field: expr => Punctuated<$a: ty, $b: ty>) => {
+        $field.inner.iter().for_each(|(a, b)| {
+            crate::call_visitors!($v, a => $a);
+            crate::call_visitors!($v, b => $b);
+        });
+        if let Some(last) = $field.last.as_ref() {
+            crate::call_visitors!($v, last.as_ref() => $a);
+        }
+    };
+
+    ($v: expr, $field: expr => Box<$ty: ty>) => {
+        crate::call_visitors!($v, $field.as_ref() => $ty);
+    };
+
+    ($v: expr, $field: expr => $ty: ty) => {
+        paste! {
+            $v.[<visit_ $ty:snake>](&$field)
+        }
+    };
+}
+
+#[macro_export]
 macro_rules! inst_from_tokens {
     ($inst: ident {
             inner : $member_ty: ty
     }) => {
         pub type $inst = $member_ty;
+
+
+        paste! {
+            pub(crate) fn [<visit_ $inst:snake>]<'ast, V>(v: &mut V, inst: &'ast $inst) where V: crate::visit::Visit<'ast> + ?Sized {
+                crate::call_visitors!(v, inst => $member_ty)
+            }
+        }
     };
     ($inst: ident {
         $(
@@ -191,6 +255,14 @@ macro_rules! inst_from_tokens {
             $(
                 pub $member_ident: $member_ty
             ),*
+        }
+
+        paste! {
+            pub(crate) fn [<visit_ $inst:snake>]<'ast, V>(v: &mut V, inst: &'ast $inst) where V: crate::visit::Visit<'ast> + ?Sized {
+                $(
+                    crate::call_visitors!(v, inst.$member_ident => $member_ty);
+                )*
+            }
         }
 
         impl ToTokens for $inst {
@@ -253,6 +325,12 @@ macro_rules! class_only_from_tokens {
                     $variant($variant)
                 ),*
             }
+
+            pub(crate) fn [<visit_ $class:snake>]<'ast, V>(v: &mut V, inst: &'ast $class) where V: crate::visit::Visit<'ast> + ?Sized {
+                match inst {
+                    $( $class::$variant(variant) => v.[<visit _ $variant:snake>](variant) ),*
+                }
+            }
         }
 
         impl ToTokens for $class {
@@ -308,6 +386,12 @@ macro_rules! class_from_tokens {
                     ),*
                 }
             })*
+
+            pub(crate) fn [<visit_ $class:snake>]<'ast, V>(v: &mut V, inst: &'ast $class) where V: crate::visit::Visit<'ast> + ?Sized {
+                match inst {
+                    $( $class::$variant(variant) => v.[<visit_ $class:snake _ $variant:snake>](variant) ),*
+                }
+            }
 
             #[derive(Clone, Debug, PartialEq)]
             pub enum $class {
