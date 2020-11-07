@@ -2,6 +2,7 @@ use derive_more::Display;
 use paste::paste;
 use rug::{Float, Integer as Int};
 
+use std::cmp::PartialEq;
 use std::fmt;
 
 #[derive(Clone, Debug, PartialEq, Hash, Eq)]
@@ -71,11 +72,23 @@ impl<T: ToTokens> Spanned for T {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Eq, Display)]
+#[derive(Clone, Debug, Hash, Eq, Display)]
 #[display(fmt = "{}", inner)]
 pub struct Ident {
     pub inner: String,
     pub span: Span,
+}
+
+impl PartialEq<str> for Ident {
+    fn eq(&self, other: &str) -> bool {
+        self.inner == other
+    }
+}
+
+impl PartialEq<Ident> for Ident {
+    fn eq(&self, other: &Self) -> bool {
+        self.span == other.span && self.inner == other.inner
+    }
 }
 
 impl ToTokens for Ident {
