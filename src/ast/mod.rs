@@ -82,6 +82,19 @@ where
     }
 }
 
+impl<'ast, T, P> Punctuated<T, P>
+where
+    T: ToTokens + Clone + Debug + PartialEq,
+    P: ToTokens + Clone + Debug + PartialEq,
+{
+    pub fn iter(&'ast self) -> impl Iterator<Item = &'ast T> {
+        self.inner
+            .iter()
+            .map(|(t, _)| t)
+            .chain(self.last.iter().map(|last| last.as_ref()))
+    }
+}
+
 crate::insts_from_tokens! {
     Block {
         brace_open: BraceOpen,
