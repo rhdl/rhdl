@@ -116,7 +116,7 @@ crate::class_from_tokens! {
         Arch {
             arch: Arch,
             generics: Option<Generics>,
-            ty: Box<Type>,
+            entity: Ident,
             brace_open: BraceOpen,
             items: Vec<ArchItem>,
             brace_close: BraceClose
