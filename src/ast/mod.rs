@@ -93,6 +93,14 @@ where
             .map(|(t, _)| t)
             .chain(self.last.iter().map(|last| last.as_ref()))
     }
+
+    pub fn first(&'ast self) -> Option<&'ast T> {
+        self.iter().next()
+    }
+
+    pub fn len(&'ast self) -> usize {
+        self.inner.len() + self.last.as_ref().map(|_| 1).unwrap_or(0)
+    }
 }
 
 crate::insts_from_tokens! {
