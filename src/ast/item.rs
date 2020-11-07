@@ -281,20 +281,20 @@ crate::insts_from_tokens! {
     UnnamedField {
         vis: Option<Vis>,
         ty: Type
+    },
+    Variant {
+        ident: Ident,
+        variant_type: VariantType
     }
 }
 
 crate::class_from_tokens! {
-    Variant {
-        Field {
-            ident: Ident,
-            fields: Fields
+    VariantType {
+        Fields {
+            inner: Fields
         },
-        Unit {
-            inner: Ident
-        },
+        Unit { },
         Discrim {
-            ident: Ident,
             eq: Eq,
             expr: Expr
         }

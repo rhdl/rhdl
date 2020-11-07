@@ -714,20 +714,9 @@ UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedFie
 
 /// https://doc.rust-lang.org/reference/items/enumerations.html
 Variant: ast::Variant = {
-    <ident:Ident> <fields:EnumFields> => ast::Variant::Field(
-        ast::VariantField {
-            ident,
-            fields
-        }
-    ),
-    Ident => ast::Variant::Unit(<>),
-    <ident:Ident> <eq:Eq> <expr:Expr> => ast::Variant::Discrim(
-        ast::VariantDiscrim {
-            ident,
-            eq,
-            expr
-        }
-    ),
+    <ident:Ident> <fields:EnumFields> => ast::Variant { ident, variant_type: ast::VariantType::Fields(fields), },
+    <ident:Ident> => ast::Variant { ident, variant_type: ast::VariantType::Unit(()), },
+    <ident:Ident> <eq:Eq> <expr:Expr> => ast::Variant { ident: ident, variant_type: ast::VariantType::Discrim(ast::VariantTypeDiscrim { eq, expr }), },
 };
 EnumFields: ast::Fields = {
     <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => ast::Fields::Named(

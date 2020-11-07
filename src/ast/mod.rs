@@ -246,6 +246,22 @@ macro_rules! call_visitors {
 
 #[macro_export]
 macro_rules! inst_from_tokens {
+    ($inst: ident { }) => {
+        pub type $inst = ();
+        paste! {
+            pub(crate) fn [<visit_ $inst:snake>]<'ast, V>(v: &mut V, inst: &'ast $inst) where V: crate::visit::Visit<'ast> + ?Sized { }
+        }
+
+        impl ToTokens for $inst {
+            fn to_tokens(&self) -> Vec<Tok> { vec![] }
+
+            fn first(&self) -> Option<Tok> { None }
+
+            fn last(&self) -> Option<Tok> { None }
+
+            fn len(&self) -> usize { 0 }
+        }
+    };
     ($inst: ident {
             inner : $member_ty: ty
     }) => {
@@ -261,7 +277,7 @@ macro_rules! inst_from_tokens {
     ($inst: ident {
         $(
             $member_ident: ident : $member_ty: ty
-        ),*
+        ),+
     }) => {
         #[derive(Clone, Debug, PartialEq)]
         pub struct $inst {
