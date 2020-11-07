@@ -71,7 +71,7 @@ impl<T: ToTokens> Spanned for T {
     }
 }
 
-#[derive(Clone, Debug, Hash, PartialEq, Display)]
+#[derive(Clone, Debug, Hash, PartialEq, Eq, Display)]
 #[display(fmt = "{}", inner)]
 pub struct Ident {
     pub inner: String,
