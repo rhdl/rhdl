@@ -79,6 +79,12 @@ pub struct Ident {
     pub span: Span,
 }
 
+impl<'a> PartialEq<&'a str> for Ident {
+    fn eq(&self, other: &&'a str) -> bool {
+        self.inner == *other
+    }
+}
+
 impl PartialEq<str> for Ident {
     fn eq(&self, other: &str) -> bool {
         self.inner == other
