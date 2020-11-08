@@ -98,6 +98,13 @@ where
         self.iter().next()
     }
 
+    pub fn last(&'ast self) -> Option<&'ast T> {
+        self.last
+            .as_ref()
+            .map(|last| last.as_ref())
+            .or(self.inner.last().map(|(t, _)| t))
+    }
+
     pub fn len(&'ast self) -> usize {
         self.inner.len() + self.last.as_ref().map(|_| 1).unwrap_or(0)
     }
