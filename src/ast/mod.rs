@@ -184,6 +184,20 @@ macro_rules! call_visitors {
         }
     };
 
+    ($v: expr, $field: expr => Option<($a: ty, Punctuated<$c: ty, $d: ty>, $e: ty)>) => {
+        if let Some((a, b, e)) = $field.as_ref() {
+            crate::call_visitors!($v, a => $a);
+            b.inner.iter().for_each(|(c, d)| {
+                crate::call_visitors!($v, c => $c);
+                crate::call_visitors!($v, d => $d);
+            });
+            if let Some(last) = b.last.as_ref() {
+                crate::call_visitors!($v, last.as_ref() => $c);
+            }
+            crate::call_visitors!($v, e => $e);
+        }
+    };
+
     ($v: expr, $field: expr => Option<($a: ty, $b: ty, $c: ty)>) => {
         if let Some((a, b, c)) = $field.as_ref() {
             crate::call_visitors!($v, a => $a);

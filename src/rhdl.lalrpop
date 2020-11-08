@@ -410,6 +410,7 @@ Box<T>: Box<T> = T => Box::new(<>);
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
 Path: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathSegment, PathSep>> => ast::SimplePath { leading_sep, segments };
 
+#[inline]
 PathSegment: ast::token::Ident = {
     Ident,
     <left:@L> <ident:LowerSelf> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
@@ -1618,7 +1619,7 @@ ExprWithoutBlockOrOperator: ast::Expr = {
 };
 
 ExprStmt: ast::Expr = {
-    AssignExpression,
+    // AssignExpression,
     ReturnExpression,
 };
 
@@ -1632,13 +1633,13 @@ ExprWithBlock: ast::Expr = {
 };
 
 ExprIf: ast::Expr = {
-    ComparisonExpression,
+    // ComparisonExpression,
     ExprWithBlock,
 };
 
 /// https://doc.rust-lang.org/reference/expressions.html
 pub Expr: ast::Expr = {
-    ComparisonExpression,
+    // ComparisonExpression,
     ExprWithBlock,
     // TODO: add struct expression to arithmetic tree in a way that it won't conflict with if/match statements
     StructExpression,
@@ -1824,9 +1825,9 @@ pub Type: ast::Type = {
         }
     ),
 };
-TypePath: ast::SimplePath = {
-    <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> <last:Box<Ident>> => {
-        ast::SimplePath {
+TypePath: ast::TypePath = {
+    <leading_sep:PathSep?> <inner:(TypePathSegment PathSep)+> <last:Box<TypePathSegmentLast>> => {
+        ast::TypePath {
             leading_sep,
             segments: ast::Punctuated {
                 inner,
@@ -1834,8 +1835,8 @@ TypePath: ast::SimplePath = {
             }
         }
     },
-    <leading_sep:PathSep?> <last:Box<Ident>> => {
-        ast::SimplePath {
+    <leading_sep:PathSep?> <last:Box<TypePathSegmentLast>> => {
+        ast::TypePath {
             leading_sep,
             segments: ast::Punctuated {
                 inner: vec![],
@@ -1843,4 +1844,52 @@ TypePath: ast::SimplePath = {
             }
         }
     },
+};
+
+// TypePath: ast::TypePath = <leading_sep:PathSep?> <segments:PunctNoTrail<TypePathSegment, PathSep>> => ast::TypePath {
+//     leading_sep,
+//     segments
+// };
+
+#[inline]
+TypePathSegment: ast::TypePathSegment = <ident:PathSegment> <generics:(PathSep? TypePathSegmentGenerics)?> => {
+    let (sep, generics) = if let Some((sep, generics)) = generics {
+        (sep, Some(generics))
+    } else {
+        (None, None)
+    };
+    ast::TypePathSegment {
+        ident,
+        sep,
+        generics,
+    }
+};
+
+#[inline]
+TypePathSegmentLast: ast::TypePathSegment = <ident:Ident> <generics:(PathSep? TypePathSegmentGenerics)?> => {
+    let (sep, generics) = if let Some((sep, generics)) = generics {
+        (sep, Some(generics))
+    } else {
+        (None, None)
+    };
+    ast::TypePathSegment {
+        ident,
+        sep,
+        generics,
+    }
+};
+
+#[inline]
+TypePathSegmentGenerics: ast::TypePathSegmentGenerics = {
+    Generics => ast::TypePathSegmentGenerics::Generics(<>),
+    // TODO: revisit fn arg generics
+    // adding them to the grammar is creating a lot of conflicts
+    // <paren_open:ParenOpen> <inputs:PunctTrail<Type, Comma>?> <paren_close:ParenClose> <ret:(RArrow Type)?> => ast::TypePathSegmentGenerics::Fn(
+    //     ast::TypePathSegmentGenericsFn {
+    //         paren_open,
+    //         inputs,
+    //         paren_close,
+    //         ret
+    //     }
+    // )
 };
