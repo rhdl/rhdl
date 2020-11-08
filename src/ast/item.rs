@@ -27,6 +27,7 @@ crate::class_from_tokens! {
         Use {
             vis: Option<Vis>,
             use_token: Use,
+            leading_sep: Option<PathSep>,
             tree: UseTree,
             semi: Semi
         },
