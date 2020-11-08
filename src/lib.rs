@@ -192,6 +192,8 @@ mod tests {
 use crate::Y;
 use crate::{ first::{ self, Type }, second::Type as AnotherType };
 pub const ROM_SIZE: uint = 64 * 1024 * 1024;
+const TRUE: bool = true;
+const FALSE: bool = false;
 mod in_another_file;
 mod in_this_file { }
 fn x(x: X) { }

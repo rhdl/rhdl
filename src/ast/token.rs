@@ -126,6 +126,8 @@ pub enum Lit {
     Int(LitInt),
     #[display(fmt = "{}", _0)]
     Float(LitFloat),
+    #[display(fmt = "{}", _0)]
+    Bool(LitBool),
 }
 
 impl ToTokens for Lit {
@@ -145,6 +147,7 @@ where
     match inst {
         Lit::Int(lit_int) => v.visit_lit_int(lit_int),
         Lit::Float(lit_float) => v.visit_lit_float(lit_float),
+        Lit::Bool(lit_bool) => v.visit_lit_bool(lit_bool),
     }
 }
 
@@ -167,7 +170,7 @@ impl ToTokens for LitInt {
     }
 }
 
-pub(crate) fn visit_lit_int<'ast, V>(v: &mut V, inst: &'ast LitInt)
+pub(crate) fn visit_lit_int<'ast, V>(_v: &mut V, _inst: &'ast LitInt)
 where
     V: crate::visit::Visit<'ast> + ?Sized,
 {
@@ -192,7 +195,30 @@ impl ToTokens for LitFloat {
     }
 }
 
-pub(crate) fn visit_lit_float<'ast, V>(v: &mut V, inst: &'ast LitFloat)
+pub(crate) fn visit_lit_float<'ast, V>(_v: &mut V, _inst: &'ast LitFloat)
+where
+    V: crate::visit::Visit<'ast> + ?Sized,
+{
+}
+
+#[derive(Clone, Debug, PartialEq, Display)]
+#[display(fmt = "{}", inner)]
+pub struct LitBool {
+    pub inner: bool,
+    pub span: Span,
+}
+
+impl ToTokens for LitBool {
+    fn to_tokens(&self) -> Vec<Tok> {
+        vec![Tok::Lit(Lit::Bool(self.clone()))]
+    }
+
+    fn len(&self) -> usize {
+        1
+    }
+}
+
+pub(crate) fn visit_lit_bool<'ast, V>(_v: &mut V, _inst: &'ast LitBool)
 where
     V: crate::visit::Visit<'ast> + ?Sized,
 {
@@ -285,7 +311,7 @@ macro_rules! tokens {
                     $( Self::$variant($variant { left }) => Span(*left, *left + $variant::len()) ),*,
                     Self::Ident(Ident { span, ..}) => span.clone(),
                     Self::Lit(lit) => match lit {
-                        Lit::Int(LitInt { span, .. }) | Lit::Float(LitFloat { span, .. }) => span.clone(),
+                        Lit::Int(LitInt { span, .. }) | Lit::Float(LitFloat { span, .. }) | Lit::Bool(LitBool { span, .. }) => span.clone(),
                     },
                 }
             }
@@ -302,7 +328,6 @@ tokens! {
     Else,
     Enum,
     Extern,
-    False,
     Fn,
     For,
     If,
@@ -323,7 +348,6 @@ tokens! {
     Struct,
     Super,
     Trait,
-    True,
     "type" => TokenType,
     Unsafe,
     Use,

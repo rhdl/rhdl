@@ -115,6 +115,7 @@ visit! {
     Le,
     Let,
     Lit,
+    LitBool,
     LitFloat,
     LitInt,
     LowerSelf,

@@ -21,7 +21,6 @@ match {
     "else" => TokElse,
     "enum" => TokEnum,
     "extern" => TokExtern,
-    "false" => TokFalse,
     "fn" => TokFn,
     "for" => TokFor,
     "if" => TokIf,
@@ -42,7 +41,6 @@ match {
     "struct" => TokStruct,
     "super" => TokSuper,
     "trait" => TokTrait,
-    "true" => TokTrue,
     "type" => TokTokenType,
     "unsafe" => TokUnsafe,
     "use" => TokUse,
@@ -135,6 +133,7 @@ match {
     "r#Self" => RawUpperSelf,
     "r#super" => RawSuper,
     r"(0|[1-9]\d*)" => Integer,
+    r"(true|false)" => Boolean,
 } else {
     r"(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-zA-Z0-9_]+)" => NonKeywordIdentifier,
     r"r#(?:[a-zA-Z][a-zA-Z0-9_]*|_[a-zA-Z0-9_]+)" => RawIdentifier,
@@ -155,7 +154,6 @@ match {
 #[inline] Else: ast::token::Else = <left:@L> TokElse => ast::token::Else { left };
 #[inline] Enum: ast::token::Enum = <left:@L> TokEnum => ast::token::Enum { left };
 #[inline] Extern: ast::token::Extern = <left:@L> TokExtern => ast::token::Extern { left };
-#[inline] False: ast::token::False = <left:@L> TokFalse => ast::token::False { left };
 #[inline] Fn: ast::token::Fn = <left:@L> TokFn => ast::token::Fn { left };
 #[inline] For: ast::token::For = <left:@L> TokFor => ast::token::For { left };
 #[inline] If: ast::token::If = <left:@L> TokIf => ast::token::If { left };
@@ -176,7 +174,6 @@ match {
 #[inline] Struct: ast::token::Struct = <left:@L> TokStruct => ast::token::Struct { left };
 #[inline] Super: ast::token::Super = <left:@L> TokSuper => ast::token::Super { left };
 #[inline] Trait: ast::token::Trait = <left:@L> TokTrait => ast::token::Trait { left };
-#[inline] True: ast::token::True = <left:@L> TokTrue => ast::token::True { left };
 #[inline] TokenType: ast::token::TokenType = <left:@L> TokTokenType => ast::token::TokenType { left };
 #[inline] Unsafe: ast::token::Unsafe = <left:@L> TokUnsafe => ast::token::Unsafe { left };
 #[inline] Use: ast::token::Use = <left:@L> TokUse => ast::token::Use { left };
@@ -368,9 +365,15 @@ pub LitFloat: ast::token::LitFloat = <left:@L> <val:FloatingPoint> <right: @R> =
     }
 };
 
+LitBool: ast::token::LitBool = <left:@L> <val:Boolean> <right:@R> => {
+    let inner = val == "true";
+    ast::LitBool { inner, span: ast::Span(left, right) }
+};
+
 Lit: ast::token::Lit = {
     LitInt => ast::token::Lit::Int(<>),
     LitFloat => ast::token::Lit::Float(<>),
+    LitBool => ast::token::Lit::Bool(<>),
 };
 
 

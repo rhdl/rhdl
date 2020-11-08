@@ -25,14 +25,13 @@ enum SpacingHint {
 fn spacing_hint<'a>(token: &'a Tok, before: &'a [Tok], after: &'a [Tok]) -> SpacingHint {
     use Tok::*;
     match token {
-        As(_) | Break(_) | Const(_) | Continue(_) | Else(_) | Enum(_) | Extern(_) | False(_)
-        | For(_) | If(_) | Impl(_) | In(_) | Let(_) | Loop(_) | Match(_) | Mod(_) | Move(_)
-        | Mut(_) | Ref(_) | Return(_) | UpperSelf(_) | Static(_) | Struct(_) | Trait(_)
-        | True(_) | TokenType(_) | Unsafe(_) | Use(_) | Where(_) | While(_) | Async(_)
-        | Await(_) | Dyn(_) | Abstract(_) | Become(_) | TokenBox(_) | Do(_) | Final(_)
-        | Macro(_) | Override(_) | Priv(_) | Typeof(_) | Unsized(_) | Virtual(_) | Yield(_)
-        | Try(_) | Union(_) | Entity(_) | Bag(_) | Ring(_) | Arch(_) | When(_) | Out(_)
-        | InOut(_) => SpacingHint::Any,
+        As(_) | Break(_) | Const(_) | Continue(_) | Else(_) | Enum(_) | Extern(_) | For(_)
+        | If(_) | Impl(_) | In(_) | Let(_) | Loop(_) | Match(_) | Mod(_) | Move(_) | Mut(_)
+        | Ref(_) | Return(_) | UpperSelf(_) | Static(_) | Struct(_) | Trait(_) | TokenType(_)
+        | Unsafe(_) | Use(_) | Where(_) | While(_) | Async(_) | Await(_) | Dyn(_) | Abstract(_)
+        | Become(_) | TokenBox(_) | Do(_) | Final(_) | Macro(_) | Override(_) | Priv(_)
+        | Typeof(_) | Unsized(_) | Virtual(_) | Yield(_) | Try(_) | Union(_) | Entity(_)
+        | Bag(_) | Ring(_) | Arch(_) | When(_) | Out(_) | InOut(_) => SpacingHint::Any,
 
         Plus(_) | Star(_) | StarStar(_) | Slash(_) | Percent(_) | Caret(_) | And(_) | Or(_)
         | AndAnd(_) | OrOr(_) | Shl(_) | Shr(_) | PlusEq(_) | MinusEq(_) | StarEq(_)
