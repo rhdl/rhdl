@@ -14,7 +14,7 @@ pub use expr::*;
 pub use item::*;
 pub use pat::*;
 use token::*;
-pub use token::{Ident, Lit, LitFloat, LitInt, Span, Spanned, ToTokens, Tok};
+pub use token::{Ident, Lit, LitFloat, LitInt, Span, Spanned, ToTokens, Tok, PathSep};
 pub use types::*;
 
 #[derive(Debug, Clone, PartialEq)]
