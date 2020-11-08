@@ -466,11 +466,10 @@ Item: ast::Item = {
     ),
 
     /// https://doc.rust-lang.org/reference/items/use-declarations.html
-    <vis:Visibility?> <use_token:Use> <leading_sep:PathSep?> <tree:UseTree> <semi:Semi> => ast::Item::Use(
+    <vis:Visibility?> <use_token:Use> <tree:UseTree> <semi:Semi> => ast::Item::Use(
         ast::ItemUse {
             vis,
             use_token,
-            leading_sep,
             tree,
             semi
         }
@@ -586,10 +585,8 @@ UseTree: ast::UseTree = {
     ),
 };
 
-
-// TODO: allow leading sep but block it at the parse level
 #[inline]
-UseTreePath: ast::SimplePath = <inner:(PathSegment PathSep)+> => ast::SimplePath { leading_sep: None, segments: ast::Punctuated { inner, last: None } };
+UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> => ast::SimplePath { leading_sep, segments: ast::Punctuated { inner, last: None } };
 
 UseLeaf: ast::UseTree = {
     Star => ast::UseTree::Glob(<>),
