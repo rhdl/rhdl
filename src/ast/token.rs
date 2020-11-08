@@ -74,6 +74,7 @@ impl<T: ToTokens> Spanned for T {
 
 #[derive(Clone, Debug, Hash, Eq, Display)]
 #[display(fmt = "{}", inner)]
+/// Equality is ONLY on inner, not on the span
 pub struct Ident {
     pub inner: String,
     pub span: Span,
@@ -93,7 +94,7 @@ impl PartialEq<str> for Ident {
 
 impl PartialEq<Ident> for Ident {
     fn eq(&self, other: &Self) -> bool {
-        self.span == other.span && self.inner == other.inner
+        self.inner == other.inner
     }
 }
 
