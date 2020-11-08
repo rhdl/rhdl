@@ -72,12 +72,18 @@ impl<T: ToTokens> Spanned for T {
     }
 }
 
-#[derive(Clone, Debug, Hash, Eq, Display)]
+#[derive(Clone, Debug, Eq, Display)]
 #[display(fmt = "{}", inner)]
 /// Equality is ONLY on inner, not on the span
 pub struct Ident {
     pub inner: String,
     pub span: Span,
+}
+
+impl std::hash::Hash for Ident {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.inner.hash(state);
+    }
 }
 
 impl<'a> PartialEq<&'a str> for Ident {
