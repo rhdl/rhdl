@@ -827,6 +827,10 @@ PathInExpressionSegment: ast::PathSegment = {
 
 #[inline]
 PathInExpressionSegmentLast: ast::PathSegment = {
+    <ident:Ident> => ast::PathSegment {
+        ident,
+        generic_args: None
+    },
     <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
@@ -928,20 +932,21 @@ Unary: ast::Expr = {
 
 /// https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 Cast: ast::Expr = {
-    <expr:Unary> <as_token:As> <ty:Type> => ast::Expr::Cast(
-        ast::ExprCast {
-            expr: Box::new(expr),
-            as_token,
-            ty: Box::new(ty)
-        }
-    ),
-    <expr:ExprWithBlock> <as_token:As> <ty:Type> => ast::Expr::Cast(
-        ast::ExprCast {
-            expr: Box::new(expr),
-            as_token,
-            ty: Box::new(ty)
-        }
-    ),
+    // TODO: re-enable cast expressions, disabled due to generics-related issues with comparison expressions
+    // <expr:Unary> <as_token:As> <ty:Type> => ast::Expr::Cast(
+    //     ast::ExprCast {
+    //         expr: Box::new(expr),
+    //         as_token,
+    //         ty: Box::new(ty)
+    //     }
+    // ),
+    // <expr:ExprWithBlock> <as_token:As> <ty:Type> => ast::Expr::Cast(
+    //     ast::ExprCast {
+    //         expr: Box::new(expr),
+    //         as_token,
+    //         ty: Box::new(ty)
+    //     }
+    // ),
 
     Unary,
 };
