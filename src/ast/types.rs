@@ -11,7 +11,7 @@ crate::class_from_tokens! {
         },
         Path {
             leading_sep: Option<PathSep>,
-            segments: Punctuated<TypePathSegment, PathSep>
+            segments: Punctuated<PathSegment, PathSep>
         },
         Tuple {
             paren_open: ParenOpen,
@@ -40,29 +40,6 @@ crate::class_from_tokens! {
             args: Punctuated<Type, Comma>,
             paren_close: ParenClose,
             ret: Option<(RArrow, Box<Type>)>
-        }
-    }
-}
-
-
-crate::insts_from_tokens! {
-    TypePathSegment {
-        ident: Ident,
-        sep: Option<PathSep>,
-        generics: Option<TypePathSegmentGenerics>
-    }
-}
-
-crate::class_from_tokens! {
-    TypePathSegmentGenerics {
-        Generics {
-            inner: Generics
-        },
-        Fn {
-            paren_open: ParenOpen,
-            inputs: Option<(ParenOpen, Punctuated<Type, Comma>, ParenClose)>,
-            paren_close: ParenClose,
-            ret: Option<(RArrow, Type)>
         }
     }
 }

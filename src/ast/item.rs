@@ -3,7 +3,7 @@ use std::boxed::Box;
 use paste::paste;
 
 use super::{
-    expr::Expr,
+    expr::{Expr, ExprPath},
     pat::PatType,
     token::*,
     types::{Type, TypePath},
@@ -344,7 +344,7 @@ crate::class_from_tokens! {
             block: Block
         },
         EntityExpression {
-            path: SimplePath,
+            path: ExprPath,
             brace_open: BraceOpen,
             fields: Punctuated<EntityFieldValue, Comma>,
             brace_close: BraceClose

@@ -32,7 +32,8 @@ crate::class_from_tokens! {
             right: Option<Box<Expr>>
         },
         Path {
-            inner: SimplePath
+            leading_sep: Option<PathSep>,
+            segments: Punctuated<PathSegment, PathSep>
         },
         Lit {
             inner: Lit
@@ -121,6 +122,10 @@ crate::class_from_tokens! {
 }
 
 crate::insts_from_tokens! {
+    PathSegment {
+        ident: Ident,
+        generic_args: Option<GenericArgs>
+    },
     Arm {
         pat: Pat,
         guard: Option<(If, Expr)>,
@@ -130,6 +135,28 @@ crate::insts_from_tokens! {
     FieldValue {
         member: Member,
         expr: Option<(Colon, Expr)>
+    },
+    GenericArgs {
+        path_sep: Option<PathSep>,
+        lt: Lt,
+        args: Punctuated<GenericArg, Comma>,
+        gt: Gt
+    }
+}
+
+crate::class_from_tokens! {
+    GenericArg {
+        Type {
+            inner: Type
+        },
+        Expr {
+            inner: Expr
+        },
+        Binding {
+            ident: Ident,
+            eq: Eq,
+            ty: Type
+        }
     }
 }
 

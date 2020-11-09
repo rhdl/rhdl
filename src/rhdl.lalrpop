@@ -714,6 +714,7 @@ StructFields: (ast::Fields, Option<ast::token::Semi>) = {
     ), Some(semi))
 };
 NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> <colon:Colon> <ty:Type> => ast::NamedField { vis, ident, colon, ty };
+#[inline]
 UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis, ty };
 
 /// https://doc.rust-lang.org/reference/items/enumerations.html
@@ -770,7 +771,7 @@ ArchItem: ast::ArchItem = {
             block
         }
     ),
-    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
+    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
         ast::ArchItemEntityExpression {
             path,
             brace_open,
@@ -785,7 +786,64 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
-PathInExpression: ast::SimplePath = Path;
+ExprPath: ast::ExprPath = {
+    <leading_sep:PathSep?> <inner:(ExprPathSegment PathSep)+> <last:Box<ExprPathSegmentLast>> => {
+        ast::ExprPath {
+            leading_sep,
+            segments: ast::Punctuated {
+                inner,
+                last: Some(last)
+            }
+        }
+    },
+    <leading_sep:PathSep?> <last:Box<ExprPathSegmentLast>> => {
+        ast::ExprPath {
+            leading_sep,
+            segments: ast::Punctuated {
+                inner: vec![],
+                last: Some(last)
+            }
+        }
+    }
+};
+
+#[inline]
+ExprPathSegment: ast::PathSegment = {
+    <ident:PathSegment> => ast::PathSegment {
+        ident,
+        generic_args: None
+    },
+    <ident:PathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
+        ident,
+        generic_args: Some(ast::GenericArgs {
+            path_sep: Some(path_sep),
+            lt,
+            args,
+            gt
+        })
+    }
+};
+
+#[inline]
+ExprPathSegmentLast: ast::PathSegment = {
+    <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
+        ident,
+        generic_args: Some(ast::GenericArgs {
+            path_sep: Some(path_sep),
+            lt,
+            args,
+            gt
+        })
+    }
+};
+
+GenericArg: ast::GenericArg = {
+    Type => ast::GenericArg::Type(<>),
+    BlockExpression => ast::GenericArg::Expr(<>),
+    LiteralExpression => ast::GenericArg::Expr(<>),
+    ArrayExpression => ast::GenericArg::Expr(<>),
+    <ident: Ident> <eq: Eq> <ty: Type> => ast::GenericArg::Binding(ast::GenericArgBinding { ident, eq, ty })
+};
 
 /// https://doc.rust-lang.org/reference/expressions/block-expr.html
 BlockExpression: ast::Expr = Block => ast::Expr::Block(<>);
@@ -1440,7 +1498,7 @@ TupleIndexingExpression: ast::Expr = {
 
 /// https://doc.rust-lang.org/reference/expressions/struct-expr.html#struct-expressions
 StructExpression: ast::Expr = {
-    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctMustTrail<FieldValue, Comma>> <base:(DotDot Box<Expr>)> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
+    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctMustTrail<FieldValue, Comma>> <base:(DotDot Box<Expr>)> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
         ast::ExprStruct {
             path,
             brace_open,
@@ -1450,7 +1508,7 @@ StructExpression: ast::Expr = {
             brace_close
         }
     ),
-    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
+    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
         ast::ExprStruct {
             path,
             brace_open,
@@ -1602,7 +1660,7 @@ ReturnExpression: ast::Expr = <return_token:Return> <expr:Box<Expr>?> => ast::Ex
 
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
-    PathInExpression => ast::Expr::Path(<>),
+    ExprPath => ast::Expr::Path(<>),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
@@ -1619,7 +1677,7 @@ ExprWithoutBlockOrOperator: ast::Expr = {
 };
 
 ExprStmt: ast::Expr = {
-    // AssignExpression,
+    AssignExpression,
     ReturnExpression,
 };
 
@@ -1633,13 +1691,13 @@ ExprWithBlock: ast::Expr = {
 };
 
 ExprIf: ast::Expr = {
-    // ComparisonExpression,
+    ComparisonExpression,
     ExprWithBlock,
 };
 
 /// https://doc.rust-lang.org/reference/expressions.html
 pub Expr: ast::Expr = {
-    // ComparisonExpression,
+    ComparisonExpression,
     ExprWithBlock,
     // TODO: add struct expression to arithmetic tree in a way that it won't conflict with if/match statements
     StructExpression,
@@ -1650,10 +1708,14 @@ pub Pat: ast::Pat = {
     /// https://doc.rust-lang.org/reference/patterns.html#literal-patterns
     Lit => ast::Pat::Lit(<>),
     /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
-    PathInExpression => {
+    ExprPath => {
         if <>.leading_sep.is_none() && <>.segments.inner.is_empty() {
-            if let Some(segment) = <>.segments.last {
-                ast::Pat::Ident(segment.as_ref().clone())
+            if let Some(segment) = <>.segments.last.as_ref() {
+                if segment.generic_args.is_none() {
+                    ast::Pat::Ident(segment.ident.clone())
+                } else {
+                    ast::Pat::Path(<>)
+                }
             } else {
                 ast::Pat::Path(<>)
             }
@@ -1679,7 +1741,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#struct-patterns
-    <path:PathInExpression> <brace_open:BraceOpen> <elems:StructPatternElements> <brace_close:BraceClose> => ast::Pat::Struct(
+    <path:ExprPath> <brace_open:BraceOpen> <elems:StructPatternElements> <brace_close:BraceClose> => ast::Pat::Struct(
         ast::PatStruct {
             path,
             brace_open,
@@ -1689,7 +1751,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-struct-patterns
-    <path: PathInExpression> <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path:ExprPath> <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1698,7 +1760,7 @@ pub Pat: ast::Pat = {
             paren_close
         }
     ),
-    <path: PathInExpression> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path:ExprPath> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1737,7 +1799,7 @@ pub Pat: ast::Pat = {
 RangePatternBound: ast::Expr = {
     LiteralExpression,
     // GroupedExpression,
-    PathInExpression => ast::Expr::Path(<>),
+    ExprPath => ast::Expr::Path(<>),
 };
 
 StructPatternElements: (ast::Punctuated<ast::StructPatternField, ast::token::Comma>, Option<ast::token::DotDot>) = {
@@ -1825,16 +1887,17 @@ pub Type: ast::Type = {
         }
     ),
 };
+
 TypePath: ast::TypePath = {
-    <leading_sep:PathSep?> <inner:(TypePathSegment PathSep)+> <last:Box<TypePathSegmentLast>> => {
-        ast::TypePath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner,
-                last: Some(last)
-            }
-        }
-    },
+    // <leading_sep:PathSep?> <inner:(TypePathSegment PathSep)+> <last:Box<TypePathSegmentLast>> => {
+    //     ast::TypePath {
+    //         leading_sep,
+    //         segments: ast::Punctuated {
+    //             inner,
+    //             last: Some(last)
+    //         }
+    //     }
+    // },
     <leading_sep:PathSep?> <last:Box<TypePathSegmentLast>> => {
         ast::TypePath {
             leading_sep,
@@ -1844,52 +1907,34 @@ TypePath: ast::TypePath = {
             }
         }
     },
+    ExprPath => ast::TypePath {
+        leading_sep: <>.leading_sep,
+        segments: <>.segments
+    },
 };
 
-// TypePath: ast::TypePath = <leading_sep:PathSep?> <segments:PunctNoTrail<TypePathSegment, PathSep>> => ast::TypePath {
-//     leading_sep,
-//     segments
-// };
-
+// TODO: allow a pathsep here, but unfortunately that makes it ambiguous with expr path segment
+// TODO: allow fn args, which I couldn't get to work
 #[inline]
-TypePathSegment: ast::TypePathSegment = <ident:PathSegment> <generics:(PathSep? TypePathSegmentGenerics)?> => {
-    let (sep, generics) = if let Some((sep, generics)) = generics {
-        (sep, Some(generics))
-    } else {
-        (None, None)
-    };
-    ast::TypePathSegment {
+TypePathSegment: ast::PathSegment = {
+    ExprPathSegment => <>,
+    <ident:PathSegment> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
         ident,
-        sep,
-        generics,
+        generic_args: Some(generic_args)
     }
 };
 
 #[inline]
-TypePathSegmentLast: ast::TypePathSegment = <ident:Ident> <generics:(PathSep? TypePathSegmentGenerics)?> => {
-    let (sep, generics) = if let Some((sep, generics)) = generics {
-        (sep, Some(generics))
-    } else {
-        (None, None)
-    };
-    ast::TypePathSegment {
+TypePathSegmentLast: ast::PathSegment = {
+    <ident:Ident> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
         ident,
-        sep,
-        generics,
+        generic_args: Some(generic_args)
     }
 };
 
-#[inline]
-TypePathSegmentGenerics: ast::TypePathSegmentGenerics = {
-    Generics => ast::TypePathSegmentGenerics::Generics(<>),
-    // TODO: revisit fn arg generics
-    // adding them to the grammar is creating a lot of conflicts
-    // <paren_open:ParenOpen> <inputs:PunctTrail<Type, Comma>?> <paren_close:ParenClose> <ret:(RArrow Type)?> => ast::TypePathSegmentGenerics::Fn(
-    //     ast::TypePathSegmentGenericsFn {
-    //         paren_open,
-    //         inputs,
-    //         paren_close,
-    //         ret
-    //     }
-    // )
+TypePathSegmentGenericArgs: ast::GenericArgs = <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::GenericArgs {
+    path_sep: None,
+    lt,
+    args,
+    gt
 };
