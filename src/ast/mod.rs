@@ -87,7 +87,7 @@ where
     T: ToTokens + Clone + Debug + PartialEq,
     P: ToTokens + Clone + Debug + PartialEq,
 {
-    pub fn iter(&'ast self) -> impl Iterator<Item = &'ast T> {
+    pub fn iter(&'ast self) -> impl Iterator<Item = &'ast T> + std::iter::DoubleEndedIterator {
         self.inner
             .iter()
             .map(|(t, _)| t)
