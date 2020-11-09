@@ -714,7 +714,6 @@ StructFields: (ast::Fields, Option<ast::token::Semi>) = {
     ), Some(semi))
 };
 NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> <colon:Colon> <ty:Type> => ast::NamedField { vis, ident, colon, ty };
-#[inline]
 UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis, ty };
 
 /// https://doc.rust-lang.org/reference/items/enumerations.html
@@ -723,6 +722,7 @@ Variant: ast::Variant = {
     <ident:Ident> => ast::Variant { ident, variant_type: ast::VariantType::Unit(()), },
     <ident:Ident> <eq:Eq> <expr:Expr> => ast::Variant { ident: ident, variant_type: ast::VariantType::Discrim(ast::VariantTypeDiscrim { eq, expr }), },
 };
+
 EnumFields: ast::Fields = {
     <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => ast::Fields::Named(
         ast::FieldsNamed {
@@ -771,7 +771,7 @@ ArchItem: ast::ArchItem = {
             block
         }
     ),
-    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
         ast::ArchItemEntityExpression {
             path,
             brace_open,
@@ -786,8 +786,8 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
-ExprPath: ast::ExprPath = {
-    <leading_sep:PathSep?> <inner:(ExprPathSegment PathSep)+> <last:Box<ExprPathSegmentLast>> => {
+PathInExpression: ast::ExprPath = {
+    <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)+> <last:Box<PathInExpressionSegmentLast>> => {
         ast::ExprPath {
             leading_sep,
             segments: ast::Punctuated {
@@ -796,7 +796,7 @@ ExprPath: ast::ExprPath = {
             }
         }
     },
-    <leading_sep:PathSep?> <last:Box<ExprPathSegmentLast>> => {
+    <leading_sep:PathSep?> <last:Box<PathInExpressionSegmentLast>> => {
         ast::ExprPath {
             leading_sep,
             segments: ast::Punctuated {
@@ -808,7 +808,7 @@ ExprPath: ast::ExprPath = {
 };
 
 #[inline]
-ExprPathSegment: ast::PathSegment = {
+PathInExpressionSegment: ast::PathSegment = {
     <ident:PathSegment> => ast::PathSegment {
         ident,
         generic_args: None
@@ -825,7 +825,7 @@ ExprPathSegment: ast::PathSegment = {
 };
 
 #[inline]
-ExprPathSegmentLast: ast::PathSegment = {
+PathInExpressionSegmentLast: ast::PathSegment = {
     <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
@@ -841,7 +841,7 @@ GenericArg: ast::GenericArg = {
     Type => ast::GenericArg::Type(<>),
     BlockExpression => ast::GenericArg::Expr(<>),
     LiteralExpression => ast::GenericArg::Expr(<>),
-    ArrayExpression => ast::GenericArg::Expr(<>),
+    // ArrayExpression => ast::GenericArg::Expr(<>),
     <ident: Ident> <eq: Eq> <ty: Type> => ast::GenericArg::Binding(ast::GenericArgBinding { ident, eq, ty })
 };
 
@@ -1498,7 +1498,7 @@ TupleIndexingExpression: ast::Expr = {
 
 /// https://doc.rust-lang.org/reference/expressions/struct-expr.html#struct-expressions
 StructExpression: ast::Expr = {
-    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctMustTrail<FieldValue, Comma>> <base:(DotDot Box<Expr>)> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctMustTrail<FieldValue, Comma>> <base:(DotDot Box<Expr>)> <comma:Comma?> <brace_close:BraceClose> => ast::Expr::Struct(
         ast::ExprStruct {
             path,
             brace_open,
@@ -1508,7 +1508,7 @@ StructExpression: ast::Expr = {
             brace_close
         }
     ),
-    <path:ExprPath> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
         ast::ExprStruct {
             path,
             brace_open,
@@ -1660,7 +1660,7 @@ ReturnExpression: ast::Expr = <return_token:Return> <expr:Box<Expr>?> => ast::Ex
 
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
-    ExprPath => ast::Expr::Path(<>),
+    PathInExpression => ast::Expr::Path(<>),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
@@ -1708,7 +1708,7 @@ pub Pat: ast::Pat = {
     /// https://doc.rust-lang.org/reference/patterns.html#literal-patterns
     Lit => ast::Pat::Lit(<>),
     /// https://doc.rust-lang.org/reference/patterns.html#identifier-patterns and https://doc.rust-lang.org/reference/patterns.html#path-patterns
-    ExprPath => {
+    PathInExpression => {
         if <>.leading_sep.is_none() && <>.segments.inner.is_empty() {
             if let Some(segment) = <>.segments.last.as_ref() {
                 if segment.generic_args.is_none() {
@@ -1741,7 +1741,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#struct-patterns
-    <path:ExprPath> <brace_open:BraceOpen> <elems:StructPatternElements> <brace_close:BraceClose> => ast::Pat::Struct(
+    <path:PathInExpression> <brace_open:BraceOpen> <elems:StructPatternElements> <brace_close:BraceClose> => ast::Pat::Struct(
         ast::PatStruct {
             path,
             brace_open,
@@ -1751,7 +1751,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#tuple-struct-patterns
-    <path:ExprPath> <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path:PathInExpression> <paren_open:ParenOpen> <subpats:PunctNoTrail<Pat, Comma>> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1760,7 +1760,7 @@ pub Pat: ast::Pat = {
             paren_close
         }
     ),
-    <path:ExprPath> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path:PathInExpression> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1799,7 +1799,7 @@ pub Pat: ast::Pat = {
 RangePatternBound: ast::Expr = {
     LiteralExpression,
     // GroupedExpression,
-    ExprPath => ast::Expr::Path(<>),
+    PathInExpression => ast::Expr::Path(<>),
 };
 
 StructPatternElements: (ast::Punctuated<ast::StructPatternField, ast::token::Comma>, Option<ast::token::DotDot>) = {
@@ -1907,7 +1907,7 @@ TypePath: ast::TypePath = {
             }
         }
     },
-    ExprPath => ast::TypePath {
+    PathInExpression => ast::TypePath {
         leading_sep: <>.leading_sep,
         segments: <>.segments
     },
@@ -1917,7 +1917,7 @@ TypePath: ast::TypePath = {
 // TODO: allow fn args, which I couldn't get to work
 #[inline]
 TypePathSegment: ast::PathSegment = {
-    ExprPathSegment => <>,
+    PathInExpressionSegment => <>,
     <ident:PathSegment> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
         ident,
         generic_args: Some(generic_args)
