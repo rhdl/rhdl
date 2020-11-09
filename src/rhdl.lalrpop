@@ -786,6 +786,7 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
+// TODO: support self qualifiers
 PathInExpression: ast::ExprPath = {
     <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)+> <last:Box<PathInExpressionSegmentLast>> => {
         ast::ExprPath {
