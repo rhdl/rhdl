@@ -72,6 +72,25 @@ crate::class_from_tokens! {
             variants: Punctuated<Variant, Comma>,
             brace_close: BraceClose
         },
+        Trait {
+            vis: Option<Vis>,
+            trait_token: Trait,
+            ident: Ident,
+            generics: Option<Generics>,
+            super_traits: Option<(Colon, Punctuated<TypePath, Plus>)>,
+            brace_open: BraceOpen,
+            items: Vec<TraitItem>,
+            brace_close: BraceClose
+        },
+        TraitAlias {
+            vis: Option<Vis>,
+            trait_token: Trait,
+            ident: Ident,
+            generics: Option<Generics>,
+            eq: Eq,
+            bounds: Option<(Colon, Punctuated<TypePath, Plus>)>,
+            semi: Semi
+        },
         Impl {
             impl_token: Impl,
             generics: Option<Generics>,
@@ -302,12 +321,29 @@ crate::class_from_tokens! {
 }
 
 crate::class_from_tokens! {
+    TraitItem {
+        Const {
+            inner: ItemConst
+        },
+        Method {
+            inner: ItemFn
+        },
+        Type {
+            inner: ItemType
+        }
+    }
+}
+
+crate::class_from_tokens! {
     ImplItem {
         Const {
             inner: ItemConst
         },
         Method {
             inner: ItemFn
+        },
+        Type {
+            inner: ItemType
         }
     }
 }
