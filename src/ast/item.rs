@@ -88,7 +88,7 @@ crate::class_from_tokens! {
             ident: Ident,
             generics: Option<Generics>,
             eq: Eq,
-            bounds: Option<(Colon, Punctuated<TypePath, Plus>)>,
+            bounds: Punctuated<TypePath, Plus>,
             semi: Semi
         },
         Impl {
@@ -323,13 +323,28 @@ crate::class_from_tokens! {
 crate::class_from_tokens! {
     TraitItem {
         Const {
-            inner: ItemConst
+            vis: Option<Vis>,
+            const_token: Const,
+            ident: Ident,
+            colon: Colon,
+            ty: Type,
+            default: Option<(Eq, Expr)>,
+            semi: Semi
         },
-        Method {
-            inner: ItemFn
+        Fn {
+            vis: Option<Vis>,
+            fn_token: Fn,
+            sig: Sig,
+            block: Option<Block>,
+            semi: Option<Semi>
         },
         Type {
-            inner: ItemType
+            vis: Option<Vis>,
+            type_token: Type,
+            ident: Ident,
+            bounds: Option<(Colon, Punctuated<TypePath, Plus>)>,
+            default: Option<(Eq, Type)>,
+            semi: Semi
         }
     }
 }
@@ -339,7 +354,7 @@ crate::class_from_tokens! {
         Const {
             inner: ItemConst
         },
-        Method {
+        Fn {
             inner: ItemFn
         },
         Type {

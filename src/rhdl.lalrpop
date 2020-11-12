@@ -440,6 +440,15 @@ ItemFn: ast::ItemFn = <vis:Visibility?> <fn_token:Fn> <sig:Sig> <block:Block> =>
     sig,
     block
 };
+ItemType: ast::ItemType = <vis:Visibility?> <type_token:TokenType> <ident:Ident> <generics:Generics?> <eq:Eq> <ty:Type> <semi:Semi> => ast::ItemType {
+    vis,
+    type_token,
+    ident,
+    generics,
+    eq,
+    ty,
+    semi
+};
 
 /// https://doc.rust-lang.org/reference/items.html
 Item: ast::Item = {
@@ -486,17 +495,7 @@ Item: ast::Item = {
     ItemFn => ast::Item::Fn(<>),
 
     /// https://doc.rust-lang.org/reference/items/type-aliases.html
-    <vis:Visibility?> <type_token:TokenType> <ident:Ident> <generics:Generics?> <eq:Eq> <ty:Type> <semi:Semi> => ast::Item::Type(
-        ast::ItemType {
-            vis,
-            type_token,
-            ident,
-            generics,
-            eq,
-            ty,
-            semi
-        }
-    ),
+    ItemType => ast::Item::Type(<>),
 
     /// https://doc.rust-lang.org/reference/items/structs.html
     <vis:Visibility?> <struct_token:Struct> <ident:Ident> <generics:Generics?> <fields:StructFields> => ast::Item::Struct(
@@ -520,6 +519,31 @@ Item: ast::Item = {
             brace_open,
             variants,
             brace_close
+        }
+    ),
+
+    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <super_traits:(Colon PunctNoTrail<TypePath, Plus>)?> <brace_open:BraceOpen> <items:TraitItem*> <brace_close:BraceClose> => ast::Item::Trait(
+        ast::ItemTrait {
+            vis,
+            trait_token,
+            ident,
+            generics,
+            super_traits,
+            brace_open,
+            items,
+            brace_close
+        }
+    ),
+
+    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <eq:Eq> <bounds:PunctNoTrail<TypePath, Plus>> <semi:Semi> => ast::Item::TraitAlias(
+        ast::ItemTraitAlias {
+            vis,
+            trait_token,
+            ident,
+            generics,
+            eq,
+            bounds,
+            semi
         }
     ),
 
@@ -740,10 +764,54 @@ EnumFields: ast::Fields = {
     ),
 };
 
+// https://doc.rust-lang.org/reference/items/traits.html
+TraitItem: ast::TraitItem = {
+    <vis:Visibility?> <const_token:Const> <ident:Ident> <colon:Colon> <ty:Type> <default:(Eq Expr)?> <semi:Semi> => ast::TraitItem::Const(
+        ast::TraitItemConst {
+            vis,
+            const_token,
+            ident,
+            colon,
+            ty,
+            default,
+            semi
+        }
+    ),
+    <vis:Visibility?> <fn_token:Fn> <sig:Sig> <block:Block> => ast::TraitItem::Fn(
+        ast::TraitItemFn {
+            vis,
+            fn_token,
+            sig,
+            block: Some(block),
+            semi: None,
+        }
+    ),
+    <vis:Visibility?> <fn_token:Fn> <sig:Sig> <semi:Semi> => ast::TraitItem::Fn(
+        ast::TraitItemFn {
+            vis,
+            fn_token,
+            sig,
+            block: None,
+            semi: Some(semi),
+        }
+    ),
+    <vis:Visibility?> <type_token:Type> <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <default:(Eq Type)?> <semi:Semi> => ast::TraitItem::Type(
+        ast::TraitItemType {
+            vis,
+            type_token,
+            ident,
+            bounds,
+            default,
+            semi
+        }
+    )
+};
+
 /// https://doc.rust-lang.org/reference/items/implementations.html
 ImplItem: ast::ImplItem = {
     ItemConst => ast::ImplItem::Const(<>),
-    ItemFn => ast::ImplItem::Method(<>),
+    ItemFn => ast::ImplItem::Fn(<>),
+    ItemType => ast::ImplItem::Type(<>),
 };
 
 Ports: ast::Punctuated<ast::Port, ast::token::Comma> = PunctTrail<Port, Comma>;
@@ -846,7 +914,6 @@ GenericArg: ast::GenericArg = {
     Type => ast::GenericArg::Type(<>),
     BlockExpression => ast::GenericArg::Expr(<>),
     LiteralExpression => ast::GenericArg::Expr(<>),
-    // ArrayExpression => ast::GenericArg::Expr(<>),
     <ident: Ident> <eq: Eq> <ty: Type> => ast::GenericArg::Binding(ast::GenericArgBinding { ident, eq, ty })
 };
 
