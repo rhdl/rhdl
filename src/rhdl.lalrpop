@@ -639,30 +639,6 @@ UseLeaf: ast::UseTree = {
 #[inline]
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub(<>),
-    <pub_token:Pub> <paren_open:ParenOpen> <crate_token:Crate> <paren_close:ParenClose> => ast::Vis::Crate(
-        ast::VisCrate {
-            pub_token,
-            paren_open,
-            crate_token,
-            paren_close
-        }
-    ),
-    <pub_token:Pub> <paren_open:ParenOpen> <super_token:Super> <paren_close:ParenClose> => ast::Vis::Super(
-        ast::VisSuper {
-            pub_token,
-            paren_open,
-            super_token,
-            paren_close
-        }
-    ),
-    <pub_token:Pub> <paren_open:ParenOpen> <self_token:LowerSelf> <paren_close:ParenClose> => ast::Vis::ExplicitInherited(
-        ast::VisExplicitInherited {
-            pub_token,
-            paren_open,
-            self_token,
-            paren_close
-        }
-    ),
     <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path:Path> <paren_close:ParenClose> => ast::Vis::Restricted(
         ast::VisRestricted {
             pub_token,
@@ -895,10 +871,7 @@ PathInExpressionSegment: ast::PathSegment = {
 
 #[inline]
 PathInExpressionSegmentLast: ast::PathSegment = {
-    <ident:Ident> => ast::PathSegment {
-        ident,
-        generic_args: None
-    },
+    <ident:PathSegment> => ast::PathSegment { ident, generic_args: None },
     <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
@@ -999,21 +972,20 @@ Unary: ast::Expr = {
 
 /// https://doc.rust-lang.org/reference/expressions/operator-expr.html#type-cast-expressions
 Cast: ast::Expr = {
-    // TODO: re-enable cast expressions, disabled due to generics-related issues with comparison expressions
-    // <expr:Unary> <as_token:As> <ty:Type> => ast::Expr::Cast(
-    //     ast::ExprCast {
-    //         expr: Box::new(expr),
-    //         as_token,
-    //         ty: Box::new(ty)
-    //     }
-    // ),
-    // <expr:ExprWithBlock> <as_token:As> <ty:Type> => ast::Expr::Cast(
-    //     ast::ExprCast {
-    //         expr: Box::new(expr),
-    //         as_token,
-    //         ty: Box::new(ty)
-    //     }
-    // ),
+    <expr:Unary> <as_token:As> <ident:Ident> => ast::Expr::Cast(
+        ast::ExprCast {
+            expr: Box::new(expr),
+            as_token,
+            ty: Box::new(ast::Type::Path(ast::TypePath { leading_sep: None, segments: ast::Punctuated { inner: vec![], last: Some(Box::new(ast::PathSegment { ident, generic_args: None }))}}))
+        }
+    ),
+    <expr:ExprWithBlock> <as_token:As> <ident:Ident> => ast::Expr::Cast(
+        ast::ExprCast {
+            expr: Box::new(expr),
+            as_token,
+            ty: Box::new(ast::Type::Path(ast::TypePath { leading_sep: None, segments: ast::Punctuated { inner: vec![], last: Some(Box::new(ast::PathSegment { ident, generic_args: None }))}}))
+        }
+    ),
 
     Unary,
 };

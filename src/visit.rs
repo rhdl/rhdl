@@ -223,11 +223,8 @@ visit! {
     VariantTypeFields,
     VariantTypeUnit,
     Vis,
-    VisCrate,
-    VisExplicitInherited,
     VisPub,
     VisRestricted,
-    VisSuper,
     When,
     Where
 }

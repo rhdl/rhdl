@@ -198,8 +198,8 @@ mod in_another_file;
 mod in_this_file { }
 fn x(x: X) { }
 type AliasForX = X;
-pub(super) struct NamedWrapper { x: X }
-pub(crate) struct UnnamedWrapper(X);
+pub(in super) struct NamedWrapper { x: X }
+pub(in crate) struct UnnamedWrapper(X);
 pub(in super::super) enum Z { A(X), B(Y), C(u12) }
 enum GrayU2 { Zero = 0b00, One = 0b01, Two = 0b11, Three = 0b10 }
 enum States { Uninitialized, Ready, Busy, Error }
