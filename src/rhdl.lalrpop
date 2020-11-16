@@ -639,6 +639,7 @@ UseLeaf: ast::UseTree = {
 #[inline]
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub(<>),
+    Priv => ast::Vis::Priv(<>),
     <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path:Path> <paren_close:ParenClose> => ast::Vis::Restricted(
         ast::VisRestricted {
             pub_token,
@@ -648,6 +649,30 @@ Visibility: ast::Vis = {
             paren_close
         }
     ),
+    <pub_token:Pub> <paren_open:ParenOpen> <crate_token:Crate> <paren_close:ParenClose> => ast::Vis::Crate(
+        ast::VisCrate {
+            pub_token,
+            paren_open,
+            crate_token,
+            paren_close
+        }
+    ),
+    <pub_token:Pub> <paren_open:ParenOpen> <super_token:Super> <paren_close:ParenClose> => ast::Vis::Super(
+        ast::VisSuper {
+            pub_token,
+            paren_open,
+            super_token,
+            paren_close
+        }
+    ),
+    <pub_token:Pub> <paren_open:ParenOpen> <self_token:LowerSelf> <paren_close:ParenClose> => ast::Vis::LowerSelf(
+        ast::VisLowerSelf {
+            pub_token,
+            paren_open,
+            self_token,
+            paren_close
+        }
+    )
 };
 
 /// https://doc.rust-lang.org/reference/items/functions.html
@@ -871,7 +896,7 @@ PathInExpressionSegment: ast::PathSegment = {
 
 #[inline]
 PathInExpressionSegmentLast: ast::PathSegment = {
-    <ident:PathSegment> => ast::PathSegment { ident, generic_args: None },
+    <ident:Ident> => ast::PathSegment { ident, generic_args: None },
     <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
@@ -1706,6 +1731,7 @@ ReturnExpression: ast::Expr = <return_token:Return> <expr:Box<Expr>?> => ast::Ex
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
     PathInExpression => ast::Expr::Path(<>),
+    <left:@L> <lower_self:LowerSelf> <right:@R> => ast::Expr::Path(ast::ExprPath { leading_sep: None, segments: ast::Punctuated { inner: vec![], last: Some(Box::new(ast::PathSegment { ident: ast::token::Ident { inner: lower_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None })) }}),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,

@@ -165,6 +165,7 @@ visit! {
     PlusEq,
     Port,
     PortType,
+    Priv,
     Pub,
     RangeType,
     RangeTypeClosed,
@@ -225,6 +226,10 @@ visit! {
     Vis,
     VisPub,
     VisRestricted,
+    VisCrate,
+    VisSuper,
+    VisLowerSelf,
+    VisPriv,
     When,
     Where
 }

@@ -202,6 +202,27 @@ crate::class_from_tokens! {
             in_token: In,
             path: SimplePath,
             paren_close: ParenClose
+        },
+        Crate {
+            pub_token: Pub,
+            paren_open: ParenOpen,
+            crate_token: Crate,
+            paren_close: ParenClose
+        },
+        Super {
+            pub_token: Pub,
+            paren_open: ParenOpen,
+            super_token: Super,
+            paren_close: ParenClose
+        },
+        LowerSelf {
+            pub_token: Pub,
+            paren_open: ParenOpen,
+            self_token: LowerSelf,
+            paren_close: ParenClose
+        },
+        Priv {
+            inner: Priv
         }
     }
 }
