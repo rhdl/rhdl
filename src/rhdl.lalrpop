@@ -897,6 +897,7 @@ PathInExpressionSegment: ast::PathSegment = {
 #[inline]
 PathInExpressionSegmentLast: ast::PathSegment = {
     <ident:Ident> => ast::PathSegment { ident, generic_args: None },
+    <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
     <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
