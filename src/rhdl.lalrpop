@@ -571,7 +571,7 @@ Item: ast::Item = {
             brace_close
         }
     ),
-    <arch:Arch> <generics:Generics?> <entity:Path> <brace_open:BraceOpen> <items:ArchItem*> <brace_close:BraceClose> => ast::Item::Arch(
+    <arch:Arch> <generics:Generics?> <entity:TypePath> <brace_open:BraceOpen> <items:ArchItem*> <brace_close:BraceClose> => ast::Item::Arch(
         ast::ItemArch {
             arch,
             generics,
