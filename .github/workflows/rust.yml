@@ -31,3 +31,7 @@ jobs:
         with:
           name: code-coverage-report
           path: cobertura.xml
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.COVERALLS_TOKEN }}
