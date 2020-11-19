@@ -255,9 +255,9 @@ crate::insts_from_tokens! {
         params: Punctuated<GenericParam, Comma>,
         gt: Gt
     },
-    WherePredicate {
+    WhereClause {
         where_token: Where,
-        params: Punctuated<GenericParam, Comma>
+        items: Punctuated<WhereClauseItem, Comma>
     }
 }
 
@@ -274,6 +274,16 @@ crate::class_from_tokens! {
             colon: Colon,
             ty: Type,
             default: Option<(Eq, Expr)>
+        }
+    }
+}
+
+crate::class_from_tokens! {
+    WhereClauseItem {
+        Type {
+            ty: Type,
+            colon: Colon,
+            bounds: Punctuated<TypePath, Plus>
         }
     }
 }

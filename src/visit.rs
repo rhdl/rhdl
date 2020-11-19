@@ -231,5 +231,8 @@ visit! {
     VisLowerSelf,
     VisPriv,
     When,
-    Where
+    Where,
+    WhereClause,
+    WhereClauseItem,
+    WhereClauseItemType
 }

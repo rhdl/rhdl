@@ -440,7 +440,7 @@ ItemFn: ast::ItemFn = <vis:Visibility?> <fn_token:Fn> <sig:Sig> <block:Block> =>
     sig,
     block
 };
-ItemType: ast::ItemType = <vis:Visibility?> <type_token:TokenType> <ident:Ident> <generics:Generics?> <eq:Eq> <ty:Type> <semi:Semi> => ast::ItemType {
+ItemType: ast::ItemType = <vis:Visibility?> <type_token:TokenType> <ident:Ident> <generics:Generics?> <where_clause:WhereClause?> <eq:Eq> <ty:Type> <semi:Semi> => ast::ItemType {
     vis,
     type_token,
     ident,
@@ -510,7 +510,7 @@ Item: ast::Item = {
     ),
 
     /// https://doc.rust-lang.org/reference/items/enumerations.html
-    <vis:Visibility?> <enum_token:Enum> <ident:Ident> <generics:Generics?> <brace_open:BraceOpen> <variants:PunctCanTrail<Variant, Comma>> <brace_close:BraceClose> => ast::Item::Enum(
+    <vis:Visibility?> <enum_token:Enum> <ident:Ident> <generics:Generics?> <where_clause:WhereClause?> <brace_open:BraceOpen> <variants:PunctCanTrail<Variant, Comma>> <brace_close:BraceClose> => ast::Item::Enum(
         ast::ItemEnum {
             vis,
             enum_token,
@@ -522,7 +522,7 @@ Item: ast::Item = {
         }
     ),
 
-    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <super_traits:(Colon PunctNoTrail<TypePath, Plus>)?> <brace_open:BraceOpen> <items:TraitItem*> <brace_close:BraceClose> => ast::Item::Trait(
+    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <super_traits:(Colon PunctNoTrail<TypePath, Plus>)?> <where_clause:WhereClause?> <brace_open:BraceOpen> <items:TraitItem*> <brace_close:BraceClose> => ast::Item::Trait(
         ast::ItemTrait {
             vis,
             trait_token,
@@ -535,7 +535,7 @@ Item: ast::Item = {
         }
     ),
 
-    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <eq:Eq> <bounds:PunctNoTrail<TypePath, Plus>> <semi:Semi> => ast::Item::TraitAlias(
+    <vis:Visibility?> <trait_token:Trait> <ident:Ident> <generics:Generics?> <where_clause:WhereClause?> <eq:Eq> <bounds:PunctNoTrail<TypePath, Plus>> <semi:Semi> => ast::Item::TraitAlias(
         ast::ItemTraitAlias {
             vis,
             trait_token,
@@ -548,7 +548,7 @@ Item: ast::Item = {
     ),
 
     /// https://doc.rust-lang.org/reference/items/implementations.html
-    <impl_token:Impl> <generics:Generics?> <of:(TypePath For)?> <ty:Box<Type>> <brace_open:BraceOpen> <items:ImplItem*> <brace_close:BraceClose> => ast::Item::Impl(
+    <impl_token:Impl> <generics:Generics?> <of:(TypePath For)?> <ty:Box<Type>> <where_clause:WhereClause?> <brace_open:BraceOpen> <items:ImplItem*> <brace_close:BraceClose> => ast::Item::Impl(
         ast::ItemImpl {
             impl_token,
             generics,
@@ -560,7 +560,7 @@ Item: ast::Item = {
         }
     ),
 
-    <vis:Visibility?> <entity:Entity> <ident:Ident> <generics:Generics?> <brace_open:BraceOpen> <ports:Ports> <brace_close:BraceClose> => ast::Item::Entity(
+    <vis:Visibility?> <entity:Entity> <ident:Ident> <generics:Generics?> <where_clause:WhereClause?> <brace_open:BraceOpen> <ports:Ports> <brace_close:BraceClose> => ast::Item::Entity(
         ast::ItemEntity {
             vis,
             entity,
@@ -571,7 +571,7 @@ Item: ast::Item = {
             brace_close
         }
     ),
-    <arch:Arch> <generics:Generics?> <entity:TypePath> <brace_open:BraceOpen> <items:ArchItem*> <brace_close:BraceClose> => ast::Item::Arch(
+    <arch:Arch> <generics:Generics?> <entity:TypePath> <where_clause:WhereClause?> <brace_open:BraceOpen> <items:ArchItem*> <brace_close:BraceClose> => ast::Item::Arch(
         ast::ItemArch {
             arch,
             generics,
@@ -676,7 +676,8 @@ Visibility: ast::Vis = {
 };
 
 /// https://doc.rust-lang.org/reference/items/functions.html
-Sig: ast::Sig = <ident:Ident> <generics:Generics?> <paren_open:ParenOpen> <inputs:FnArgs> <paren_close:ParenClose> <output:(RArrow Type)?> => ast::Sig {
+#[inline]
+Sig: ast::Sig = <ident:Ident> <generics:Generics?> <paren_open:ParenOpen> <inputs:FnArgs> <paren_close:ParenClose> <output:(RArrow Type)?> <where_clause:WhereClause?> => ast::Sig {
     ident,
     generics,
     paren_open,
@@ -702,6 +703,14 @@ PatType: ast::PatType = <pat:Pat> <colon:Colon> <ty:Type> => ast::PatType { pat,
 /// https://doc.rust-lang.org/reference/items/generics.html
 Generics: ast::Generics = <lt:Lt> <params:PunctCanTrail<GenericParam, Comma>> <gt:Gt> => ast::Generics { lt, params, gt };
 
+/// https://doc.rust-lang.org/reference/items/generics.html#where-clauses
+#[inline]
+WhereClause: ast::WhereClause = <where_token:Where> <items:PunctCanTrail<WhereClauseItem, Comma>> => ast::WhereClause { where_token, items };
+#[inline]
+WhereClauseItem: ast::WhereClauseItem = {
+    <ty:Type> <colon:Colon> <bounds:PunctNoTrail<TypePath, Plus>> => ast::WhereClauseItem::Type(ast::WhereClauseItemType { ty, colon, bounds })
+};
+
 GenericParam: ast::GenericParam = {
     <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <eq:(Eq Type)?> => ast::GenericParam::Type(
         ast::GenericParamType {
@@ -722,21 +731,22 @@ GenericParam: ast::GenericParam = {
 };
 
 /// https://doc.rust-lang.org/reference/items/structs.html
-StructFields: (ast::Fields, Option<ast::token::Semi>) = {
-    <brace_open:BraceOpen> <inner:PunctCanTrail<NamedField, Comma>> <brace_close:BraceClose> => (ast::Fields::Named(
+#[inline]
+StructFields: (ast::Fields, Option<ast::token::Semi>, Option<ast::WhereClause>) = {
+    <where_clause:WhereClause?> <brace_open:BraceOpen> <inner:PunctCanTrail<NamedField, Comma>> <brace_close:BraceClose> => (ast::Fields::Named(
         ast::FieldsNamed {
             brace_open,
             inner,
             brace_close
         }
-    ), None),
-    <paren_open:ParenOpen> <inner:PunctCanTrail<UnnamedField, Comma>> <paren_close:ParenClose> <semi:Semi> => (ast::Fields::Unnamed(
+    ), None, where_clause),
+    <paren_open:ParenOpen> <inner:PunctCanTrail<UnnamedField, Comma>> <paren_close:ParenClose> <where_clause:WhereClause?> <semi:Semi> => (ast::Fields::Unnamed(
         ast::FieldsUnnamed {
             paren_open,
             inner,
             paren_close
         }
-    ), Some(semi))
+    ), Some(semi), where_clause)
 };
 NamedField: ast::NamedField = <vis:Visibility?> <ident:Ident> <colon:Colon> <ty:Type> => ast::NamedField { vis, ident, colon, ty };
 UnnamedField: ast::UnnamedField = <vis:Visibility?> <ty:Type> => ast::UnnamedField { vis, ty };
