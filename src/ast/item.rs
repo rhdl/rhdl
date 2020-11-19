@@ -353,7 +353,7 @@ crate::class_from_tokens! {
         },
         Type {
             vis: Option<Vis>,
-            type_token: Type,
+            type_token: TokenType,
             ident: Ident,
             bounds: Option<(Colon, Punctuated<TypePath, Plus>)>,
             default: Option<(Eq, Type)>,

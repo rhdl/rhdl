@@ -806,7 +806,7 @@ TraitItem: ast::TraitItem = {
             semi: Some(semi),
         }
     ),
-    <vis:Visibility?> <type_token:Type> <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <default:(Eq Type)?> <semi:Semi> => ast::TraitItem::Type(
+    <vis:Visibility?> <type_token:TokenType> <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <default:(Eq Type)?> <semi:Semi> => ast::TraitItem::Type(
         ast::TraitItemType {
             vis,
             type_token,
