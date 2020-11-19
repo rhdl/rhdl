@@ -377,7 +377,7 @@ Lit: ast::token::Lit = {
 };
 
 
-PunctTrail<T, P>: ast::Punctuated<T, P> = {
+PunctCanTrail<T, P>: ast::Punctuated<T, P> = {
     <inner:(T P)*> <last:T?> => {
         ast::Punctuated {
             inner,
@@ -510,7 +510,7 @@ Item: ast::Item = {
     ),
 
     /// https://doc.rust-lang.org/reference/items/enumerations.html
-    <vis:Visibility?> <enum_token:Enum> <ident:Ident> <generics:Generics?> <brace_open:BraceOpen> <variants:PunctTrail<Variant, Comma>> <brace_close:BraceClose> => ast::Item::Enum(
+    <vis:Visibility?> <enum_token:Enum> <ident:Ident> <generics:Generics?> <brace_open:BraceOpen> <variants:PunctCanTrail<Variant, Comma>> <brace_close:BraceClose> => ast::Item::Enum(
         ast::ItemEnum {
             vis,
             enum_token,
@@ -581,7 +581,7 @@ Item: ast::Item = {
             brace_close
         }
     )
-    // <vis:Visibility?> <bag:Bag> <ident:Ident> <brace_open:BraceOpen> <literals:PunctTrail<Lit, Comma>> <brace_close:BraceClose> => ast::Item::Bag(
+    // <vis:Visibility?> <bag:Bag> <ident:Ident> <brace_open:BraceOpen> <literals:PunctCanTrail<Lit, Comma>> <brace_close:BraceClose> => ast::Item::Bag(
     //     ast::ItemBag {
     //         vis,
     //         bag,
@@ -618,7 +618,7 @@ UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <inner:(PathSegment PathSe
 
 UseLeaf: ast::UseTree = {
     Star => ast::UseTree::Glob(<>),
-    <brace_open:BraceOpen> <trees:PunctTrail<UseTree, Comma>> <brace_close:BraceClose> => ast::UseTree::Group(
+    <brace_open:BraceOpen> <trees:PunctCanTrail<UseTree, Comma>> <brace_close:BraceClose> => ast::UseTree::Group(
         ast::UseTreeGroup {
             brace_open,
             trees,
@@ -690,17 +690,17 @@ FnArgs: ast::Punctuated<ast::FnArg, ast::token::Comma> = {
         inner: vec![],
         last: Some(Box::new(ast::FnArg::Receiver(receiver))),
     },
-    <receiver:(LowerSelf Comma)> <mut args:PunctTrail<FnArg, Comma>> => {
+    <receiver:(LowerSelf Comma)> <mut args:PunctCanTrail<FnArg, Comma>> => {
         args.inner.insert(0, (ast::FnArg::Receiver(receiver.0), receiver.1));
         args
     },
-    PunctTrail<FnArg, Comma>,
+    PunctCanTrail<FnArg, Comma>,
 };
 FnArg: ast::FnArg = PatType => ast::FnArg::Typed(<>);
 PatType: ast::PatType = <pat:Pat> <colon:Colon> <ty:Type> => ast::PatType { pat, colon, ty };
 
 /// https://doc.rust-lang.org/reference/items/generics.html
-Generics: ast::Generics = <lt:Lt> <params:PunctTrail<GenericParam, Comma>> <gt:Gt> => ast::Generics { lt, params, gt };
+Generics: ast::Generics = <lt:Lt> <params:PunctCanTrail<GenericParam, Comma>> <gt:Gt> => ast::Generics { lt, params, gt };
 
 GenericParam: ast::GenericParam = {
     <ident:Ident> <bounds:(Colon PunctNoTrail<TypePath, Plus>)?> <eq:(Eq Type)?> => ast::GenericParam::Type(
@@ -723,14 +723,14 @@ GenericParam: ast::GenericParam = {
 
 /// https://doc.rust-lang.org/reference/items/structs.html
 StructFields: (ast::Fields, Option<ast::token::Semi>) = {
-    <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => (ast::Fields::Named(
+    <brace_open:BraceOpen> <inner:PunctCanTrail<NamedField, Comma>> <brace_close:BraceClose> => (ast::Fields::Named(
         ast::FieldsNamed {
             brace_open,
             inner,
             brace_close
         }
     ), None),
-    <paren_open:ParenOpen> <inner:PunctTrail<UnnamedField, Comma>> <paren_close:ParenClose> <semi:Semi> => (ast::Fields::Unnamed(
+    <paren_open:ParenOpen> <inner:PunctCanTrail<UnnamedField, Comma>> <paren_close:ParenClose> <semi:Semi> => (ast::Fields::Unnamed(
         ast::FieldsUnnamed {
             paren_open,
             inner,
@@ -749,14 +749,14 @@ Variant: ast::Variant = {
 };
 
 EnumFields: ast::Fields = {
-    <brace_open:BraceOpen> <inner:PunctTrail<NamedField, Comma>> <brace_close:BraceClose> => ast::Fields::Named(
+    <brace_open:BraceOpen> <inner:PunctCanTrail<NamedField, Comma>> <brace_close:BraceClose> => ast::Fields::Named(
         ast::FieldsNamed {
             brace_open,
             inner,
             brace_close
         }
     ),
-    <paren_open:ParenOpen> <inner:PunctTrail<UnnamedField, Comma>> <paren_close:ParenClose> => ast::Fields::Unnamed(
+    <paren_open:ParenOpen> <inner:PunctCanTrail<UnnamedField, Comma>> <paren_close:ParenClose> => ast::Fields::Unnamed(
         ast::FieldsUnnamed {
             paren_open,
             inner,
@@ -815,7 +815,7 @@ ImplItem: ast::ImplItem = {
     ItemType => ast::ImplItem::Type(<>),
 };
 
-Ports: ast::Punctuated<ast::Port, ast::token::Comma> = PunctTrail<Port, Comma>;
+Ports: ast::Punctuated<ast::Port, ast::token::Comma> = PunctCanTrail<Port, Comma>;
 #[inline]
 PortType: ast::PortType = {
     In => ast::PortType::In(<>),
@@ -840,7 +840,7 @@ ArchItem: ast::ArchItem = {
             block
         }
     ),
-    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctCanTrail<EntityFieldValue, Comma>> <brace_close:BraceClose> => ast::ArchItem::EntityExpression(
         ast::ArchItemEntityExpression {
             path,
             brace_open,
@@ -883,7 +883,7 @@ PathInExpressionSegment: ast::PathSegment = {
         ident,
         generic_args: None
     },
-    <ident:PathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
+    <ident:PathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
             path_sep: Some(path_sep),
@@ -898,7 +898,7 @@ PathInExpressionSegment: ast::PathSegment = {
 PathInExpressionSegmentLast: ast::PathSegment = {
     <ident:Ident> => ast::PathSegment { ident, generic_args: None },
     <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
-    <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
+    <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
             path_sep: Some(path_sep),
@@ -1515,7 +1515,7 @@ ArrayExpression: ast::Expr = {
             bracket_close
         }
     ),
-    <bracket_open:BracketOpen> <elements:PunctTrail<Expr, Comma>> <bracket_close:BracketClose> => ast::Expr::Array(
+    <bracket_open:BracketOpen> <elements:PunctCanTrail<Expr, Comma>> <bracket_close:BracketClose> => ast::Expr::Array(
         ast::ExprArray {
             bracket_open,
             elements,
@@ -1579,7 +1579,7 @@ StructExpression: ast::Expr = {
             brace_close
         }
     ),
-    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
+    <path:PathInExpression> <brace_open:BraceOpen> <fields:PunctCanTrail<FieldValue, Comma>> <brace_close:BraceClose> => ast::Expr::Struct(
         ast::ExprStruct {
             path,
             brace_open,
@@ -1597,7 +1597,7 @@ FieldValue: ast::FieldValue = {
 };
 
 /// https://doc.rust-lang.org/reference/expressions/call-expr.html
-CallExpression: ast::Expr = <on:Box<ExprWithoutFieldOrBlock>> <paren_open:ParenOpen> <args:PunctTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::Call(
+CallExpression: ast::Expr = <on:Box<ExprWithoutFieldOrBlock>> <paren_open:ParenOpen> <args:PunctCanTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::Call(
     ast::ExprCall {
         on,
         paren_open,
@@ -1608,7 +1608,7 @@ CallExpression: ast::Expr = <on:Box<ExprWithoutFieldOrBlock>> <paren_open:ParenO
 
 /// https://doc.rust-lang.org/reference/expressions/method-call-expr.html
 MethodCallExpression: ast::Expr = {
-    <on:Box<ExprWithBlock>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
+    <on:Box<ExprWithBlock>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctCanTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
         ast::ExprMethodCall {
             on,
             dot,
@@ -1618,7 +1618,7 @@ MethodCallExpression: ast::Expr = {
             paren_close
         }    
     ),
-    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
+    <on:Box<ExprWithoutBlockOrOperator>> <dot:Dot> <method:Ident> <paren_open:ParenOpen> <args:PunctCanTrail<Expr, Comma>> <paren_close:ParenClose> => ast::Expr::MethodCall(
         ast::ExprMethodCall {
             on,
             dot,
@@ -1702,7 +1702,7 @@ IfExpression: ast::Expr = {
 };
 
 /// https://doc.rust-lang.org/reference/expressions/match-expr.html
-MatchExpression: ast::Expr = <match_token:Match> <expr:Box<ExprIf>> <brace_open:BraceOpen> <arms:PunctTrail<MatchArm, Comma>> <brace_close:BraceClose> => ast::Expr::Match(
+MatchExpression: ast::Expr = <match_token:Match> <expr:Box<ExprIf>> <brace_open:BraceOpen> <arms:PunctCanTrail<MatchArm, Comma>> <brace_close:BraceClose> => ast::Expr::Match(
     ast::ExprMatch {
         match_token,
         expr,
@@ -1832,7 +1832,7 @@ pub Pat: ast::Pat = {
             paren_close
         }
     ),
-    <path:PathInExpression> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
+    <path:PathInExpression> <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctCanTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::TupleStruct(
         ast::PatTupleStruct {
             path,
             paren_open,
@@ -1850,7 +1850,7 @@ pub Pat: ast::Pat = {
             paren_close
         }
     ),
-    <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::Tuple(
+    <paren_open:ParenOpen> <subpats:PunctMustTrail<Pat, Comma>> <rest_subpats:(DotDot Comma PunctCanTrail<Pat, Comma>)?> <paren_close:ParenClose> => ast::Pat::Tuple(
         ast::PatTuple {
             paren_open,
             subpats,
@@ -1859,7 +1859,7 @@ pub Pat: ast::Pat = {
         }
     ),
     /// https://doc.rust-lang.org/reference/patterns.html#slice-patterns
-    <bracket_open:BracketOpen> <subpats:PunctTrail<Pat, Comma>> <bracket_close:BracketClose> => ast::Pat::Slice(
+    <bracket_open:BracketOpen> <subpats:PunctCanTrail<Pat, Comma>> <bracket_close:BracketClose> => ast::Pat::Slice(
         ast::PatSlice {
             bracket_open,
             subpats,
@@ -1875,7 +1875,7 @@ RangePatternBound: ast::Expr = {
 };
 
 StructPatternElements: (ast::Punctuated<ast::StructPatternField, ast::token::Comma>, Option<ast::token::DotDot>) = {
-    PunctTrail<StructPatternField, Comma> => (<>, None),
+    PunctCanTrail<StructPatternField, Comma> => (<>, None),
     <fields:PunctMustTrail<StructPatternField, Comma>> <dotdot:DotDot> => (fields, Some(dotdot)),
 };
 
@@ -1904,7 +1904,7 @@ pub Type: ast::Type = {
 
     /// https://doc.rust-lang.org/reference/types.html#parenthesized-types
     /// https://doc.rust-lang.org/reference/types/tuple.html#tuple-types
-    <paren_open:ParenOpen> <tys: PunctTrail<Type, Comma>> <paren_close:ParenClose> => {
+    <paren_open:ParenOpen> <tys: PunctCanTrail<Type, Comma>> <paren_close:ParenClose> => {
         if tys.inner.is_empty() && tys.last.is_some() {
             ast::Type::Parenthesized(
                 ast::TypeParenthesized {
@@ -1949,7 +1949,7 @@ pub Type: ast::Type = {
 
     /// https://doc.rust-lang.org/reference/types/function-pointer.html
     /// TODO: support named params "MaybeNamedParam"
-    <fn_token:Fn> <paren_open:ParenOpen> <args:PunctTrail<Type, Comma>> <paren_close:ParenClose> <ret:(RArrow Box<Type>)?> => ast::Type::Fn(
+    <fn_token:Fn> <paren_open:ParenOpen> <args:PunctCanTrail<Type, Comma>> <paren_close:ParenClose> <ret:(RArrow Box<Type>)?> => ast::Type::Fn(
         ast::TypeFn {
             fn_token,
             paren_open,
@@ -2004,7 +2004,7 @@ TypePathSegmentLast: ast::PathSegment = {
     }
 };
 
-TypePathSegmentGenericArgs: ast::GenericArgs = <lt:Lt> <args:PunctTrail<GenericArg, Comma>> <gt:Gt> => ast::GenericArgs {
+TypePathSegmentGenericArgs: ast::GenericArgs = <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::GenericArgs {
     path_sep: None,
     lt,
     args,
