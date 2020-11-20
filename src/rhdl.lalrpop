@@ -866,23 +866,12 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
 // TODO: support self qualifiers
-PathInExpression: ast::ExprPath = {
-    <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)+> <last:Box<PathInExpressionSegmentLast>> => {
-        ast::ExprPath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner,
-                last: Some(last)
-            }
-        }
-    },
-    <leading_sep:PathSep?> <last:Box<PathInExpressionSegmentLast>> => {
-        ast::ExprPath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner: vec![],
-                last: Some(last)
-            }
+PathInExpression: ast::ExprPath = <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)*> <last:Box<PathInExpressionSegmentLast>> => {
+    ast::ExprPath {
+        leading_sep,
+        segments: ast::Punctuated {
+            inner,
+            last: Some(last)
         }
     }
 };
@@ -893,6 +882,7 @@ PathInExpressionSegment: ast::PathSegment = {
         ident,
         generic_args: None
     },
+    <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
     <ident:PathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
@@ -1971,20 +1961,11 @@ pub Type: ast::Type = {
 };
 
 TypePath: ast::TypePath = {
-    // <leading_sep:PathSep?> <inner:(TypePathSegment PathSep)+> <last:Box<TypePathSegmentLast>> => {
-    //     ast::TypePath {
-    //         leading_sep,
-    //         segments: ast::Punctuated {
-    //             inner,
-    //             last: Some(last)
-    //         }
-    //     }
-    // },
-    <leading_sep:PathSep?> <last:Box<TypePathSegmentLast>> => {
+    <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)*> <last:Box<TypePathSegmentLast>> => {
         ast::TypePath {
             leading_sep,
             segments: ast::Punctuated {
-                inner: vec![],
+                inner,
                 last: Some(last)
             }
         }
@@ -1999,7 +1980,7 @@ TypePath: ast::TypePath = {
 // TODO: allow fn args, which I couldn't get to work
 #[inline]
 TypePathSegment: ast::PathSegment = {
-    PathInExpressionSegment => <>,
+    PathInExpressionSegment,
     <ident:PathSegment> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
         ident,
         generic_args: Some(generic_args)
