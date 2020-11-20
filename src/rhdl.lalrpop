@@ -408,10 +408,10 @@ PunctNoTrail<T, P>: ast::Punctuated<T, P> = {
 Box<T>: Box<T> = T => Box::new(<>);
 
 /// https://doc.rust-lang.org/reference/paths.html#simple-paths
-Path: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathSegment, PathSep>> => ast::SimplePath { leading_sep, segments };
+SimplePath: ast::SimplePath = <leading_sep:PathSep?> <segments:PunctNoTrail<SimplePathSegment, PathSep>> => ast::SimplePath { leading_sep, segments };
 
 #[inline]
-PathSegment: ast::token::Ident = {
+SimplePathSegment: ast::token::Ident = {
     Ident,
     <left:@L> <ident:LowerSelf> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
     <left:@L> <ident:Super> <right:@R> => ast::token::Ident { inner: ident.to_string(), span: ast::Span(left, right) },
@@ -614,7 +614,7 @@ UseTree: ast::UseTree = {
 };
 
 #[inline]
-UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <inner:(PathSegment PathSep)+> => ast::SimplePath { leading_sep, segments: ast::Punctuated { inner, last: None } };
+UseTreePath: ast::SimplePath = <leading_sep:PathSep?> <inner:(SimplePathSegment PathSep)+> => ast::SimplePath { leading_sep, segments: ast::Punctuated { inner, last: None } };
 
 UseLeaf: ast::UseTree = {
     Star => ast::UseTree::Glob(<>),
@@ -625,14 +625,14 @@ UseLeaf: ast::UseTree = {
             brace_close
         }
     ),
-    <name:PathSegment> <as_token:As> <rename:Ident> => ast::UseTree::Rename(
+    <name:SimplePathSegment> <as_token:As> <rename:Ident> => ast::UseTree::Rename(
         ast::UseTreeRename {
             name,
             as_token,
             rename
         }
     ),
-    PathSegment => ast::UseTree::Name(<>),
+    SimplePathSegment => ast::UseTree::Name(<>),
 };
 
 /// https://doc.rust-lang.org/reference/visibility-and-privacy.html
@@ -640,7 +640,7 @@ UseLeaf: ast::UseTree = {
 Visibility: ast::Vis = {
     Pub => ast::Vis::Pub(<>),
     Priv => ast::Vis::Priv(<>),
-    <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path:Path> <paren_close:ParenClose> => ast::Vis::Restricted(
+    <pub_token:Pub> <paren_open:ParenOpen> <in_token:In> <path:SimplePath> <paren_close:ParenClose> => ast::Vis::Restricted(
         ast::VisRestricted {
             pub_token,
             paren_open,
@@ -866,39 +866,20 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
 // TODO: support self qualifiers
-PathInExpression: ast::ExprPath = <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)*> <last:Box<PathInExpressionSegmentLast>> => {
-    ast::ExprPath {
-        leading_sep,
-        segments: ast::Punctuated {
-            inner,
-            last: Some(last)
-        }
-    }
+#[inline]
+PathInExpression: ast::ExprPath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathInExpressionSegment, PathSep>> => ast::ExprPath {
+    leading_sep,
+    segments
 };
 
 #[inline]
 PathInExpressionSegment: ast::PathSegment = {
-    <ident:PathSegment> => ast::PathSegment {
+    <ident:SimplePathSegment> => ast::PathSegment {
         ident,
         generic_args: None
     },
     <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
-    <ident:PathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
-        ident,
-        generic_args: Some(ast::GenericArgs {
-            path_sep: Some(path_sep),
-            lt,
-            args,
-            gt
-        })
-    }
-};
-
-#[inline]
-PathInExpressionSegmentLast: ast::PathSegment = {
-    <ident:Ident> => ast::PathSegment { ident, generic_args: None },
-    <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
-    <ident:Ident> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
+    <ident:SimplePathSegment> <path_sep:PathSep> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::PathSegment {
         ident,
         generic_args: Some(ast::GenericArgs {
             path_sep: Some(path_sep),
@@ -1732,7 +1713,6 @@ ReturnExpression: ast::Expr = <return_token:Return> <expr:Box<Expr>?> => ast::Ex
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
     PathInExpression => ast::Expr::Path(<>),
-    <left:@L> <lower_self:LowerSelf> <right:@R> => ast::Expr::Path(ast::ExprPath { leading_sep: None, segments: ast::Punctuated { inner: vec![], last: Some(Box::new(ast::PathSegment { ident: ast::token::Ident { inner: lower_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None })) }}),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
@@ -1960,43 +1940,40 @@ pub Type: ast::Type = {
     ),
 };
 
-TypePath: ast::TypePath = {
-    <leading_sep:PathSep?> <inner:(PathInExpressionSegment PathSep)*> <last:Box<TypePathSegmentLast>> => {
-        ast::TypePath {
-            leading_sep,
-            segments: ast::Punctuated {
-                inner,
-                last: Some(last)
-            }
+// Type paths cannot be ambiguous with visibility shorthands, so those types of segments aren't allowed at the path end
+#[inline]
+TypePath: ast::TypePath = <leading_sep:PathSep?> <inner:(TypePathSegment PathSep)*> <last:Box<TypePathSegmentLast>> => {
+    ast::TypePath {
+        leading_sep,
+        segments: ast::Punctuated {
+            inner,
+            last: Some(last)
         }
-    },
-    PathInExpression => ast::TypePath {
-        leading_sep: <>.leading_sep,
-        segments: <>.segments
-    },
+    }
 };
 
-// TODO: allow a pathsep here, but unfortunately that makes it ambiguous with expr path segment
 // TODO: allow fn args, which I couldn't get to work
 #[inline]
 TypePathSegment: ast::PathSegment = {
-    PathInExpressionSegment,
-    <ident:PathSegment> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
+    <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
+    <ident:SimplePathSegment> <generic_args:TypePathSegmentGenericArgs?> => ast::PathSegment {
         ident,
-        generic_args: Some(generic_args)
-    }
+        generic_args
+    },
 };
 
 #[inline]
 TypePathSegmentLast: ast::PathSegment = {
-    <ident:Ident> <generic_args:TypePathSegmentGenericArgs> => ast::PathSegment {
+    <left:@L> <upper_self:UpperSelf> <right:@R> => ast::PathSegment { ident: ast::token::Ident { inner: upper_self.to_string(), span: ast::token::Span(left, right) }, generic_args: None },
+    <ident:Ident> <generic_args:TypePathSegmentGenericArgs?> => ast::PathSegment {
         ident,
-        generic_args: Some(generic_args)
-    }
+        generic_args
+    },
 };
 
-TypePathSegmentGenericArgs: ast::GenericArgs = <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::GenericArgs {
-    path_sep: None,
+#[inline]
+TypePathSegmentGenericArgs: ast::GenericArgs = <path_sep:PathSep?> <lt:Lt> <args:PunctCanTrail<GenericArg, Comma>> <gt:Gt> => ast::GenericArgs {
+    path_sep,
     lt,
     args,
     gt
