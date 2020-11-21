@@ -10,7 +10,6 @@ libflate = "1"
 [dependencies]
 lalrpop-util = { version = "0.19", features =  [ "lexer" ] }
 rug = "1.11"
-derive_more = { version = "0.99", features = [ "display" ] }
 paste = "1"
 
 [dev-dependencies]

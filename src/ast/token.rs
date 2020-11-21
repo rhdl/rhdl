@@ -1,4 +1,3 @@
-use derive_more::Display;
 use paste::paste;
 use rug::{Float, Integer as Int};
 
@@ -72,12 +71,17 @@ impl<T: ToTokens> Spanned for T {
     }
 }
 
-#[derive(Clone, Debug, Eq, Display)]
-#[display(fmt = "{}", inner)]
+#[derive(Clone, Debug, Eq)]
 /// Equality is ONLY on inner, not on the span
 pub struct Ident {
     pub inner: String,
     pub span: Span,
+}
+
+impl fmt::Display for Ident {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
 }
 
 impl std::hash::Hash for Ident {
@@ -120,14 +124,21 @@ where
 {
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
+#[derive(Clone, Debug, PartialEq)]
 pub enum Lit {
-    #[display(fmt = "{}", _0)]
     Int(LitInt),
-    #[display(fmt = "{}", _0)]
     Float(LitFloat),
-    #[display(fmt = "{}", _0)]
     Bool(LitBool),
+}
+
+impl fmt::Display for Lit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Int(i) => write!(f, "{}", i),
+            Self::Float(float) => write!(f, "{}", float),
+            Self::Bool(b) => write!(f, "{}", b)
+        }
+    }
 }
 
 impl ToTokens for Lit {
@@ -151,13 +162,18 @@ where
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
-#[display(fmt = "{}", raw)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LitInt {
     pub val: Int,
     pub suffix: Option<Ident>,
     pub raw: String,
     pub span: Span,
+}
+
+impl fmt::Display for LitInt {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.raw)
+    }
 }
 
 impl ToTokens for LitInt {
@@ -176,13 +192,18 @@ where
 {
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
-#[display(fmt = "{}", raw)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LitFloat {
     pub val: Float,
     pub suffix: Option<Ident>,
     pub raw: String,
     pub span: Span,
+}
+
+impl fmt::Display for LitFloat {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.raw)
+    }
 }
 
 impl ToTokens for LitFloat {
@@ -201,11 +222,16 @@ where
 {
 }
 
-#[derive(Clone, Debug, PartialEq, Display)]
-#[display(fmt = "{}", inner)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct LitBool {
     pub inner: bool,
     pub span: Span,
+}
+
+impl fmt::Display for LitBool {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.inner)
+    }
 }
 
 impl ToTokens for LitBool {
@@ -298,7 +324,7 @@ macro_rules! tokens {
         $(
             token!($($format =>)? $variant);
         )*
-        #[derive(Debug, Clone, PartialEq, Display)]
+        #[derive(Debug, Clone, PartialEq)]
         pub enum Tok {
             $( $variant($variant) ),*,
             Ident(Ident),
