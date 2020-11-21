@@ -333,13 +333,13 @@ pub LitInt: ast::token::LitInt = {
     },
 
     // i.e. 36#HI, an Int in base 36
-    <left:@L> <val:BaseInteger> <right: @R> => {
+    <left:@L> <val:BaseInteger> <right:@R> <suffix:(Pound Ident)?> => {
         const BASE_CHAR: char = '#';
         let base = val.split(BASE_CHAR).next().map(i32::from_str).unwrap().unwrap();
         ast::token::LitInt {
             val: Int::parse_radix(&val.split(BASE_CHAR).nth(1).unwrap(), base).unwrap().into(),
-            suffix: None,
-            raw: val.to_string(),
+            suffix: suffix.clone().map(|x| x.1),
+            raw: val.to_string() + suffix.as_ref().map(|x| format!("{}{}", x.0, x.1)).unwrap_or_default().as_str(),
             span: ast::Span(left, right),
         }
     },
@@ -856,7 +856,6 @@ ArchItem: ast::ArchItem = {
         }
     )
 };
-#[inline]
 EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => ast::EntityFieldValue { ident, expr };
 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html

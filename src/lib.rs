@@ -1,5 +1,3 @@
-use lalrpop_util::lalrpop_mod;
-
 #[macro_use]
 pub mod ast;
 
@@ -8,7 +6,7 @@ pub mod visit;
 #[cfg(test)]
 mod display;
 
-lalrpop_mod!(pub parser, "/rhdl.rs");
+pub mod parser;
 
 #[cfg(test)]
 mod tests {
