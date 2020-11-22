@@ -35,6 +35,11 @@ crate::class_from_tokens! {
             leading_sep: Option<PathSep>,
             segments: Punctuated<PathSegment, PathSep>
         },
+        QPath {
+            qualifier: Qualifier,
+            leading_sep: PathSep,
+            segments: Punctuated<PathSegment, PathSep>
+        },
         Lit {
             inner: Lit
         },

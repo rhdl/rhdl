@@ -860,11 +860,21 @@ EntityFieldValue: ast::EntityFieldValue = <ident:Ident> <expr:(Colon Expr)?> => 
 
 /// https://doc.rust-lang.org/reference/expressions/literal-expr.html
 LiteralExpression: ast::Expr = Lit => ast::Expr::Lit(<>);
+
 /// https://doc.rust-lang.org/reference/expressions/path-expr.html
-// TODO: support self qualifiers
 PathInExpression: ast::ExprPath = <leading_sep:PathSep?> <segments:PunctNoTrail<PathInExpressionSegment, PathSep>> => ast::ExprPath {
     leading_sep,
     segments
+};
+
+/// https://doc.rust-lang.org/reference/paths.html#qualified-paths
+// TODO: allow qualified paths without the "as typepath". It's creating local ambiguities at the moment
+#[inline]
+Qualifier: ast::Qualifier = <lt:Lt> <ty:Box<Type>> <cast:(As Box<TypePath>)> <gt:Gt> => ast::Qualifier {
+    lt,
+    ty,
+    cast: Some(cast),
+    gt
 };
 
 #[inline]
@@ -1708,6 +1718,12 @@ ReturnExpression: ast::Expr = <return_token:Return> <expr:Box<Expr>?> => ast::Ex
 ExprWithoutFieldOrBlock: ast::Expr = {
     LiteralExpression,
     PathInExpression => ast::Expr::Path(<>),
+    /// https://doc.rust-lang.org/reference/paths.html#qualified-paths
+    <qualifier:Qualifier> <leading_sep:PathSep> <segments:PunctNoTrail<PathInExpressionSegment, PathSep>> => ast::Expr::QPath(ast::ExprQPath {
+        qualifier,
+        leading_sep,
+        segments
+    }),
     GroupedExpression,
     ArrayExpression,
     IndexExpression,
@@ -1876,6 +1892,12 @@ StructPatternField: ast::StructPatternField = {
 pub Type: ast::Type = {
     /// https://doc.rust-lang.org/reference/paths.html#paths-in-types
     TypePath => ast::Type::Path(<>),
+    /// https://doc.rust-lang.org/reference/paths.html#qualified-paths
+    <qualifier:Qualifier> <leading_sep:PathSep> <segments:PunctNoTrail<TypePathSegment, PathSep>> => ast::Type::QPath(ast::TypeQPath {
+        qualifier,
+        leading_sep,
+        segments
+    }),
 
     /// https://doc.rust-lang.org/reference/types.html#parenthesized-types
     /// https://doc.rust-lang.org/reference/types/tuple.html#tuple-types

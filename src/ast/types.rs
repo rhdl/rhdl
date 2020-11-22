@@ -13,6 +13,11 @@ crate::class_from_tokens! {
             leading_sep: Option<PathSep>,
             segments: Punctuated<PathSegment, PathSep>
         },
+        QPath {
+            qualifier: Qualifier,
+            leading_sep: PathSep,
+            segments: Punctuated<PathSegment, PathSep>
+        },
         Tuple {
             paren_open: ParenOpen,
             tys: Punctuated<Type, Comma>,
@@ -41,5 +46,14 @@ crate::class_from_tokens! {
             paren_close: ParenClose,
             ret: Option<(RArrow, Box<Type>)>
         }
+    }
+}
+
+crate::insts_from_tokens! {
+    Qualifier {
+        lt: Lt,
+        ty: Box<Type>,
+        cast: Option<(As, Box<TypePath>)>,
+        gt: Gt
     }
 }
