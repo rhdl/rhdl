@@ -1742,6 +1742,7 @@ ExprWithoutBlockOrOperator: ast::Expr = {
 ExprStmt: ast::Expr = {
     AssignExpression,
     ReturnExpression,
+    StructExpression,
 };
 
 /// https://doc.rust-lang.org/reference/expressions.html
