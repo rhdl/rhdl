@@ -331,6 +331,16 @@ macro_rules! tokens {
             Lit(Lit),
         }
 
+        impl fmt::Display for Tok {
+            fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+                match self {
+                    $(Self::$variant(v) => write!(f, "{}", v)),*,
+                    Self::Ident(i) => write!(f, "{}", i),
+                    Self::Lit(l) => write!(f, "{}", l)
+                }
+            }
+        }
+
         impl Spanned for Tok {
             fn span(&self) -> Span {
                 match self {
