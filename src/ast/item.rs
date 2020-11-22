@@ -278,6 +278,16 @@ crate::class_from_tokens! {
     }
 }
 
+impl GenericParam {
+    pub fn ident<'ast>(&'ast self) -> &'ast Ident {
+        use GenericParam::*;
+        match self {
+            Type(t) => &t.ident,
+            Const(c) => &c.ident,
+        }
+    }
+}
+
 crate::class_from_tokens! {
     WhereClauseItem {
         Type {
