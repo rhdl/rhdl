@@ -7,7 +7,7 @@ mod expr;
 mod item;
 // pub mod macaroni;
 mod pat;
-pub(crate) mod token;
+pub mod token;
 mod types;
 
 pub use expr::*;
